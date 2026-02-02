@@ -2,11 +2,11 @@
 // Note: This is a frontend simulation. Replace with actual Solana program integration when ready.
 
 // Symbol definitions with rarity (most common to rarest)
-const SYMBOLS = ['🍇', '🍒', '🍋', '🍊', '🍉', '⭐', '💎', '7️⃣'];
+// Note: We no longer use emoji symbols - only images. SYMBOL_NAMES kept for alt text.
 const SYMBOL_NAMES = ['Grapes', 'Cherry', 'Lemon', 'Orange', 'Watermelon', 'Star', 'Diamond', 'Seven'];
 
 // Symbol distribution per reel (36 symbols total per reel for unique rarities)
-// Index matches SYMBOLS array: [Grapes, Cherry, Lemon, Orange, Watermelon, Star, Diamond, Seven]
+// Index matches SYMBOL_NAMES array: [Grapes, Cherry, Lemon, Orange, Watermelon, Star, Diamond, Seven]
 // Each symbol has unique rarity:
 const SYMBOL_COUNTS = [8, 7, 6, 5, 4, 3, 2, 1]; // Total = 36
 // Rarities: Grapes 22.2%, Cherry 19.4%, Lemon 16.7%, Orange 13.9%, Watermelon 11.1%, Star 8.3%, Diamond 5.6%, Seven 2.8%
@@ -121,8 +121,15 @@ function initializeReels() {
             for (let j = 0; j < numSymbols; j++) {
                 const symbol = document.createElement('div');
                 symbol.className = 'reel-symbol';
-                symbol.textContent = SYMBOLS[FIXED_REEL_ORDER[j]];
-                symbol.dataset.symbolIndex = FIXED_REEL_ORDER[j]; // Store symbol index for win calculation
+                const symbolIndex = FIXED_REEL_ORDER[j];
+                // Map symbol index to image number: 0 (Grapes) -> 8.png, 7 (Seven) -> 1.png
+                const imageNumber = 8 - symbolIndex;
+                const img = document.createElement('img');
+                img.src = `/public/images/symbols/${imageNumber}.png`;
+                img.alt = SYMBOL_NAMES[symbolIndex];
+                img.className = 'symbol-image';
+                symbol.appendChild(img);
+                symbol.dataset.symbolIndex = symbolIndex; // Store symbol index for win calculation
                 symbol.style.height = `${reelHeight}px`;
                 strip.appendChild(symbol);
             }
@@ -254,7 +261,7 @@ async function purchaseSpins() {
 function createFixedReelOrder() {
     // Build array of all symbols with their counts
     const symbolPool = [];
-    for (let symbolIndex = 0; symbolIndex < SYMBOLS.length; symbolIndex++) {
+    for (let symbolIndex = 0; symbolIndex < SYMBOL_NAMES.length; symbolIndex++) {
         for (let count = 0; count < SYMBOL_COUNTS[symbolIndex]; count++) {
             symbolPool.push(symbolIndex);
         }
@@ -361,7 +368,20 @@ function stopReel(reelNum, symbolIndex) {
     
     // Update the center symbol to show the result
     if (symbols[centerIndex]) {
-        symbols[centerIndex].textContent = SYMBOLS[symbolIndex];
+        const imageNumber = 8 - symbolIndex;
+        const img = symbols[centerIndex].querySelector('.symbol-image');
+        if (img) {
+            img.src = `/public/images/symbols/${imageNumber}.png`;
+            img.alt = SYMBOL_NAMES[symbolIndex];
+        } else {
+            // If no image exists, create one
+            symbols[centerIndex].innerHTML = '';
+            const newImg = document.createElement('img');
+            newImg.src = `/public/images/symbols/${imageNumber}.png`;
+            newImg.alt = SYMBOL_NAMES[symbolIndex];
+            newImg.className = 'symbol-image';
+            symbols[centerIndex].appendChild(newImg);
+        }
     }
     
     // Calculate position using pixels for accuracy
@@ -378,8 +398,6 @@ function stopReel(reelNum, symbolIndex) {
 
 // Calculate Win
 function calculateWin(results, bet) {
-    const symbols = results.map(i => SYMBOLS[i]);
-    const symbolNames = results.map(i => SYMBOL_NAMES[i]);
     const winDisplay = document.getElementById('win-display');
     const winMessage = document.getElementById('win-message');
     const winAmount = document.getElementById('win-amount');
@@ -392,12 +410,13 @@ function calculateWin(results, bet) {
         // All symbols match - use payout table
         const symbolIndex = results[0];
         win = PAYOUTS[symbolIndex] || 0;
-        message = `🎉 THREE ${symbolNames[0]}! 🎉`;
+        // Create win message with image: "3 x [image]"
+        const imageNumber = 8 - symbolIndex;
+        winMessage.innerHTML = `🎉 <span class="win-symbols">3 x <img src="/public/images/symbols/${imageNumber}.png" alt="${SYMBOL_NAMES[symbolIndex]}" class="win-symbol-image"></span> 🎉`;
     }
     
     if (win > 0) {
         totalWon += win;
-        winMessage.textContent = message;
         winAmount.textContent = `You won ${win} XMA!`;
         winDisplay.style.display = 'block';
         
