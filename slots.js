@@ -125,7 +125,7 @@ function initializeReels() {
                 // Map symbol index to image number: 0 (Grapes) -> 8.png, 7 (Seven) -> 1.png
                 const imageNumber = 8 - symbolIndex;
                 const img = document.createElement('img');
-                img.src = `/public/images/symbols/${imageNumber}.png`;
+                img.src = `/images/symbols/${imageNumber}.png`;
                 img.alt = SYMBOL_NAMES[symbolIndex];
                 img.className = 'symbol-image';
                 symbol.appendChild(img);
@@ -371,13 +371,13 @@ function stopReel(reelNum, symbolIndex) {
         const imageNumber = 8 - symbolIndex;
         const img = symbols[centerIndex].querySelector('.symbol-image');
         if (img) {
-            img.src = `/public/images/symbols/${imageNumber}.png`;
+            img.src = `/images/symbols/${imageNumber}.png`;
             img.alt = SYMBOL_NAMES[symbolIndex];
         } else {
             // If no image exists, create one
             symbols[centerIndex].innerHTML = '';
             const newImg = document.createElement('img');
-            newImg.src = `/public/images/symbols/${imageNumber}.png`;
+            newImg.src = `/images/symbols/${imageNumber}.png`;
             newImg.alt = SYMBOL_NAMES[symbolIndex];
             newImg.className = 'symbol-image';
             symbols[centerIndex].appendChild(newImg);
@@ -412,7 +412,7 @@ function calculateWin(results, bet) {
         win = PAYOUTS[symbolIndex] || 0;
         // Create win message with image: "3 x [image]"
         const imageNumber = 8 - symbolIndex;
-        winMessage.innerHTML = `🎉 <span class="win-symbols">3 x <img src="/public/images/symbols/${imageNumber}.png" alt="${SYMBOL_NAMES[symbolIndex]}" class="win-symbol-image"></span> 🎉`;
+        winMessage.innerHTML = `🎉 <span class="win-symbols">3 x <img src="/images/symbols/${imageNumber}.png" alt="${SYMBOL_NAMES[symbolIndex]}" class="win-symbol-image"></span> 🎉`;
     }
     
     if (win > 0) {
