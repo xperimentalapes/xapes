@@ -126,8 +126,12 @@ function initializeReels() {
                 const imageNumber = 8 - symbolIndex;
                 const img = document.createElement('img');
                 img.src = `/images/symbols/${imageNumber}.png`;
-                img.alt = SYMBOL_NAMES[symbolIndex];
+                img.alt = ''; // Empty alt to prevent text fallback
                 img.className = 'symbol-image';
+                img.onerror = function() {
+                    console.error(`Failed to load image: /images/symbols/${imageNumber}.png`);
+                    this.style.display = 'none';
+                };
                 symbol.appendChild(img);
                 symbol.dataset.symbolIndex = symbolIndex; // Store symbol index for win calculation
                 symbol.style.height = `${reelHeight}px`;
@@ -372,14 +376,22 @@ function stopReel(reelNum, symbolIndex) {
         const img = symbols[centerIndex].querySelector('.symbol-image');
         if (img) {
             img.src = `/images/symbols/${imageNumber}.png`;
-            img.alt = SYMBOL_NAMES[symbolIndex];
+            img.alt = ''; // Empty alt to prevent text fallback
+            img.onerror = function() {
+                console.error(`Failed to load image: /images/symbols/${imageNumber}.png`);
+                this.style.display = 'none';
+            };
         } else {
             // If no image exists, create one
             symbols[centerIndex].innerHTML = '';
             const newImg = document.createElement('img');
             newImg.src = `/images/symbols/${imageNumber}.png`;
-            newImg.alt = SYMBOL_NAMES[symbolIndex];
+            newImg.alt = ''; // Empty alt to prevent text fallback
             newImg.className = 'symbol-image';
+            newImg.onerror = function() {
+                console.error(`Failed to load image: /images/symbols/${imageNumber}.png`);
+                this.style.display = 'none';
+            };
             symbols[centerIndex].appendChild(newImg);
         }
     }

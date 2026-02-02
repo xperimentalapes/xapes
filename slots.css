@@ -254,11 +254,11 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 80px;
-    font-weight: 800;
     flex-shrink: 0;
     position: relative;
     box-sizing: border-box;
+    font-size: 0; /* Hide any text fallback */
+    color: transparent; /* Hide any text fallback */
 }
 
 .symbol-image {
@@ -266,6 +266,17 @@
     height: 100%;
     object-fit: contain;
     display: block;
+}
+
+/* Hide alt text when image fails to load */
+.reel-symbol::before {
+    content: '';
+    display: none;
+}
+
+.symbol-image::after {
+    content: '';
+    display: none;
 }
 
 .reel.spinning .reel-strip {
