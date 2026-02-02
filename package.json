@@ -3,6 +3,6 @@
   "version": "1.0.0",
   "description": "Xperimental Mutant Apes website",
   "scripts": {
-    "build": "mkdir -p public && cp index.html styles.css script.js public/ 2>/dev/null || true"
+    "build": "mkdir -p public && cp index.html styles.css script.js slots.html slots.css slots.js public/ 2>/dev/null || true"
   }
 }

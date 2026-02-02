@@ -5,5 +5,7 @@
       "source": "/slots",
       "destination": "/slots.html"
     }
-  ]
+  ],
+  "buildCommand": "npm run build",
+  "outputDirectory": "public"
 }
