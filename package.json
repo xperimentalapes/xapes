@@ -1,0 +1,8 @@
+{
+  "name": "xapes",
+  "version": "1.0.0",
+  "description": "Xperimental Mutant Apes website",
+  "scripts": {
+    "build": "echo 'No build step needed for static site'"
+  }
+}
