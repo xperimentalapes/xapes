@@ -3,6 +3,6 @@
   "version": "1.0.0",
   "description": "Xperimental Mutant Apes website",
   "scripts": {
-    "build": "echo 'Static site - no build needed'"
+    "build": "mkdir -p public && cp index.html styles.css script.js public/ 2>/dev/null || true"
   }
 }
