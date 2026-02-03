@@ -5,7 +5,7 @@ const { Connection, PublicKey, Transaction, Keypair } = require('@solana/web3.js
 const { getAssociatedTokenAddress, createTransferInstruction } = require('@solana/spl-token');
 const { createClient } = require('@supabase/supabase-js');
 
-const TREASURY_WALLET = '5eZ3Qt1jKCGdXkCES791W68T87bGG62j9ZHcmBaMUtTP';
+const TREASURY_WALLET = '6auNHk39Mut82FhjY9iBZXjqm7xJabFVrY3bVgrYSMvj';
 const XMA_TOKEN_MINT = 'HVSruatutKcgpZJXYyeRCWAnyT7mzYq1io9YoJ6F4yMP';
 const TOKEN_DECIMALS = 6;
 // Use Helius RPC endpoint (dedicated service, no rate limits)
