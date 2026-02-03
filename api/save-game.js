@@ -144,7 +144,8 @@ module.exports = async function handler(req, res) {
             total_spins: playerUpdate.total_spins,
             total_wagered: playerUpdate.total_wagered,
             total_won: playerUpdate.total_won,
-            unclaimed_rewards: playerUpdate.unclaimed_rewards
+            unclaimed_rewards: playerUpdate.unclaimed_rewards,
+            spins_remaining: playerUpdate.spins_remaining
         });
         
         const { data: playerData, error: playerError } = await supabase

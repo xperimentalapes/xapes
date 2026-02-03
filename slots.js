@@ -530,10 +530,14 @@ async function purchaseSpins() {
 
         // Update spins remaining
         spinsRemaining += numSpins;
+        console.log(`Purchased ${numSpins} spins. New total: ${spinsRemaining}`);
         
         // Save spins purchase to database
         if (wallet) {
+            console.log('Saving spins purchase to database...', { numSpins, spinsRemaining });
             await saveGameData(0, [], 0, undefined, undefined, numSpins); // Save spins purchase
+        } else {
+            console.warn('Cannot save spins purchase - wallet not connected');
         }
         
         // Update balance
@@ -968,21 +972,21 @@ async function loadPlayerData() {
         
         const data = await response.json();
         
+        console.log('Player data loaded from database:', data);
+        
         // Restore unclaimed rewards
         if (data.unclaimedRewards > 0) {
             totalWon = data.unclaimedRewards;
+            console.log('Restored unclaimed rewards:', data.unclaimedRewards);
         }
         
-        // Restore spins remaining
-        if (data.spinsRemaining > 0) {
-            spinsRemaining = data.spinsRemaining;
-        }
+        // Restore spins remaining (always restore, even if 0, to sync with database)
+        spinsRemaining = data.spinsRemaining || 0;
+        console.log('Restored spins remaining:', spinsRemaining);
         
-        // Update display and buttons if we restored any data
-        if (data.unclaimedRewards > 0 || data.spinsRemaining > 0) {
-            updateDisplay();
-            updateButtonStates();
-        }
+        // Update display and buttons
+        updateDisplay();
+        updateButtonStates();
         
         console.log('Player data loaded:', {
             totalSpins: data.totalSpins,
