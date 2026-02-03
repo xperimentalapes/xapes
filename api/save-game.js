@@ -116,8 +116,9 @@ module.exports = async function handler(req, res) {
                     playerUpdate.cost_per_spin = Math.floor(spinCost); // Store cost per spin for remaining spins
                     // Don't increment total_spins or update wagered/won for purchases
                 } 
-                // If updateSpinsRemaining is set AND spinCost > 0, this is a spin (increment stats)
-                else if (updateSpinsRemaining !== undefined && spinCost > 0) {
+                // If updateSpinsRemaining is set, this is a spin (increment stats)
+                // Use stored cost_per_spin from database for calculations (even if spinCost is 0)
+                else if (updateSpinsRemaining !== undefined) {
                     // This is a spin - increment total_spins and update wagered/won
                     // Use stored cost_per_spin from database for prize calculations
                     const storedCostPerSpin = currentPlayer.cost_per_spin || 100;
@@ -131,14 +132,6 @@ module.exports = async function handler(req, res) {
                         BigInt(currentPlayer.total_won || 0) + 
                         BigInt(Math.floor(wonAmount * 1e6))
                     ).toString();
-                    // Clear cost_per_spin when all spins are used
-                    if (updateSpinsRemaining === 0) {
-                        playerUpdate.cost_per_spin = null;
-                    }
-                }
-                // If updateSpinsRemaining is set but spinCost is 0, just update spins_remaining (no stats update)
-                else if (updateSpinsRemaining !== undefined) {
-                    playerUpdate.spins_remaining = updateSpinsRemaining;
                     // Clear cost_per_spin when all spins are used
                     if (updateSpinsRemaining === 0) {
                         playerUpdate.cost_per_spin = null;
