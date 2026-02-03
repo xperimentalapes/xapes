@@ -1269,23 +1269,27 @@
     }
     
     .game-stats-bar .btn-win-percent-desktop {
-        flex: 0 0 calc(50% - 3px) !important;
-        padding: 6px 12px !important;
-        font-size: 14px !important; /* Bigger but not too big */
+        flex: 0 0 calc(25% - 3px) !important;
+        padding: 6px 8px !important;
+        font-size: 12px !important;
         font-weight: 700 !important;
-        margin: 0 auto !important; /* Center horizontally */
-        align-self: center !important;
         order: 4 !important;
-        width: fit-content !important;
+        width: auto !important;
         max-width: 100% !important;
     }
     
     .game-stats-bar .btn-leaderboard-desktop {
-        flex: 0 0 calc(50% - 3px) !important;
-        order: 5 !important;
-        margin: 0 auto !important;
-        width: 40px !important;
-        height: 40px !important;
+        flex: 0 0 calc(25% - 3px) !important;
+        order: 4 !important;
+        width: 32px !important;
+        height: 32px !important;
+        padding: 4px !important;
+        margin-left: 6px !important;
+    }
+    
+    .game-stats-bar .btn-leaderboard-desktop svg {
+        width: 16px !important;
+        height: 16px !important;
     }
     
     .spin-button-hint {

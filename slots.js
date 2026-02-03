@@ -1324,7 +1324,7 @@ function updateSpinButtonText() {
             spinBtnMain.textContent = 'SPIN';
         }
         if (spinBtnHint) {
-            spinBtnHint.textContent = 'DOUBLE CLICK FOR AUTOSPIN';
+            spinBtnHint.textContent = 'CLICK TO AUTOSPIN';
         }
     }
 }
