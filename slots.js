@@ -370,26 +370,22 @@ function setupGameControls() {
     
     purchaseBtn.addEventListener('click', purchaseSpins);
     
-    // Handle click for spin/autospin toggle
+    // Handle single click for spin, double click for autospin
     let clickTimeout;
     spinBtn.addEventListener('click', (e) => {
-        if (isAutoSpinning) {
-            // If autospin is active, single click stops it
+        if (clickTimeout) {
+            clearTimeout(clickTimeout);
+            clickTimeout = null;
+            // Double click detected - toggle autospin
             toggleAutoSpin();
         } else {
-            // If autospin is not active, check for double click to start autospin
-            if (clickTimeout) {
-                clearTimeout(clickTimeout);
+            clickTimeout = setTimeout(() => {
                 clickTimeout = null;
-                // Double click detected - start autospin
-                toggleAutoSpin();
-            } else {
-                clickTimeout = setTimeout(() => {
-                    clickTimeout = null;
-                    // Single click - normal spin
+                // Single click - normal spin (only if not autospinning)
+                if (!isAutoSpinning) {
                     spin();
-                }, 300); // 300ms window for double click
-            }
+                }
+            }, 300); // 300ms window for double click
         }
     });
     
@@ -403,24 +399,16 @@ function setupGameControls() {
 
 // Toggle autospin
 function toggleAutoSpin() {
-    // Allow toggling off even if spinning (to stop after current spin)
-    if (isAutoSpinning) {
-        // Stopping autospin - just set flag to false
-        isAutoSpinning = false;
-        updateSpinButtonText();
-        updateButtonStates();
-        return;
-    }
-    
-    // Starting autospin - check conditions
     if (isSpinning || spinsRemaining <= 0) return;
     
-    isAutoSpinning = true;
+    isAutoSpinning = !isAutoSpinning;
     updateSpinButtonText();
     updateButtonStates();
     
-    // Start autospin
-    autoSpin();
+    if (isAutoSpinning) {
+        // Start autospin
+        autoSpin();
+    }
 }
 
 // Auto spin loop
