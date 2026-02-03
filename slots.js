@@ -391,15 +391,24 @@ function setupGameControls() {
 
 // Toggle autospin
 function toggleAutoSpin() {
+    // Allow toggling off even if spinning (to stop after current spin)
+    if (isAutoSpinning) {
+        // Stopping autospin - just set flag to false
+        isAutoSpinning = false;
+        updateSpinButtonText();
+        updateButtonStates();
+        return;
+    }
+    
+    // Starting autospin - check conditions
     if (isSpinning || spinsRemaining <= 0) return;
     
-    isAutoSpinning = !isAutoSpinning;
+    isAutoSpinning = true;
     updateSpinButtonText();
+    updateButtonStates();
     
-    if (isAutoSpinning) {
-        // Start autospin
-        autoSpin();
-    }
+    // Start autospin
+    autoSpin();
 }
 
 // Auto spin loop
@@ -1250,7 +1259,7 @@ function updateButtonStates() {
     }
     
     // Enable spin button when spins > 0 and not collecting
-    // Keep button enabled during autospin so user can double-click to stop
+    // Keep button enabled during autospin so user can click to stop
     const shouldDisableSpin = spinsRemaining <= 0 || isCollecting || (isSpinning && !isAutoSpinning);
     spinBtn.disabled = shouldDisableSpin;
     
