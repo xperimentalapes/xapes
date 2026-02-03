@@ -498,6 +498,11 @@
     font-size: 28px;
     font-weight: 800;
     box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
 }
 
 .btn-spin:hover:not(:disabled) {
@@ -581,14 +586,6 @@
 .btn-leaderboard-desktop svg {
     width: 20px;
     height: 20px;
-}
-
-.btn-spin {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
 }
 
 .spin-button-main {
