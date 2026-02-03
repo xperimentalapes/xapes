@@ -202,15 +202,26 @@ async function setupWalletConnection() {
                 walletInfo.style.display = 'flex';
                 
                 // Initialize connection using solanaWeb3 from the loaded script
+                // Use Ankr public RPC (more reliable than official endpoint for rate limits)
+                const rpcUrl = 'https://rpc.ankr.com/solana';
+                
                 if (typeof window.solanaWeb3 !== 'undefined') {
                     connection = new window.solanaWeb3.Connection(
-                        'https://api.mainnet-beta.solana.com', // Mainnet
-                        'confirmed'
+                        rpcUrl,
+                        'confirmed',
+                        {
+                            commitment: 'confirmed',
+                            disableRetryOnRateLimit: false
+                        }
                     );
                 } else if (typeof solanaWeb3 !== 'undefined') {
                     connection = new solanaWeb3.Connection(
-                        'https://api.mainnet-beta.solana.com',
-                        'confirmed'
+                        rpcUrl,
+                        'confirmed',
+                        {
+                            commitment: 'confirmed',
+                            disableRetryOnRateLimit: false
+                        }
                     );
                 }
                 
@@ -270,8 +281,14 @@ async function updateBalance() {
             const account = await getAccount(connection, tokenAccount);
             xmaBalance = Number(account.amount) / Math.pow(10, TOKEN_DECIMALS);
         } catch (error) {
-            // Token account doesn't exist yet
-            xmaBalance = 0;
+            // Token account doesn't exist yet or RPC error
+            if (error.message && (error.message.includes('403') || error.message.includes('429') || error.message.includes('rate limit'))) {
+                console.warn('RPC rate limited, balance may not update. Consider using a dedicated RPC endpoint.');
+                // Keep current balance, don't reset to 0
+            } else {
+                // Token account doesn't exist yet
+                xmaBalance = 0;
+            }
         }
         
         updateDisplay();

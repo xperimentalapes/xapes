@@ -7,7 +7,8 @@ const { getAssociatedTokenAddress, createTransferInstruction } = require('@solan
 const TREASURY_WALLET = '5eZ3Qt1jKCGdXkCES791W68T87bGG62j9ZHcmBaMUtTP';
 const XMA_TOKEN_MINT = 'HVSruatutKcgpZJXYyeRCWAnyT7mzYq1io9YoJ6F4yMP';
 const TOKEN_DECIMALS = 6;
-const RPC_URL = 'https://api.mainnet-beta.solana.com';
+// Use Ankr public RPC (more reliable than official endpoint)
+const RPC_URL = 'https://rpc.ankr.com/solana';
 
 module.exports = async function handler(req, res) {
     // Only allow POST requests
@@ -40,8 +41,11 @@ module.exports = async function handler(req, res) {
             return res.status(500).json({ error: 'Invalid treasury key configuration' });
         }
 
-        // Initialize connection
-        const connection = new Connection(RPC_URL, 'confirmed');
+        // Initialize connection with retry configuration
+        const connection = new Connection(RPC_URL, 'confirmed', {
+            commitment: 'confirmed',
+            disableRetryOnRateLimit: false
+        });
 
         // Create public keys
         const tokenMint = new PublicKey(XMA_TOKEN_MINT);
