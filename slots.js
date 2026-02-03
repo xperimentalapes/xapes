@@ -1130,14 +1130,25 @@ async function loadLeaderboard(sortBy = 'spins') {
 // Database Functions
 
 // Load player data from database
+let isLoadingPlayerData = false; // Prevent duplicate calls
 async function loadPlayerData() {
     if (!wallet) return;
     
+    // Prevent duplicate simultaneous calls
+    if (isLoadingPlayerData) {
+        console.log('loadPlayerData: Already loading, skipping duplicate call');
+        return;
+    }
+    
+    isLoadingPlayerData = true;
+    
     try {
-        const response = await fetch(`/api/load-player?walletAddress=${encodeURIComponent(wallet)}`);
+        const response = await fetch(`/api/load-player?walletAddress=${encodeURIComponent(wallet)}`, {
+            signal: AbortSignal.timeout(10000) // 10 second timeout
+        });
         
         if (!response.ok) {
-            console.error('Failed to load player data:', response.statusText);
+            console.error('Failed to load player data:', response.status, response.statusText);
             return;
         }
         
@@ -1166,8 +1177,17 @@ async function loadPlayerData() {
             spinsRemaining: data.spinsRemaining
         });
     } catch (error) {
-        console.error('Error loading player data:', error);
+        // Only log if it's not an abort/timeout (which are expected in some cases)
+        if (error.name === 'AbortError' || error.name === 'TimeoutError') {
+            console.warn('loadPlayerData: Request timeout or aborted');
+        } else if (error.name === 'TypeError' && error.message.includes('NetworkError')) {
+            console.warn('loadPlayerData: Network error - API may be unavailable or request was aborted');
+        } else {
+            console.error('Error loading player data:', error);
+        }
         // Don't show error to user - just continue without saved data
+    } finally {
+        isLoadingPlayerData = false;
     }
 }
 
