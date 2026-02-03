@@ -106,6 +106,80 @@ module.exports = async function handler(req, res) {
             return res.status(429).json({ error: 'Too many requests. Please wait before trying again.' });
         }
 
+        // CRITICAL: Check database for actual unclaimed amount and atomically update to 0
+        // This prevents race conditions where user clicks collect multiple times
+        if (supabase) {
+            try {
+                // First, get current unclaimed rewards from database
+                const { data: playerData, error: fetchError } = await supabase
+                    .from('players')
+                    .select('unclaimed_rewards')
+                    .eq('wallet_address', userWallet)
+                    .single();
+
+                if (fetchError && fetchError.code !== 'PGRST116') {
+                    console.error('Error fetching player data:', fetchError);
+                    return res.status(500).json({ error: 'Failed to verify unclaimed rewards' });
+                }
+
+                // Convert database amount to XMA (6 decimals)
+                const TOKEN_DECIMALS = 6;
+                const dbUnclaimedRewards = playerData 
+                    ? Number(playerData.unclaimed_rewards || 0) / Math.pow(10, TOKEN_DECIMALS)
+                    : 0;
+
+                // Security: Verify the amount matches what user is requesting
+                // Use database amount as source of truth (prevents frontend manipulation)
+                if (dbUnclaimedRewards <= 0) {
+                    console.warn(`Collect attempt with no unclaimed rewards. Wallet: ${userWallet}, Requested: ${amount}, DB: ${dbUnclaimedRewards}`);
+                    return res.status(400).json({ 
+                        error: 'No unclaimed rewards available',
+                        actualAmount: 0
+                    });
+                }
+
+                // If requested amount doesn't match database, use database amount (source of truth)
+                if (Math.abs(dbUnclaimedRewards - amount) > 0.000001) {
+                    console.warn(`Amount mismatch: requested ${amount}, database has ${dbUnclaimedRewards}. Using database amount.`);
+                    amount = dbUnclaimedRewards;
+                }
+
+                // Atomically update unclaimed_rewards to 0 ONLY if it matches current value
+                // This prevents race conditions - if another collect happened, this will fail
+                const { data: updateData, error: updateError } = await supabase
+                    .from('players')
+                    .update({ unclaimed_rewards: '0' })
+                    .eq('wallet_address', userWallet)
+                    .eq('unclaimed_rewards', playerData.unclaimed_rewards) // Only update if value hasn't changed
+                    .select();
+
+                if (updateError) {
+                    console.error('Error updating unclaimed rewards:', updateError);
+                    return res.status(500).json({ error: 'Failed to update unclaimed rewards' });
+                }
+
+                // If no rows were updated, it means another collect happened (race condition)
+                if (!updateData || updateData.length === 0) {
+                    console.warn(`Race condition detected: unclaimed rewards already collected. Wallet: ${userWallet}`);
+                    return res.status(409).json({ 
+                        error: 'Unclaimed rewards have already been collected',
+                        actualAmount: 0
+                    });
+                }
+
+                console.log(`Successfully reserved ${amount} XMA for collection. Wallet: ${userWallet}`);
+            } catch (dbError) {
+                console.error('Database error during collect verification:', dbError);
+                return res.status(500).json({ 
+                    error: 'Failed to verify unclaimed rewards',
+                    message: dbError.message 
+                });
+            }
+        } else {
+            // If database not configured, still proceed but log warning
+            console.warn('Supabase not configured - cannot verify unclaimed rewards from database');
+        }
+
         // Get treasury private key from environment variable
         const treasuryPrivateKey = process.env.TREASURY_PRIVATE_KEY;
         if (!treasuryPrivateKey) {
@@ -209,28 +283,13 @@ module.exports = async function handler(req, res) {
             verifySignatures: false
         });
 
-        // Clear unclaimed rewards in database after successful transaction creation
-        // Note: This clears it optimistically - if transaction fails, it will be restored on next spin
-        if (supabase) {
-            try {
-                const { error: updateError } = await supabase
-                    .from('players')
-                    .update({ unclaimed_rewards: '0' })
-                    .eq('wallet_address', userWallet);
-                
-                if (updateError) {
-                    console.error('Error clearing unclaimed rewards:', updateError);
-                    // Don't fail the request - transaction is still valid
-                }
-            } catch (dbError) {
-                console.error('Database error clearing unclaimed rewards:', dbError);
-                // Continue - transaction is still valid
-            }
-        }
+        // Note: Unclaimed rewards already cleared atomically above before creating transaction
+        // This prevents race conditions - if transaction fails, we'll need to handle that separately
 
-        // Return the signed transaction as base64
+        // Return the signed transaction as base64 and actual amount collected
         return res.status(200).json({
-            transaction: serializedTransaction.toString('base64')
+            transaction: serializedTransaction.toString('base64'),
+            actualAmount: amount // Return the actual amount that was collected (from database)
         });
 
     } catch (error) {

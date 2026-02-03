@@ -51,6 +51,7 @@ let xmaBalance = 0;
 let spinsRemaining = 0;
 let totalWon = 0;
 let isSpinning = false;
+let isCollecting = false; // Prevent multiple simultaneous collect attempts
 
 // Fixed reel order (created once, same for all reels)
 let FIXED_REEL_ORDER = null;
@@ -743,6 +744,12 @@ async function calculateWin(results, bet) {
 // Withdraw Winnings - Transfer XMA tokens from treasury to user wallet
 // Uses backend API to get presigned transaction from treasury
 async function withdrawWinnings() {
+    // Prevent multiple simultaneous collect attempts
+    if (isCollecting) {
+        console.log('Collect already in progress, ignoring duplicate request');
+        return;
+    }
+    
     if (totalWon <= 0) {
         alert('No winnings to withdraw');
         return;
@@ -776,8 +783,18 @@ async function withdrawWinnings() {
         return;
     }
     
+    // Set collecting flag and disable button immediately
+    isCollecting = true;
+    const withdrawBtn = document.getElementById('withdraw-button');
+    const originalText = withdrawBtn.textContent;
+    withdrawBtn.disabled = true;
+    withdrawBtn.textContent = 'Collecting...';
+    withdrawBtn.style.opacity = '0.5';
+    withdrawBtn.style.cursor = 'not-allowed';
+    
     try {
         // Call backend API to get presigned transaction
+        // Backend will check database and atomically update unclaimed_rewards to 0
         const response = await fetch('/api/collect', {
             method: 'POST',
             headers: {
@@ -794,7 +811,17 @@ async function withdrawWinnings() {
             throw new Error(errorData.error || 'Failed to create collect transaction');
         }
 
-        const { transaction: transactionBase64 } = await response.json();
+        const { transaction: transactionBase64, actualAmount } = await response.json();
+        
+        // If backend returned actualAmount, use it (means database had different amount)
+        if (actualAmount !== undefined && actualAmount !== totalWon) {
+            console.warn(`Amount mismatch: frontend had ${totalWon}, database had ${actualAmount}. Using database amount.`);
+            // Update frontend to match database
+            totalWon = actualAmount;
+            if (actualAmount === 0) {
+                throw new Error('No unclaimed rewards available (may have already been collected)');
+            }
+        }
 
         // Deserialize the presigned transaction
         const { Transaction } = window.solanaWeb3 || solanaWeb3;
@@ -824,14 +851,9 @@ async function withdrawWinnings() {
         // Wait for confirmation
         await connection.confirmTransaction(signature, 'confirmed');
 
-        // Reset total won and update database
+        // Reset total won (database already updated by backend)
         const amount = totalWon;
         totalWon = 0;
-        
-        // Clear unclaimed rewards in database
-        if (wallet) {
-            await saveGameData(0, [], 0, 0); // Save with unclaimed rewards = 0
-        }
 
         // Update balance
         await updateBalance();
@@ -846,11 +868,18 @@ async function withdrawWinnings() {
         // Handle user rejection gracefully
         if (errorMsg.includes('User rejected') || errorMsg.includes('User cancelled') || errorMsg.includes('rejected')) {
             // User intentionally rejected - don't show error, just return silently
+            // But re-enable button
+            isCollecting = false;
+            updateButtonStates();
             return;
         }
         
         // Show error for other cases
         alert('Failed to collect winnings: ' + errorMsg);
+    } finally {
+        // Always reset collecting flag and re-enable button
+        isCollecting = false;
+        updateButtonStates();
     }
 }
 
