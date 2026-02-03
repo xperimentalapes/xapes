@@ -53,6 +53,7 @@ let totalWon = 0;
 let isSpinning = false;
 let isCollecting = false; // Prevent multiple simultaneous collect attempts
 let isAutoSpinning = false; // Autospin state
+let clickTimeout = null; // For double-click detection
 
 // Fixed reel order (created once, same for all reels)
 let FIXED_REEL_ORDER = null;
@@ -371,7 +372,6 @@ function setupGameControls() {
     purchaseBtn.addEventListener('click', purchaseSpins);
     
     // Handle click for spin/autospin
-    let clickTimeout = null;
     spinBtn.addEventListener('click', (e) => {
         // If autospin is active, single click stops it immediately
         if (isAutoSpinning) {
@@ -396,8 +396,8 @@ function setupGameControls() {
             // First click - wait to see if there's a second click
             clickTimeout = setTimeout(() => {
                 clickTimeout = null;
-                // Single click - normal spin
-                if (!isAutoSpinning) {
+                // Single click - normal spin (only if autospin wasn't started)
+                if (!isAutoSpinning && !isSpinning && spinsRemaining > 0) {
                     spin();
                 }
             }, 300); // 300ms window for double click
