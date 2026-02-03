@@ -211,9 +211,9 @@ module.exports = async function handler(req, res) {
 
         // Clear unclaimed rewards in database after successful transaction creation
         // Note: This clears it optimistically - if transaction fails, it will be restored on next spin
-        if (collectSupabase) {
+        if (supabase) {
             try {
-                const { error: updateError } = await collectSupabase
+                const { error: updateError } = await supabase
                     .from('players')
                     .update({ unclaimed_rewards: '0' })
                     .eq('wallet_address', userWallet);
