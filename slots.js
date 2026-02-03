@@ -193,9 +193,40 @@ async function setupWalletConnection() {
     
     // Check if Phantom wallet is installed
     if (typeof window.solana !== 'undefined' && window.solana.isPhantom) {
+        // Check if already connected
+        try {
+            if (window.solana.isConnected) {
+                const resp = await window.solana.connect({ onlyIfTrusted: true });
+                if (resp) {
+                    wallet = resp.publicKey.toString();
+                    walletAddress.textContent = `${wallet.slice(0, 4)}...${wallet.slice(-4)}`;
+                    connectContainer.style.display = 'none';
+                    walletInfo.style.display = 'flex';
+                    
+                    // Initialize connection
+                    const rpcUrl = 'https://mainnet.helius-rpc.com/?api-key=277997e8-09ce-4516-a03e-5b062b51c6ac';
+                    if (typeof window.solanaWeb3 !== 'undefined') {
+                        connection = new window.solanaWeb3.Connection(rpcUrl, 'confirmed');
+                    } else if (typeof solanaWeb3 !== 'undefined') {
+                        connection = new solanaWeb3.Connection(rpcUrl, 'confirmed');
+                    }
+                    
+                    await updateBalance();
+                    updateButtonStates();
+                }
+            }
+        } catch (err) {
+            // Not connected, that's fine - user will click connect button
+            console.log('Wallet not auto-connected:', err.message);
+        }
+        
         connectBtn.addEventListener('click', async () => {
             try {
-                const resp = await window.solana.connect();
+                // Request connection with explicit options
+                const resp = await window.solana.connect({
+                    onlyIfTrusted: false
+                });
+                
                 wallet = resp.publicKey.toString();
                 walletAddress.textContent = `${wallet.slice(0, 4)}...${wallet.slice(-4)}`;
                 connectContainer.style.display = 'none';
@@ -235,6 +266,11 @@ async function setupWalletConnection() {
                 updateButtonStates();
             } catch (err) {
                 console.error('Wallet connection error:', err);
+                // Don't show alert for user rejection
+                if (err.message && (err.message.includes('User rejected') || err.message.includes('not been authorized'))) {
+                    console.log('User rejected wallet connection');
+                    return;
+                }
                 alert('Failed to connect wallet: ' + err.message);
             }
         });
