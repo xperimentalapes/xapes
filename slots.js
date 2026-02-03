@@ -997,7 +997,7 @@ async function loadPlayerData() {
 }
 
 // Save game data to database
-async function saveGameData(spinCost, resultSymbols, wonAmount, unclaimedRewards = null) {
+async function saveGameData(spinCost, resultSymbols, wonAmount, unclaimedRewards = null, updateSpinsRemaining = null, spinsPurchased = null) {
     if (!wallet) {
         console.log('saveGameData: No wallet connected, skipping save');
         return;
@@ -1009,7 +1009,9 @@ async function saveGameData(spinCost, resultSymbols, wonAmount, unclaimedRewards
             spinCost,
             resultSymbols,
             wonAmount,
-            unclaimedRewards: unclaimedRewards !== null ? unclaimedRewards : totalWon
+            unclaimedRewards: unclaimedRewards !== null ? unclaimedRewards : totalWon,
+            updateSpinsRemaining,
+            spinsPurchased
         });
         
         const response = await fetch('/api/save-game', {
@@ -1022,7 +1024,9 @@ async function saveGameData(spinCost, resultSymbols, wonAmount, unclaimedRewards
                 spinCost: spinCost,
                 resultSymbols: resultSymbols,
                 wonAmount: wonAmount,
-                updateUnclaimedRewards: unclaimedRewards !== null ? unclaimedRewards : totalWon
+                updateUnclaimedRewards: unclaimedRewards !== null ? unclaimedRewards : totalWon,
+                updateSpinsRemaining: updateSpinsRemaining !== null ? updateSpinsRemaining : (spinsPurchased === null ? spinsRemaining : undefined),
+                spinsPurchased: spinsPurchased
             })
         });
         
