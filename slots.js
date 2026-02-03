@@ -370,21 +370,28 @@ function setupGameControls() {
     
     purchaseBtn.addEventListener('click', purchaseSpins);
     
-    // Handle single click for spin, double click for autospin
+    // Handle click for spin/autospin
     let clickTimeout;
     spinBtn.addEventListener('click', (e) => {
+        if (isAutoSpinning) {
+            // If autospin is active, single click stops it immediately
+            isAutoSpinning = false;
+            updateSpinButtonText();
+            updateButtonStates();
+            return;
+        }
+        
+        // If autospin is not active, check for double click to start
         if (clickTimeout) {
             clearTimeout(clickTimeout);
             clickTimeout = null;
-            // Double click detected - toggle autospin
+            // Double click detected - start autospin
             toggleAutoSpin();
         } else {
             clickTimeout = setTimeout(() => {
                 clickTimeout = null;
-                // Single click - normal spin (only if not autospinning)
-                if (!isAutoSpinning) {
-                    spin();
-                }
+                // Single click - normal spin
+                spin();
             }, 300); // 300ms window for double click
         }
     });
