@@ -202,8 +202,8 @@ async function setupWalletConnection() {
                 walletInfo.style.display = 'flex';
                 
                 // Initialize connection using solanaWeb3 from the loaded script
-                // Use Ankr public RPC (more reliable than official endpoint for rate limits)
-                const rpcUrl = 'https://rpc.ankr.com/solana';
+                // Use Helius RPC endpoint (dedicated service, no rate limits)
+                const rpcUrl = 'https://mainnet.helius-rpc.com/?api-key=277997e8-09ce-4516-a03e-5b062b51c6ac';
                 
                 if (typeof window.solanaWeb3 !== 'undefined') {
                     connection = new window.solanaWeb3.Connection(
@@ -211,7 +211,10 @@ async function setupWalletConnection() {
                         'confirmed',
                         {
                             commitment: 'confirmed',
-                            disableRetryOnRateLimit: false
+                            disableRetryOnRateLimit: false,
+                            httpHeaders: {
+                                'Content-Type': 'application/json'
+                            }
                         }
                     );
                 } else if (typeof solanaWeb3 !== 'undefined') {
@@ -220,7 +223,10 @@ async function setupWalletConnection() {
                         'confirmed',
                         {
                             commitment: 'confirmed',
-                            disableRetryOnRateLimit: false
+                            disableRetryOnRateLimit: false,
+                            httpHeaders: {
+                                'Content-Type': 'application/json'
+                            }
                         }
                     );
                 }
@@ -282,19 +288,27 @@ async function updateBalance() {
             xmaBalance = Number(account.amount) / Math.pow(10, TOKEN_DECIMALS);
         } catch (error) {
             // Token account doesn't exist yet or RPC error
-            if (error.message && (error.message.includes('403') || error.message.includes('429') || error.message.includes('rate limit'))) {
-                console.warn('RPC rate limited, balance may not update. Consider using a dedicated RPC endpoint.');
+            const errorMsg = error.message || error.toString() || '';
+            if (errorMsg.includes('403') || errorMsg.includes('429') || errorMsg.includes('rate limit') || errorMsg.includes('Too Many Requests')) {
+                console.warn('RPC rate limited. Balance may not update. For production, use a dedicated RPC service (Helius, QuickNode, etc.)');
                 // Keep current balance, don't reset to 0
-            } else {
+            } else if (errorMsg.includes('Invalid param') || errorMsg.includes('not found') || errorMsg.includes('could not find account')) {
                 // Token account doesn't exist yet
                 xmaBalance = 0;
+            } else {
+                // Other error - log but don't reset balance
+                console.warn('Error fetching token account:', errorMsg);
             }
         }
         
         updateDisplay();
     } catch (error) {
         console.error('Error fetching balance:', error);
-        xmaBalance = 0;
+        const errorMsg = error.message || error.toString() || '';
+        // If it's a rate limit error, don't reset balance
+        if (!errorMsg.includes('403') && !errorMsg.includes('429') && !errorMsg.includes('rate limit')) {
+            xmaBalance = 0;
+        }
         updateDisplay();
     }
 }
@@ -373,15 +387,50 @@ async function purchaseSpins() {
             transferAmount
         );
         
-        // Create and send transaction
+        // Create and send transaction with retry logic for rate limits
         const transaction = new Transaction().add(transferInstruction);
-        const { blockhash } = await connection.getLatestBlockhash();
+        
+        let blockhash;
+        let retries = 3;
+        while (retries > 0) {
+            try {
+                const result = await connection.getLatestBlockhash();
+                blockhash = result.blockhash;
+                break;
+            } catch (error) {
+                retries--;
+                const errorMsg = error.message || error.toString() || '';
+                if (retries === 0 || (!errorMsg.includes('403') && !errorMsg.includes('429'))) {
+                    throw error;
+                }
+                console.warn(`RPC rate limited, retrying... (${3 - retries}/3)`);
+                await new Promise(resolve => setTimeout(resolve, 1000 * (4 - retries))); // Exponential backoff
+            }
+        }
+        
         transaction.recentBlockhash = blockhash;
         transaction.feePayer = userPublicKey;
         
         // Sign and send
         const signed = await window.solana.signTransaction(transaction);
-        const signature = await connection.sendRawTransaction(signed.serialize());
+        
+        retries = 3;
+        let signature;
+        while (retries > 0) {
+            try {
+                signature = await connection.sendRawTransaction(signed.serialize());
+                break;
+            } catch (error) {
+                retries--;
+                const errorMsg = error.message || error.toString() || '';
+                if (retries === 0 || (!errorMsg.includes('403') && !errorMsg.includes('429'))) {
+                    throw error;
+                }
+                console.warn(`RPC rate limited on send, retrying... (${3 - retries}/3)`);
+                await new Promise(resolve => setTimeout(resolve, 1000 * (4 - retries)));
+            }
+        }
+        
         await connection.confirmTransaction(signature, 'confirmed');
         
         // Update spins remaining
@@ -621,10 +670,24 @@ async function withdrawWinnings() {
         const transactionBytes = Uint8Array.from(atob(transactionBase64), c => c.charCodeAt(0));
         const transaction = Transaction.from(transactionBytes);
 
-        // Send the transaction
-        const signature = await connection.sendRawTransaction(transaction.serialize(), {
-            skipPreflight: false,
-        });
+        // Send the transaction with retry logic for rate limits
+        let retries = 3;
+        let signature;
+        while (retries > 0) {
+            try {
+                signature = await connection.sendRawTransaction(transaction.serialize(), {
+                    skipPreflight: false,
+                });
+                break;
+            } catch (error) {
+                retries--;
+                if (retries === 0 || (!error.message || !error.message.includes('403') && !error.message.includes('429'))) {
+                    throw error;
+                }
+                console.warn(`RPC rate limited on send, retrying... (${3 - retries}/3)`);
+                await new Promise(resolve => setTimeout(resolve, 1000 * (4 - retries)));
+            }
+        }
 
         // Wait for confirmation
         await connection.confirmTransaction(signature, 'confirmed');

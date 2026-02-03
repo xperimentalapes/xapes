@@ -7,8 +7,8 @@ const { getAssociatedTokenAddress, createTransferInstruction } = require('@solan
 const TREASURY_WALLET = '5eZ3Qt1jKCGdXkCES791W68T87bGG62j9ZHcmBaMUtTP';
 const XMA_TOKEN_MINT = 'HVSruatutKcgpZJXYyeRCWAnyT7mzYq1io9YoJ6F4yMP';
 const TOKEN_DECIMALS = 6;
-// Use Ankr public RPC (more reliable than official endpoint)
-const RPC_URL = 'https://rpc.ankr.com/solana';
+// Use Helius RPC endpoint (dedicated service, no rate limits)
+const RPC_URL = 'https://mainnet.helius-rpc.com/?api-key=277997e8-09ce-4516-a03e-5b062b51c6ac';
 
 module.exports = async function handler(req, res) {
     // Only allow POST requests
