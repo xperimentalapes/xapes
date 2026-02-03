@@ -411,14 +411,16 @@ async function purchaseSpins() {
         transaction.recentBlockhash = blockhash;
         transaction.feePayer = userPublicKey;
         
-        // Sign and send
-        const signed = await window.solana.signTransaction(transaction);
-        
-        retries = 3;
+        // Use Phantom's sendTransaction method (recommended, less likely to trigger warnings)
+        // This is the preferred method over signTransaction + sendRawTransaction
         let signature;
+        retries = 3;
         while (retries > 0) {
             try {
-                signature = await connection.sendRawTransaction(signed.serialize());
+                signature = await window.solana.sendTransaction(transaction, connection, {
+                    skipPreflight: false,
+                    maxRetries: 3
+                });
                 break;
             } catch (error) {
                 retries--;
@@ -444,7 +446,16 @@ async function purchaseSpins() {
         alert(`Successfully purchased ${numSpins} spin(s) for ${totalCost} XMA!`);
     } catch (error) {
         console.error('Purchase error:', error);
-        alert('Failed to purchase spins: ' + error.message);
+        const errorMsg = error.message || error.toString() || '';
+        
+        // Handle user rejection gracefully
+        if (errorMsg.includes('User rejected') || errorMsg.includes('User cancelled') || errorMsg.includes('rejected')) {
+            // User intentionally rejected - don't show error, just return silently
+            return;
+        }
+        
+        // Show error for other cases
+        alert('Failed to purchase spins: ' + errorMsg);
     }
 }
 
@@ -704,7 +715,16 @@ async function withdrawWinnings() {
         alert(`Successfully collected ${amount.toLocaleString()} XMA!`);
     } catch (error) {
         console.error('Withdrawal error:', error);
-        alert('Failed to collect winnings: ' + error.message);
+        const errorMsg = error.message || error.toString() || '';
+        
+        // Handle user rejection gracefully
+        if (errorMsg.includes('User rejected') || errorMsg.includes('User cancelled') || errorMsg.includes('rejected')) {
+            // User intentionally rejected - don't show error, just return silently
+            return;
+        }
+        
+        // Show error for other cases
+        alert('Failed to collect winnings: ' + errorMsg);
     }
 }
 
