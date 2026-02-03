@@ -64,11 +64,14 @@
     justify-content: center;
     padding: 10px;
     padding-top: 120px; /* Account for navbar */
-    overflow: visible;
+    overflow-x: hidden; /* Prevent horizontal scroll */
+    overflow-y: auto;
     background: var(--bg-dark);
     min-height: 0;
     box-sizing: border-box;
     margin-top: 0;
+    width: 100%;
+    max-width: 100vw; /* Ensure it doesn't exceed viewport width */
 }
 
 .slot-machine-wrapper {
@@ -81,7 +84,7 @@
     justify-content: center;
     min-height: 0;
     overflow: hidden;
-    padding: 0 10px;
+    padding: 0;
     box-sizing: border-box;
 }
 
@@ -940,6 +943,7 @@
         display: flex;
         padding: 5px;
         padding-top: 90px; /* Increased to prevent stats bar from being hidden */
+        overflow-x: hidden; /* Prevent horizontal scroll */
     }
     
     .slot-machine-wrapper {
@@ -949,6 +953,7 @@
         transform: none;
         height: 100%;
         justify-content: flex-start;
+        padding: 0; /* Remove padding to prevent overflow */
     }
     
     .slots-title {
@@ -1141,12 +1146,14 @@
     .slots-container {
         padding: 5px;
         padding-top: 85px; /* Increased to prevent stats bar from being hidden */
+        overflow-x: hidden; /* Prevent horizontal scroll */
     }
     
     .slot-machine-wrapper {
         gap: 10px;
         height: 100%;
         justify-content: flex-start;
+        padding: 0; /* Remove padding to prevent overflow */
     }
     
     .slots-title {
