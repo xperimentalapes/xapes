@@ -672,10 +672,8 @@ async function spin() {
     const newSpinsRemaining = Math.max(0, spinsRemaining - 1);
     spinsRemaining = newSpinsRemaining;
     
-    // Save updated spins remaining to database
-    if (wallet) {
-        await saveGameData(0, [], 0, undefined, newSpinsRemaining); // Update spins remaining
-    }
+    // Don't save spins remaining here - will be saved after spin completes with full stats
+    // This prevents double-saving and ensures stats are updated correctly
     
     updateDisplay();
     updateButtonStates();
@@ -710,11 +708,12 @@ async function spin() {
         const costPerSpin = parseFloat(document.getElementById('cost-per-spin').value) || SPIN_COST;
         const winAmount = await calculateWin(results, costPerSpin);
         
-        // Save game data to database
+        // Save game data to database (with spin stats and current spins remaining)
         console.log('Spin complete - checking wallet:', wallet ? 'connected' : 'NOT CONNECTED');
         if (wallet) {
             console.log('Wallet connected, calling saveGameData...');
-            await saveGameData(costPerSpin, results, winAmount);
+            // Include updateSpinsRemaining so stats are incremented correctly
+            await saveGameData(costPerSpin, results, winAmount, undefined, spinsRemaining);
         } else {
             console.warn('Cannot save game data - wallet not connected');
         }
