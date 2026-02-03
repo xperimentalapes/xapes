@@ -411,13 +411,16 @@ async function purchaseSpins() {
         transaction.recentBlockhash = blockhash;
         transaction.feePayer = userPublicKey;
         
-        // Use Phantom's sendTransaction method (recommended, less likely to trigger warnings)
-        // This is the preferred method over signTransaction + sendRawTransaction
-        let signature;
+        // Sign and send transaction
+        // Use signTransaction (Phantom's standard method)
+        const signed = await window.solana.signTransaction(transaction);
+        
+        // Send the signed transaction
         retries = 3;
+        let signature;
         while (retries > 0) {
             try {
-                signature = await window.solana.sendTransaction(transaction, connection, {
+                signature = await connection.sendRawTransaction(signed.serialize(), {
                     skipPreflight: false,
                     maxRetries: 3
                 });
