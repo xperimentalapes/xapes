@@ -11,26 +11,33 @@ const SYMBOL_NAMES = ['Grapes', 'Cherry', 'Lemon', 'Orange', 'Watermelon', 'Star
 const SYMBOL_COUNTS = [8, 7, 6, 5, 4, 3, 2, 1]; // Total = 36
 // Rarities: Grapes 22.2%, Cherry 19.4%, Lemon 16.7%, Orange 13.9%, Watermelon 11.1%, Star 8.3%, Diamond 5.6%, Seven 2.8%
 
-// Payouts for 3-of-a-kind (in XMA, based on 100 XMA per spin, targeting 80% RTP)
+// Payout multipliers for 3-of-a-kind (based on 100 XMA per spin, targeting 80% RTP)
 // Probabilities: (count/36)³ for each symbol
 // Expected payout = Σ(probability × payout) = 80 XMA
 // Probabilities: Grapes 1.097%, Cherry 0.735%, Lemon 0.463%, Orange 0.268%, Watermelon 0.137%, Star 0.058%, Diamond 0.017%, Seven 0.002%
 // Total win probability ≈ 1.88%, so payouts need to be high to reach 80% RTP
-const PAYOUTS = {
-    0: 1300,  // 3 Grapes (1.097% chance) - 13x
-    1: 1600,  // 3 Cherries (0.735% chance) - 16x
-    2: 2100,  // 3 Lemons (0.463% chance) - 21x
-    3: 3500,  // 3 Oranges (0.268% chance) - 35x
-    4: 7000,  // 3 Watermelons (0.137% chance) - 70x
-    5: 16500, // 3 Stars (0.058% chance) - 165x
-    6: 55000, // 3 Diamonds (0.017% chance) - 550x
-    7: 330000 // 3 Sevens (0.002% chance) - 3300x
+const PAYOUT_MULTIPLIERS = {
+    0: 13,   // 3 Grapes (1.097% chance) - 13x
+    1: 16,   // 3 Cherries (0.735% chance) - 16x
+    2: 21,   // 3 Lemons (0.463% chance) - 21x
+    3: 35,   // 3 Oranges (0.268% chance) - 35x
+    4: 70,   // 3 Watermelons (0.137% chance) - 70x
+    5: 165,  // 3 Stars (0.058% chance) - 165x
+    6: 550,  // 3 Diamonds (0.017% chance) - 550x
+    7: 3300  // 3 Sevens (0.002% chance) - 3300x
 };
 // Expected RTP: 80% (calculated and verified)
 
+// Calculate actual payout amount based on cost per spin
+function getPayoutAmount(symbolIndex, costPerSpin) {
+    return PAYOUT_MULTIPLIERS[symbolIndex] * costPerSpin;
+}
+
 const SPIN_COST = 100; // Fixed cost per spin in XMA
 const SLOT_MACHINE_PROGRAM_ID = 'Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS'; // Update with actual program ID
-const XMA_TOKEN_MINT = 'YOUR_XMA_TOKEN_MINT_HERE'; // Update with actual XMA token mint
+const XMA_TOKEN_MINT = 'HVSruatutKcgpZJXYyeRCWAnyT7mzYq1io9YoJ6F4yMP'; // XMA token mint address
+const TREASURY_WALLET = '5eZ3Qt1jKCGdXkCES791W68T87bGG62j9ZHcmBaMUtTP'; // Treasury wallet address
+const TOKEN_DECIMALS = 6; // XMA token decimals
 
 let wallet = null;
 let connection = null;
@@ -53,11 +60,8 @@ document.addEventListener('DOMContentLoaded', () => {
     setupPrizeModal();
     initializeReels();
     
-    // Testing mode: Set fixed cost and give 1 free spin
+    // Set default cost per spin
     document.getElementById('cost-per-spin').value = SPIN_COST;
-    document.getElementById('cost-per-spin').disabled = true; // Disable cost input for testing
-    document.getElementById('number-of-spins').disabled = true; // Disable spins input for testing
-    spinsRemaining = 1; // Give 1 free spin
     updateDisplay();
     updateButtonStates();
     
@@ -179,12 +183,12 @@ async function setupWalletConnection() {
                 // Initialize connection using solanaWeb3 from the loaded script
                 if (typeof window.solanaWeb3 !== 'undefined') {
                     connection = new window.solanaWeb3.Connection(
-                        'https://api.devnet.solana.com', // Change to mainnet when ready
+                        'https://api.mainnet-beta.solana.com', // Mainnet
                         'confirmed'
                     );
                 } else if (typeof solanaWeb3 !== 'undefined') {
                     connection = new solanaWeb3.Connection(
-                        'https://api.devnet.solana.com',
+                        'https://api.mainnet-beta.solana.com',
                         'confirmed'
                     );
                 }
@@ -219,21 +223,35 @@ async function setupWalletConnection() {
     }
 }
 
-// Update Balance (Mock - replace with actual token balance fetch)
+// Update Balance - Fetch actual XMA token balance
 async function updateBalance() {
     if (!wallet || !connection) return;
     
     try {
-        // TODO: Replace with actual token balance fetch
-        // const tokenAccount = await getAssociatedTokenAddress(...);
-        // const balance = await getAccount(connection, tokenAccount);
-        // xmaBalance = Number(balance.amount) / 1_000_000;
+        const { PublicKey } = window.solanaWeb3 || solanaWeb3;
+        const { getAssociatedTokenAddress, getAccount } = window.splToken || splToken;
         
-        // Mock balance for testing
-        xmaBalance = 100; // Remove this when implementing real balance
+        const tokenMint = new PublicKey(XMA_TOKEN_MINT);
+        const userPublicKey = new PublicKey(wallet);
+        
+        const tokenAccount = await getAssociatedTokenAddress(
+            tokenMint,
+            userPublicKey
+        );
+        
+        try {
+            const account = await getAccount(connection, tokenAccount);
+            xmaBalance = Number(account.amount) / Math.pow(10, TOKEN_DECIMALS);
+        } catch (error) {
+            // Token account doesn't exist yet
+            xmaBalance = 0;
+        }
+        
         updateDisplay();
     } catch (error) {
         console.error('Error fetching balance:', error);
+        xmaBalance = 0;
+        updateDisplay();
     }
 }
 
@@ -255,9 +273,80 @@ function setupGameControls() {
     });
 }
 
-// Purchase Spins (Disabled in testing mode)
+// Purchase Spins - Transfer XMA tokens to treasury wallet
 async function purchaseSpins() {
-    alert('Purchase disabled in testing mode. You automatically get 1 spin after each use.');
+    if (!wallet || !connection) {
+        alert('Please connect your wallet first');
+        return;
+    }
+    
+    const costPerSpin = parseFloat(document.getElementById('cost-per-spin').value);
+    const numSpins = parseInt(document.getElementById('number-of-spins').value);
+    
+    if (!costPerSpin || costPerSpin <= 0 || !numSpins || numSpins <= 0) {
+        alert('Please enter valid cost per spin and number of spins');
+        return;
+    }
+    
+    const totalCost = costPerSpin * numSpins;
+    
+    if (xmaBalance < totalCost) {
+        alert(`Insufficient balance. You need ${totalCost} XMA but only have ${xmaBalance.toFixed(2)} XMA`);
+        return;
+    }
+    
+    try {
+        const { PublicKey, Transaction } = window.solanaWeb3 || solanaWeb3;
+        const { getAssociatedTokenAddress, createTransferInstruction } = window.splToken || splToken;
+        
+        const tokenMint = new PublicKey(XMA_TOKEN_MINT);
+        const userPublicKey = new PublicKey(wallet);
+        const treasuryPublicKey = new PublicKey(TREASURY_WALLET);
+        
+        // Get token accounts
+        const userTokenAccount = await getAssociatedTokenAddress(
+            tokenMint,
+            userPublicKey
+        );
+        
+        const treasuryTokenAccount = await getAssociatedTokenAddress(
+            tokenMint,
+            treasuryPublicKey
+        );
+        
+        // Create transfer instruction
+        const transferAmount = BigInt(Math.floor(totalCost * Math.pow(10, TOKEN_DECIMALS)));
+        const transferInstruction = createTransferInstruction(
+            userTokenAccount,
+            treasuryTokenAccount,
+            userPublicKey,
+            transferAmount
+        );
+        
+        // Create and send transaction
+        const transaction = new Transaction().add(transferInstruction);
+        const { blockhash } = await connection.getLatestBlockhash();
+        transaction.recentBlockhash = blockhash;
+        transaction.feePayer = userPublicKey;
+        
+        // Sign and send
+        const signed = await window.solana.signTransaction(transaction);
+        const signature = await connection.sendRawTransaction(signed.serialize());
+        await connection.confirmTransaction(signature, 'confirmed');
+        
+        // Update spins remaining
+        spinsRemaining += numSpins;
+        
+        // Update balance
+        await updateBalance();
+        updateDisplay();
+        updateButtonStates();
+        
+        alert(`Successfully purchased ${numSpins} spin(s) for ${totalCost} XMA!`);
+    } catch (error) {
+        console.error('Purchase error:', error);
+        alert('Failed to purchase spins: ' + error.message);
+    }
 }
 
 // Create fixed reel order with no consecutive repeats
@@ -318,7 +407,7 @@ async function spin() {
     if (isSpinning || spinsRemaining <= 0) return;
     
     isSpinning = true;
-    spinsRemaining--;
+    spinsRemaining = Math.max(0, spinsRemaining - 1);
     updateDisplay();
     updateButtonStates();
     
@@ -349,10 +438,9 @@ async function spin() {
     
     // Calculate win after all reels stop
     setTimeout(() => {
-        calculateWin(results, SPIN_COST);
+        const costPerSpin = parseFloat(document.getElementById('cost-per-spin').value) || SPIN_COST;
+        calculateWin(results, costPerSpin);
         isSpinning = false;
-        // Auto-grant 1 spin for testing
-        spinsRemaining = 1;
         updateDisplay();
         updateButtonStates();
     }, 2500);
@@ -412,63 +500,92 @@ function stopReel(reelNum, symbolIndex) {
 function calculateWin(results, bet) {
     const winDisplay = document.getElementById('win-display');
     const winMessage = document.getElementById('win-message');
-    const winAmount = document.getElementById('win-amount');
     
     let win = 0;
-    let message = '';
     
     // Check for 3-of-a-kind
     if (results[0] === results[1] && results[1] === results[2]) {
         // All symbols match - use payout table
         const symbolIndex = results[0];
-        win = PAYOUTS[symbolIndex] || 0;
-        // Create win message with image: "3 x [image]"
-        const imageNumber = 8 - symbolIndex;
-        winMessage.innerHTML = `🎉 <span class="win-symbols">3 x <img src="/images/symbols/${imageNumber}.png" alt="${SYMBOL_NAMES[symbolIndex]}" class="win-symbol-image"></span> 🎉`;
-    }
-    
-    if (win > 0) {
-        totalWon += win;
-        winAmount.textContent = `You won ${win} XMA!`;
-        winDisplay.style.display = 'block';
+        const costPerSpin = parseFloat(document.getElementById('cost-per-spin').value) || SPIN_COST;
+        win = getPayoutAmount(symbolIndex, costPerSpin);
         
-        setTimeout(() => {
-            winDisplay.style.display = 'none';
-        }, 3000);
+        if (win > 0) {
+            totalWon += win;
+            winMessage.textContent = `${win.toLocaleString()} XMA`;
+            winDisplay.style.display = 'block';
+            
+            setTimeout(() => {
+                winDisplay.style.display = 'none';
+            }, 3000);
+        }
     }
     // No popup for losses - just update display silently
     
     updateDisplay();
+    updateButtonStates();
 }
 
-// Withdraw Winnings
+// Withdraw Winnings - Transfer XMA tokens from treasury to user wallet
+// Uses backend API to get presigned transaction from treasury
 async function withdrawWinnings() {
     if (totalWon <= 0) {
         alert('No winnings to withdraw');
         return;
     }
     
-    if (!wallet) {
+    if (!wallet || !connection) {
         alert('Please connect your wallet');
         return;
     }
     
     try {
-        // TODO: Replace with actual Solana transaction
-        // const program = new Program(idl, SLOT_MACHINE_PROGRAM_ID, provider);
-        // const tx = await program.methods.withdraw(...).rpc();
-        
-        // Mock withdrawal for testing
+        // Call backend API to get presigned transaction
+        const response = await fetch('/api/collect', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                userWallet: wallet,
+                amount: totalWon
+            })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to create collect transaction');
+        }
+
+        const { transaction: transactionBase64 } = await response.json();
+
+        // Deserialize the presigned transaction
+        const { Transaction } = window.solanaWeb3 || solanaWeb3;
+        // Convert base64 to Uint8Array for browser
+        const transactionBytes = Uint8Array.from(atob(transactionBase64), c => c.charCodeAt(0));
+        const transaction = Transaction.from(transactionBytes);
+
+        // Send the transaction
+        const signature = await connection.sendRawTransaction(transaction.serialize(), {
+            skipPreflight: false,
+        });
+
+        // Wait for confirmation
+        await connection.confirmTransaction(signature, 'confirmed');
+
+        // Reset total won
         const amount = totalWon;
-        xmaBalance += amount;
         totalWon = 0;
-        
+
+        // Update balance
+        await updateBalance();
         updateDisplay();
         updateButtonStates();
-        alert(`Withdrew ${amount.toFixed(2)} XMA`);
+
+        alert(`Successfully collected ${amount.toLocaleString()} XMA!`);
     } catch (error) {
         console.error('Withdrawal error:', error);
-        alert('Failed to withdraw: ' + error.message);
+        alert('Failed to collect winnings: ' + error.message);
     }
 }
 
@@ -535,13 +652,19 @@ function updateButtonStates() {
     const spinBtn = document.getElementById('spin-button');
     const withdrawBtn = document.getElementById('withdraw-button');
     
-    // Testing mode: Disable purchase button
-    purchaseBtn.disabled = true;
-    purchaseBtn.style.opacity = '0.5';
-    purchaseBtn.style.cursor = 'not-allowed';
+    // Enable purchase button when wallet is connected
+    purchaseBtn.disabled = !wallet;
+    if (wallet) {
+        purchaseBtn.style.opacity = '1';
+        purchaseBtn.style.cursor = 'pointer';
+    } else {
+        purchaseBtn.style.opacity = '0.5';
+        purchaseBtn.style.cursor = 'not-allowed';
+    }
     
-    // Enable spin button when spins > 0
+    // Enable spin button when spins > 0 and not spinning
     spinBtn.disabled = spinsRemaining <= 0 || isSpinning;
     
+    // Enable collect button when wallet connected and total won > 0
     withdrawBtn.disabled = !wallet || totalWon <= 0;
 }
