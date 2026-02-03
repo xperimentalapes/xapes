@@ -527,9 +527,14 @@ async function purchaseSpins() {
         }
         
         await connection.confirmTransaction(signature, 'confirmed');
-        
+
         // Update spins remaining
         spinsRemaining += numSpins;
+        
+        // Save spins purchase to database
+        if (wallet) {
+            await saveGameData(0, [], 0, undefined, undefined, numSpins); // Save spins purchase
+        }
         
         // Update balance
         await updateBalance();
@@ -610,7 +615,14 @@ async function spin() {
     if (isSpinning || spinsRemaining <= 0) return;
     
     isSpinning = true;
-    spinsRemaining = Math.max(0, spinsRemaining - 1);
+    const newSpinsRemaining = Math.max(0, spinsRemaining - 1);
+    spinsRemaining = newSpinsRemaining;
+    
+    // Save updated spins remaining to database
+    if (wallet) {
+        await saveGameData(0, [], 0, undefined, newSpinsRemaining); // Update spins remaining
+    }
+    
     updateDisplay();
     updateButtonStates();
     
@@ -959,6 +971,15 @@ async function loadPlayerData() {
         // Restore unclaimed rewards
         if (data.unclaimedRewards > 0) {
             totalWon = data.unclaimedRewards;
+        }
+        
+        // Restore spins remaining
+        if (data.spinsRemaining > 0) {
+            spinsRemaining = data.spinsRemaining;
+        }
+        
+        // Update display and buttons if we restored any data
+        if (data.unclaimedRewards > 0 || data.spinsRemaining > 0) {
             updateDisplay();
             updateButtonStates();
         }
@@ -966,7 +987,8 @@ async function loadPlayerData() {
         console.log('Player data loaded:', {
             totalSpins: data.totalSpins,
             totalWon: data.totalWon,
-            unclaimedRewards: data.unclaimedRewards
+            unclaimedRewards: data.unclaimedRewards,
+            spinsRemaining: data.spinsRemaining
         });
     } catch (error) {
         console.error('Error loading player data:', error);

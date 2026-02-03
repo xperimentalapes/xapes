@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS players (
     total_won BIGINT DEFAULT 0,
     total_wagered BIGINT DEFAULT 0,
     unclaimed_rewards BIGINT DEFAULT 0,
+    spins_remaining INTEGER DEFAULT 0,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

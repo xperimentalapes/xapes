@@ -76,6 +76,7 @@ module.exports = async function handler(req, res) {
                 totalWon: 0,
                 totalWagered: 0,
                 unclaimedRewards: 0,
+                spinsRemaining: 0,
                 createdAt: null
             });
         }
@@ -92,6 +93,7 @@ module.exports = async function handler(req, res) {
             totalWon: totalWon,
             totalWagered: totalWagered,
             unclaimedRewards: unclaimedRewards,
+            spinsRemaining: player.spins_remaining || 0,
             createdAt: player.created_at
         });
 

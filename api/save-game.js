@@ -47,7 +47,9 @@ module.exports = async function handler(req, res) {
             spinCost, 
             resultSymbols, 
             wonAmount,
-            updateUnclaimedRewards 
+            updateUnclaimedRewards,
+            updateSpinsRemaining,
+            spinsPurchased
         } = req.body;
 
         // Validate inputs
@@ -84,16 +86,35 @@ module.exports = async function handler(req, res) {
             playerUpdate.unclaimed_rewards = updateUnclaimedRewards 
                 ? BigInt(Math.floor(updateUnclaimedRewards * 1e6)).toString()
                 : BigInt(Math.floor(wonAmount * 1e6)).toString();
+            // If spins were purchased, set spins_remaining, otherwise start at 0 and decrement
+            if (spinsPurchased !== undefined) {
+                playerUpdate.spins_remaining = spinsPurchased;
+            } else {
+                playerUpdate.spins_remaining = 0; // First spin, so no remaining after this
+            }
         } else {
             // Update existing player
             const { data: currentPlayer } = await supabase
                 .from('players')
-                .select('total_spins, total_won, total_wagered, unclaimed_rewards')
+                .select('total_spins, total_won, total_wagered, unclaimed_rewards, spins_remaining')
                 .eq('wallet_address', walletAddress)
                 .single();
 
             if (currentPlayer) {
-                playerUpdate.total_spins = (currentPlayer.total_spins || 0) + 1;
+                // If spins were purchased, add to remaining
+                if (spinsPurchased !== undefined && spinsPurchased > 0) {
+                    playerUpdate.spins_remaining = (currentPlayer.spins_remaining || 0) + spinsPurchased;
+                } 
+                // If updateSpinsRemaining is explicitly set, use that value
+                else if (updateSpinsRemaining !== undefined) {
+                    playerUpdate.spins_remaining = updateSpinsRemaining;
+                }
+                // Otherwise, decrement by 1 (a spin was played)
+                else {
+                    playerUpdate.total_spins = (currentPlayer.total_spins || 0) + 1;
+                    playerUpdate.spins_remaining = Math.max(0, (currentPlayer.spins_remaining || 0) - 1);
+                }
+                
                 playerUpdate.total_wagered = (
                     BigInt(currentPlayer.total_wagered || 0) + 
                     BigInt(Math.floor(spinCost * 1e6))
