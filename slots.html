@@ -77,6 +77,11 @@
                     <span id="total-won" class="stat-value">0 XMA</span>
                 </div>
                 <button id="prize-structure-btn-desktop" class="btn-win-percent-desktop">win %</button>
+                <button id="leaderboard-btn-desktop" class="btn-leaderboard-desktop" title="Leaderboard">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
             </div>
 
             <!-- Slot Machine -->
@@ -142,7 +147,10 @@
 
                 <div class="button-group">
                     <button id="purchase-spins" class="btn btn-primary" disabled>BUY</button>
-                    <button id="spin-button" class="btn btn-spin" disabled>SPIN</button>
+                    <div class="spin-button-wrapper">
+                        <button id="spin-button" class="btn btn-spin" disabled>SPIN</button>
+                        <span id="spin-button-hint" class="spin-button-hint">DOUBLE CLICK FOR AUTOSPIN</span>
+                    </div>
                     <button id="withdraw-button" class="btn btn-withdraw" disabled>COLLECT</button>
                 </div>
             </div>
@@ -174,6 +182,29 @@
                 <div class="prize-footer">
                     <p class="prize-small-print">* average payout 80%</p>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaderboard Modal -->
+    <div id="leaderboard-modal" class="leaderboard-modal">
+        <div class="leaderboard-modal-content">
+            <div class="leaderboard-modal-header">
+                <h2>Leaderboard</h2>
+                <button id="close-leaderboard-modal" class="close-modal-btn">&times;</button>
+            </div>
+            <div class="leaderboard-modal-body">
+                <div class="leaderboard-controls">
+                    <label for="leaderboard-sort">Sort by:</label>
+                    <select id="leaderboard-sort" class="leaderboard-sort">
+                        <option value="spins">Total Spins</option>
+                        <option value="won">Total Won</option>
+                        <option value="winRate">Win %</option>
+                    </select>
+                </div>
+                <div id="leaderboard-loading" class="leaderboard-loading" style="display: none;">Loading...</div>
+                <div id="leaderboard-error" class="leaderboard-error" style="display: none;"></div>
+                <div id="leaderboard-list" class="leaderboard-list"></div>
             </div>
         </div>
     </div>

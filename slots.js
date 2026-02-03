@@ -52,6 +52,7 @@ let spinsRemaining = 0;
 let totalWon = 0;
 let isSpinning = false;
 let isCollecting = false; // Prevent multiple simultaneous collect attempts
+let isAutoSpinning = false; // Autospin state
 
 // Fixed reel order (created once, same for all reels)
 let FIXED_REEL_ORDER = null;
@@ -68,6 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setupWalletConnection();
         setupGameControls();
         setupPrizeModal();
+        setupLeaderboardModal();
         initializeReels();
         
         // Set default cost per spin
@@ -367,13 +369,60 @@ function setupGameControls() {
     const spinsInput = document.getElementById('number-of-spins');
     
     purchaseBtn.addEventListener('click', purchaseSpins);
-    spinBtn.addEventListener('click', spin);
+    
+    // Handle single click for spin, double click for autospin
+    let clickTimeout;
+    spinBtn.addEventListener('click', (e) => {
+        if (clickTimeout) {
+            clearTimeout(clickTimeout);
+            clickTimeout = null;
+            // Double click detected - toggle autospin
+            toggleAutoSpin();
+        } else {
+            clickTimeout = setTimeout(() => {
+                clickTimeout = null;
+                // Single click - normal spin (only if not autospinning)
+                if (!isAutoSpinning) {
+                    spin();
+                }
+            }, 300); // 300ms window for double click
+        }
+    });
+    
     withdrawBtn.addEventListener('click', withdrawWinnings);
     
     // Update button states when inputs change
     [costInput, spinsInput].forEach(input => {
         input.addEventListener('input', updateButtonStates);
     });
+}
+
+// Toggle autospin
+function toggleAutoSpin() {
+    if (isSpinning || spinsRemaining <= 0) return;
+    
+    isAutoSpinning = !isAutoSpinning;
+    updateSpinButtonText();
+    
+    if (isAutoSpinning) {
+        // Start autospin
+        autoSpin();
+    }
+}
+
+// Auto spin loop
+async function autoSpin() {
+    while (isAutoSpinning && spinsRemaining > 0 && !isSpinning) {
+        await spin();
+        // Wait a bit between spins for visual effect
+        await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    
+    // If we stopped because spins ran out, disable autospin
+    if (spinsRemaining <= 0) {
+        isAutoSpinning = false;
+        updateSpinButtonText();
+    }
 }
 
 // Purchase Spins - Transfer XMA tokens to treasury wallet
@@ -672,6 +721,11 @@ async function spin() {
         isSpinning = false;
         updateDisplay();
         updateButtonStates();
+        
+        // Continue autospin if enabled and spins remaining
+        if (isAutoSpinning && spinsRemaining > 0) {
+            setTimeout(() => autoSpin(), 100);
+        }
     }, 2500);
 }
 
@@ -956,6 +1010,123 @@ function setupPrizeModal() {
     });
 }
 
+// Setup Leaderboard Modal
+function setupLeaderboardModal() {
+    const leaderboardBtn = document.getElementById('leaderboard-btn-desktop');
+    const modal = document.getElementById('leaderboard-modal');
+    const closeBtn = document.getElementById('close-leaderboard-modal');
+    const sortSelect = document.getElementById('leaderboard-sort');
+    
+    const openModal = async () => {
+        modal.classList.add('show');
+        await loadLeaderboard('spins'); // Default sort
+    };
+    
+    // Open modal from button
+    if (leaderboardBtn) {
+        leaderboardBtn.addEventListener('click', openModal);
+    }
+    
+    // Close modal
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => {
+            modal.classList.remove('show');
+        });
+    }
+    
+    // Close on background click
+    if (modal) {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.classList.remove('show');
+            }
+        });
+    }
+    
+    // Close on Escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.classList.contains('show')) {
+            modal.classList.remove('show');
+        }
+    });
+    
+    // Handle sort change
+    if (sortSelect) {
+        sortSelect.addEventListener('change', (e) => {
+            loadLeaderboard(e.target.value);
+        });
+    }
+}
+
+// Load leaderboard data
+async function loadLeaderboard(sortBy = 'spins') {
+    const loadingEl = document.getElementById('leaderboard-loading');
+    const errorEl = document.getElementById('leaderboard-error');
+    const listEl = document.getElementById('leaderboard-list');
+    
+    // Show loading
+    if (loadingEl) loadingEl.style.display = 'block';
+    if (errorEl) errorEl.style.display = 'none';
+    if (listEl) listEl.innerHTML = '';
+    
+    try {
+        const response = await fetch(`/api/leaderboard?sortBy=${sortBy}&limit=100`);
+        
+        if (!response.ok) {
+            throw new Error(`Failed to load leaderboard: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.error) {
+            throw new Error(data.error);
+        }
+        
+        // Display leaderboard
+        if (listEl && data.leaderboard) {
+            if (data.leaderboard.length === 0) {
+                listEl.innerHTML = '<p style="text-align: center; color: #888; padding: 20px;">No players yet. Be the first!</p>';
+            } else {
+                listEl.innerHTML = data.leaderboard.map((player, index) => {
+                    const rank = index + 1;
+                    const winRate = player.winRate.toFixed(2);
+                    const totalWon = player.totalWon.toFixed(2);
+                    const totalWagered = player.totalWagered.toFixed(2);
+                    
+                    return `
+                        <div class="leaderboard-item">
+                            <div class="leaderboard-rank">#${rank}</div>
+                            <div class="leaderboard-wallet">${player.displayAddress}</div>
+                            <div class="leaderboard-stats">
+                                <div class="leaderboard-stat">
+                                    <span class="stat-label">Spins:</span>
+                                    <span class="stat-value">${player.totalSpins.toLocaleString()}</span>
+                                </div>
+                                <div class="leaderboard-stat">
+                                    <span class="stat-label">Won:</span>
+                                    <span class="stat-value">${totalWon} XMA</span>
+                                </div>
+                                <div class="leaderboard-stat">
+                                    <span class="stat-label">Win %:</span>
+                                    <span class="stat-value">${winRate}%</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+    } catch (error) {
+        console.error('Error loading leaderboard:', error);
+        if (errorEl) {
+            errorEl.textContent = error.message || 'Failed to load leaderboard';
+            errorEl.style.display = 'block';
+        }
+    } finally {
+        if (loadingEl) loadingEl.style.display = 'none';
+    }
+}
+
 // Database Functions
 
 // Load player data from database
@@ -1076,6 +1247,8 @@ function updateButtonStates() {
         spinBtn.style.cursor = 'not-allowed';
     }
     
+    updateSpinButtonText();
+    
     // Enable collect button when wallet connected, total won > 0, and not already collecting
     withdrawBtn.disabled = !wallet || totalWon <= 0 || isCollecting;
     if (totalWon > 0 && !isCollecting) {
@@ -1089,6 +1262,26 @@ function updateButtonStates() {
             withdrawBtn.textContent = 'Collecting...';
         } else {
             withdrawBtn.textContent = 'COLLECT';
+        }
+    }
+}
+
+// Update spin button text based on autospin state
+function updateSpinButtonText() {
+    const spinBtn = document.getElementById('spin-button');
+    const spinBtnHint = document.getElementById('spin-button-hint');
+    
+    if (!spinBtn) return;
+    
+    if (isAutoSpinning) {
+        spinBtn.textContent = 'SPINNING...';
+        if (spinBtnHint) {
+            spinBtnHint.textContent = 'DOUBLE CLICK TO STOP AUTOSPIN';
+        }
+    } else {
+        spinBtn.textContent = 'SPIN';
+        if (spinBtnHint) {
+            spinBtnHint.textContent = 'DOUBLE CLICK FOR AUTOSPIN';
         }
     }
 }
