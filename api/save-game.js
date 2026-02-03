@@ -98,7 +98,7 @@ module.exports = async function handler(req, res) {
             // Update existing player
             const { data: currentPlayer } = await supabase
                 .from('players')
-                .select('total_spins, total_won, total_wagered, unclaimed_rewards, spins_remaining')
+                .select('total_spins, total_won, total_wagered, unclaimed_rewards, spins_remaining, cost_per_spin')
                 .eq('wallet_address', walletAddress)
                 .single();
 

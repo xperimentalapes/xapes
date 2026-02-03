@@ -683,6 +683,13 @@ function getWeightedRandomSymbol() {
 async function spin() {
     if (isSpinning || spinsRemaining <= 0) return;
     
+    // CRITICAL: Get cost per spin - use stored value from database if spins remaining, otherwise from input
+    // The input field should have been set to the stored cost_per_spin when player data was loaded
+    const costPerSpinInput = document.getElementById('cost-per-spin');
+    const costPerSpin = parseFloat(costPerSpinInput.value) || SPIN_COST;
+    
+    console.log('Spin initiated - cost per spin:', costPerSpin, 'spins remaining:', spinsRemaining);
+    
     isSpinning = true;
     const newSpinsRemaining = Math.max(0, spinsRemaining - 1);
     spinsRemaining = newSpinsRemaining;
@@ -728,7 +735,8 @@ async function spin() {
         if (wallet) {
             console.log('Wallet connected, calling saveGameData...');
             // Include updateSpinsRemaining so stats are incremented correctly
-            await saveGameData(costPerSpin, results, winAmount, undefined, spinsRemaining);
+            // Pass costPerSpin as 0 since the API will use stored cost_per_spin from database
+            await saveGameData(0, results, winAmount, undefined, spinsRemaining);
         } else {
             console.warn('Cannot save game data - wallet not connected');
         }
