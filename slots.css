@@ -195,7 +195,7 @@
         inset 0 -10px 30px rgba(0, 0, 0, 0.3),
         0 4px 20px rgba(0, 0, 0, 0.4);
     box-sizing: border-box;
-    clip-path: inset(-50% 0 -50% 0);
+    clip-path: inset(-80% 0 -80% 0); /* Increased to show much more symbols above and below */
 }
 
 
@@ -251,7 +251,7 @@
 .reel-symbol {
     width: 100%;
     height: 100%;
-    display: flex;
+    display: flex !important;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
@@ -259,6 +259,7 @@
     box-sizing: border-box;
     font-size: 0; /* Hide any text fallback */
     color: transparent; /* Hide any text fallback */
+    overflow: visible !important;
 }
 
 .symbol-image {
@@ -726,16 +727,19 @@
     color: var(--primary-color);
 }
 
-/* Responsive - Mobile */
+/* Responsive - Mobile Portrait */
 @media (max-width: 1024px) {
     .slots-container {
         padding: 8px;
-        padding-top: 70px;
+        padding-top: 100px; /* Increased to prevent stats bar from being hidden */
     }
     
     .slot-machine-wrapper {
-        gap: 6px;
+        gap: 12px;
         transform: none;
+        flex-direction: column;
+        height: 100%;
+        justify-content: flex-start;
     }
     
     .slots-title {
@@ -743,286 +747,406 @@
         margin-bottom: 8px;
     }
     
+    /* Show desktop stats bar on mobile, 2 rows: Balance+Spins top, Total Won+win% bottom, ALIGNED */
     .game-stats-bar {
+        display: flex !important;
+        padding: 10px;
+        gap: 10px;
+        flex-wrap: wrap !important;
+        flex-shrink: 0;
+        width: 100%;
+    }
+    
+    /* Balance on top left */
+    .game-stats-bar .stat-item:nth-child(1) {
+        flex: 0 0 calc(50% - 5px) !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        order: 1 !important;
+    }
+    
+    /* Spins Remaining on top right */
+    .game-stats-bar .stat-item:nth-child(2) {
+        flex: 0 0 calc(50% - 5px) !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        order: 2 !important;
+    }
+    
+    /* Total Won centered below Balance (same column, second row) */
+    .game-stats-bar .stat-item:nth-child(3) {
+        flex: 0 0 calc(50% - 5px) !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        order: 3 !important;
+    }
+    
+    /* win% button centered below Spins (same column, second row) */
+    .game-stats-bar .btn-win-percent-desktop {
+        flex: 0 0 calc(50% - 5px) !important;
+        padding: 10px 16px !important;
+        font-size: 18px !important; /* Bigger but not too big */
+        font-weight: 700 !important;
+        margin: 0 auto !important; /* Center horizontally */
+        align-self: center !important;
+        order: 4 !important;
+        width: fit-content !important;
+        max-width: 100% !important;
+    }
+    
+    .game-stats-bar .stat-label {
+        font-size: 14px !important; /* Bigger */
+        font-weight: 600 !important;
+    }
+    
+    .game-stats-bar .stat-value {
+        font-size: 20px !important; /* Bigger */
+        font-weight: 700 !important;
+    }
+    
+    /* Hide mobile stats sidebar */
+    .mobile-stats-sidebar {
         display: none !important;
     }
     
+    /* Make slot-machine-main shrink to just reels height */
     .slot-machine-main {
         padding: 12px;
         display: flex !important;
-        flex-direction: row !important;
-        gap: 12px;
-        align-items: center;
-        justify-content: space-between;
+        flex-direction: column !important;
+        gap: 0;
+        align-items: stretch;
+        justify-content: flex-start;
+        flex: 0 0 auto;
+        height: auto;
+        max-height: none;
     }
     
     .reels-container {
         gap: 8px;
         margin-bottom: 0;
-        flex: 0 0 70%;
+        flex: 0 0 auto;
         display: flex;
         align-items: center;
         justify-content: center;
-        max-width: 70%;
+        max-width: 100%;
+        width: 100%;
     }
     
     .reel-wrapper {
         flex: 1;
         min-width: 0;
         max-width: none;
-        height: 100%;
+        aspect-ratio: 2/3;
+        max-height: 200px !important; /* Reduced to fit on screen */
     }
     
     .reel-symbol {
-        font-size: clamp(32px, 5vw, 50px);
+        font-size: 0; /* Hide text, images will show */
     }
     
-    .mobile-stats-sidebar {
-        display: flex !important;
-        flex-direction: column;
-        align-items: center;
-        gap: 12px;
-        min-width: 0;
-        max-width: 30%;
-        flex: 0 0 30%;
-        background: transparent;
-        border: none;
-        padding: 0;
-        justify-content: center;
+    .symbol-image {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
     }
     
-    .mobile-stat-value {
-        font-size: 14px;
-    }
-    
+    /* Controls panel fills remaining space but doesn't overflow */
     .controls-panel {
-        padding: 10px;
-        gap: 10px;
+        padding: 12px !important; /* Reduced padding to fit */
+        gap: 12px !important; /* Reduced gap to fit */
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-height: 0;
+        max-height: 100%;
+        overflow-y: auto;
+        justify-content: flex-start;
     }
     
+    /* Stack inputs vertically on mobile */
     .inputs-row {
-        gap: 10px;
+        flex-direction: column;
+        gap: 12px !important; /* Reduced spacing to fit */
     }
     
     .control-group {
-        min-width: 100px;
+        width: 100%;
+        min-width: 0;
+        flex-direction: column; /* Stack label above input */
+        align-items: flex-start;
+        gap: 8px;
     }
     
     .control-group label {
-        font-size: 16px;
+        font-size: 20px !important; /* Bigger but fits on screen */
         white-space: nowrap;
         flex-shrink: 0;
+        font-weight: 700 !important;
     }
     
     .control-group input {
-        padding: 8px 10px;
-        font-size: 18px;
-        flex: 1;
-        min-width: 70px;
+        padding: 12px 10px !important; /* Reduced padding to fit */
+        font-size: 22px !important; /* Bigger but fits on screen */
+        width: 100%;
+        min-width: 0;
+        font-weight: 600 !important;
     }
     
+    /* Stack buttons vertically on mobile - fill available space */
     .button-group {
-        gap: 8px;
+        flex-direction: column;
+        gap: 10px !important;
         width: 100%;
+        flex: 1;
+        min-height: 0;
     }
     
     .btn {
-        flex: 1;
-        width: 100%;
-        padding: 18px 12px;
-        font-size: 22px;
-        font-weight: 800;
+        width: 100% !important;
+        padding: 0 !important; /* Remove padding, use flex to fill */
+        flex: 1 !important; /* Fill available space */
+        font-size: 24px !important; /* Bigger but fits on screen */
+        font-weight: 800 !important;
+        min-height: 60px !important;
     }
     
     .btn-spin {
-        font-size: 22px;
-        font-weight: 800;
+        font-size: 24px !important;
+        font-weight: 800 !important;
     }
     
     .btn-primary {
-        font-size: 22px;
-        font-weight: 800;
+        font-size: 24px !important;
+        font-weight: 800 !important;
     }
     
     .btn-withdraw {
-        font-size: 22px;
-        font-weight: 800;
+        font-size: 24px !important;
+        font-weight: 800 !important;
     }
 }
 
 @media (max-width: 768px) {
-    @media (orientation: portrait) {
-        .slots-container {
-            display: none;
-        }
-        
-        .orientation-prompt {
-            display: flex;
-        }
+    /* Hide orientation prompt - we support portrait now */
+    .orientation-prompt {
+        display: none !important;
     }
     
-    @media (max-width: 1024px) and (orientation: landscape) {
-        .orientation-prompt {
-            display: none !important;
-        }
-        
-        .slots-container {
-            display: flex;
-            padding: 5px;
-            padding-top: 60px;
-        }
-        
-        .slot-machine-wrapper {
-            gap: 4px;
-            max-height: 100vh;
-            overflow: hidden;
-            transform: none;
-            transform-origin: center;
-        }
-        
-        .slots-title {
-            font-size: 14px;
-        }
-        
-        .game-stats-bar {
-            display: none !important;
-        }
-        
-        .slot-machine-main {
-            padding: 10px;
-            gap: 20px;
-            display: flex !important;
-            flex-direction: row !important;
-            align-items: center;
-        }
-        
-        .control-group {
-            flex-direction: row;
-            align-items: center;
-        }
-        
-        .control-group input {
-            width: auto;
-            min-width: 60px;
-        }
-        
-        .reels-container {
-            gap: 6px;
-            margin-bottom: 0;
-            flex: 0 0 70%;
-            max-width: 70%;
-        }
-        
-        .reel-wrapper {
-            flex: 1;
-            min-width: 0;
-            max-width: none;
-            height: 100%;
-        }
-        
-        .reel-symbol {
-            font-size: 28px;
-        }
-        
-.mobile-stats-sidebar {
-    display: flex !important;
-    flex-direction: column;
-    align-items: center;
-    min-width: 0;
-    max-width: 30%;
-            flex: 0 0 30%;
-            padding: 0;
-            gap: 8px;
-        }
-        
-        .mobile-stat-label {
-            font-size: 8px;
-        }
-        
-        .mobile-stat-value {
-            font-size: 12px;
-        }
-        
-        .controls-panel {
-            padding: 8px;
-            gap: 8px;
-        }
-        
-        .inputs-row {
-            gap: 6px;
-        }
-        
-        .control-group {
-            min-width: 80px;
-        }
-        
-        .control-group label {
-            font-size: 14px;
-            white-space: nowrap;
-            flex-shrink: 0;
-        }
-        
-        .control-group input {
-            padding: 6px 8px;
-            font-size: 16px;
-            flex: 1;
-            min-width: 60px;
-        }
-        
-        .button-group {
-            gap: 6px;
-            width: 100%;
-        }
-        
-        .btn {
-            padding: 14px 10px;
-            font-size: 18px;
-            font-weight: 800;
-            flex: 1;
-            width: 100%;
-        }
-        
-        .btn-spin {
-            font-size: 18px;
-            font-weight: 800;
-        }
-        
-        .btn-primary {
-            font-size: 18px;
-            font-weight: 800;
-        }
-        
-        .btn-withdraw {
-            font-size: 18px;
-            font-weight: 800;
-        }
-        
-        .win-display {
-            padding: 12px 20px;
-        }
-        
-        .win-display h2 {
-            font-size: 18px;
-        }
-        
-        .win-display p {
-            font-size: 14px;
-        }
-        
-        .win-symbol-image {
-            width: 40px;
-            height: 40px;
-        }
-    }
-}
-
-@media (max-width: 480px) and (orientation: landscape) {
     .slots-container {
+        display: flex;
         padding: 5px;
+        padding-top: 90px; /* Increased to prevent stats bar from being hidden */
     }
     
     .slot-machine-wrapper {
+        gap: 12px;
+        max-height: none;
+        overflow: visible;
+        transform: none;
+        height: 100%;
+        justify-content: flex-start;
+    }
+    
+    .slots-title {
+        font-size: 14px;
+    }
+    
+    /* Show desktop stats bar on mobile, 2 rows: Balance+Spins top, Total Won+win% bottom, ALIGNED */
+    .game-stats-bar {
+        display: flex !important;
+        padding: 10px;
+        gap: 10px;
+        flex-shrink: 0;
+        flex-wrap: wrap !important;
+        width: 100%;
+    }
+    
+    .game-stats-bar .stat-item:nth-child(1) {
+        flex: 0 0 calc(50% - 5px) !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        order: 1 !important;
+    }
+    
+    .game-stats-bar .stat-item:nth-child(2) {
+        flex: 0 0 calc(50% - 5px) !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        order: 2 !important;
+    }
+    
+    .game-stats-bar .stat-item:nth-child(3) {
+        flex: 0 0 calc(50% - 5px) !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        order: 3 !important;
+    }
+    
+    .game-stats-bar .btn-win-percent-desktop {
+        flex: 0 0 calc(50% - 5px) !important;
+        padding: 8px 14px !important;
+        font-size: 16px !important; /* Bigger but not too big */
+        font-weight: 700 !important;
+        margin: 0 auto !important; /* Center horizontally */
+        align-self: center !important;
+        order: 4 !important;
+        width: fit-content !important;
+        max-width: 100% !important;
+    }
+    
+    .game-stats-bar .stat-label {
+        font-size: 12px !important;
+        font-weight: 600 !important;
+    }
+    
+    .game-stats-bar .stat-value {
+        font-size: 18px !important;
+        font-weight: 700 !important;
+    }
+    
+    .slot-machine-main {
+        padding: 10px;
+        gap: 0;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch;
+        flex: 0 0 auto;
+        height: auto;
+        max-height: none;
+    }
+    
+    .reels-container {
+        gap: 6px;
+        margin-bottom: 0;
+        flex: 0 0 auto;
+        max-width: 100%;
+        width: 100%;
+    }
+    
+    .reel-wrapper {
+        flex: 1;
+        min-width: 0;
+        max-width: none;
+        aspect-ratio: 2/3;
+        max-height: 240px !important; /* Increased to show more of the reels including bottom */
+    }
+    
+    .reel-symbol {
+        font-size: 0; /* Hide text, images will show */
+    }
+    
+    .symbol-image {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+    
+    .mobile-stats-sidebar {
+        display: none !important;
+    }
+    
+    .controls-panel {
+        padding: 16px;
+        gap: 20px; /* Increased gap */
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-height: 0;
+        justify-content: flex-start; /* Changed from space-around */
+    }
+    
+    /* Stack inputs vertically */
+    .inputs-row {
+        flex-direction: column;
+        gap: 18px; /* Increased spacing */
+    }
+    
+    .control-group {
+        width: 100%;
+        min-width: 0;
+        flex-direction: column; /* Stack label above input */
+        align-items: flex-start;
         gap: 8px;
+    }
+    
+    .control-group label {
+        font-size: 16px; /* Increased text size */
+        white-space: nowrap;
+        flex-shrink: 0;
+        font-weight: 600;
+    }
+    
+    .control-group input {
+        padding: 12px 10px; /* Increased padding */
+        font-size: 18px; /* Increased text size */
+        width: 100%;
+        min-width: 0;
+    }
+    
+    /* Stack buttons vertically */
+    .button-group {
+        flex-direction: column;
+        gap: 14px; /* Increased spacing */
+        width: 100%;
+    }
+    
+    .btn {
+        width: 100%;
+        padding: 22px 10px; /* Increased height */
+        font-size: 22px; /* Increased text size */
+        font-weight: 800;
+    }
+    
+    .btn-spin {
+        font-size: 18px;
+        font-weight: 800;
+    }
+    
+    .btn-primary {
+        font-size: 18px;
+        font-weight: 800;
+    }
+    
+    .btn-withdraw {
+        font-size: 18px;
+        font-weight: 800;
+    }
+    
+    .win-display {
+        padding: 12px 20px;
+    }
+    
+    .win-display h2 {
+        font-size: 18px;
+    }
+    
+    .win-display p {
+        font-size: 14px;
+    }
+    
+    .win-symbol-image {
+        width: 40px;
+        height: 40px;
+    }
+}
+
+@media (max-width: 480px) {
+    .slots-container {
+        padding: 5px;
+        padding-top: 85px; /* Increased to prevent stats bar from being hidden */
+    }
+    
+    .slot-machine-wrapper {
+        gap: 10px;
+        height: 100%;
+        justify-content: flex-start;
     }
     
     .slots-title {
@@ -1030,46 +1154,138 @@
     }
     
     .game-stats-bar {
-        padding: 6px 8px;
+        padding: 6px;
+        gap: 6px;
+        flex-shrink: 0;
+        flex-wrap: wrap !important;
+        width: 100%;
     }
     
-    .stat-label {
-        font-size: 9px;
+    .game-stats-bar .stat-item:nth-child(1) {
+        flex: 0 0 calc(50% - 3px) !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        order: 1 !important;
     }
     
-    .stat-value {
-        font-size: 12px;
+    .game-stats-bar .stat-item:nth-child(2) {
+        flex: 0 0 calc(50% - 3px) !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        order: 2 !important;
+    }
+    
+    .game-stats-bar .stat-item:nth-child(3) {
+        flex: 0 0 calc(50% - 3px) !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        order: 3 !important;
+    }
+    
+    .game-stats-bar .btn-win-percent-desktop {
+        flex: 0 0 calc(50% - 3px) !important;
+        padding: 6px 12px !important;
+        font-size: 14px !important; /* Bigger but not too big */
+        font-weight: 700 !important;
+        margin: 0 auto !important; /* Center horizontally */
+        align-self: center !important;
+        order: 4 !important;
+        width: fit-content !important;
+        max-width: 100% !important;
+    }
+    
+    .game-stats-bar .stat-label {
+        font-size: 10px !important;
+        font-weight: 600 !important;
+    }
+    
+    .game-stats-bar .stat-value {
+        font-size: 16px !important;
+        font-weight: 700 !important;
     }
     
     .slot-machine-main {
-        padding: 12px;
+        padding: 8px;
+        gap: 0;
+        flex: 0 0 auto;
+        height: auto;
     }
     
     .reels-container {
-        gap: 6px;
-        margin-bottom: 12px;
+        gap: 4px;
+        margin-bottom: 0;
     }
     
     .reel-wrapper {
-        max-width: 80px;
+        max-height: 180px; /* Increased to show more of the reels */
     }
     
     .reel-symbol {
-        font-size: 36px;
+        font-size: 0; /* Hide text, images will show */
+    }
+    
+    .symbol-image {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
     }
     
     .controls-panel {
-        padding: 10px;
-        gap: 10px;
+        padding: 14px;
+        gap: 18px; /* Increased gap */
+        flex: 1;
+        min-height: 0;
+        justify-content: flex-start; /* Changed from space-around */
+    }
+    
+    .control-group {
+        flex-direction: column; /* Stack label above input */
+        align-items: flex-start;
+        gap: 6px;
+    }
+    
+    .control-group label {
+        font-size: 16px !important; /* Bigger but fits on screen */
+        font-weight: 700 !important;
+    }
+    
+    .control-group input {
+        padding: 8px 6px !important; /* Reduced padding to fit */
+        font-size: 18px !important; /* Bigger but fits on screen */
+        width: 100%;
+        font-weight: 600 !important;
+    }
+    
+    .inputs-row {
+        gap: 10px !important; /* Reduced spacing to fit */
+    }
+    
+    .button-group {
+        gap: 8px !important; /* Reduced spacing to fit */
     }
     
     .btn {
-        padding: 10px 16px;
-        font-size: 12px;
+        padding: 14px 8px !important; /* Reduced height to fit on screen */
+        font-size: 20px !important; /* Bigger but fits on screen */
+        font-weight: 800 !important;
     }
     
     .btn-spin {
-        font-size: 16px;
+        font-size: 20px !important;
+        font-weight: 800 !important;
+    }
+    
+    .btn-primary {
+        font-size: 20px !important;
+        font-weight: 800 !important;
+    }
+    
+    .btn-withdraw {
+        font-size: 20px !important;
+        font-weight: 800 !important;
     }
 }
 
