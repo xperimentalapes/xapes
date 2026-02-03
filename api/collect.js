@@ -28,17 +28,43 @@ module.exports = async function handler(req, res) {
         const treasuryPrivateKey = process.env.TREASURY_PRIVATE_KEY;
         if (!treasuryPrivateKey) {
             console.error('TREASURY_PRIVATE_KEY not set in environment variables');
-            return res.status(500).json({ error: 'Server configuration error' });
+            return res.status(500).json({ 
+                error: 'Server configuration error',
+                message: 'TREASURY_PRIVATE_KEY environment variable is not set. Please configure it in Vercel.'
+            });
         }
 
         // Parse treasury keypair
+        // Support both JSON array format and base58 string format
         let treasuryKeypair;
         try {
-            const privateKeyArray = JSON.parse(treasuryPrivateKey);
-            treasuryKeypair = Keypair.fromSecretKey(Uint8Array.from(privateKeyArray));
+            // Try parsing as JSON array first (most common format)
+            if (treasuryPrivateKey.startsWith('[')) {
+                const privateKeyArray = JSON.parse(treasuryPrivateKey);
+                if (!Array.isArray(privateKeyArray) || privateKeyArray.length !== 64) {
+                    throw new Error('Private key array must have 64 elements');
+                }
+                treasuryKeypair = Keypair.fromSecretKey(Uint8Array.from(privateKeyArray));
+            } else {
+                // Try base58 format (alternative)
+                try {
+                    const bs58 = require('bs58');
+                    const decoded = bs58.decode(treasuryPrivateKey);
+                    if (decoded.length !== 64) {
+                        throw new Error('Private key must be 64 bytes');
+                    }
+                    treasuryKeypair = Keypair.fromSecretKey(decoded);
+                } catch (bs58Error) {
+                    throw new Error('Private key must be a JSON array [1,2,3,...] or base58 string. bs58 package may not be installed.');
+                }
+            }
         } catch (error) {
             console.error('Error parsing treasury private key:', error);
-            return res.status(500).json({ error: 'Invalid treasury key configuration' });
+            console.error('Private key format received:', treasuryPrivateKey.substring(0, 20) + '...');
+            return res.status(500).json({ 
+                error: 'Invalid treasury key configuration',
+                message: `Failed to parse treasury private key: ${error.message}. Expected JSON array [1,2,3,...] or base58 string.`
+            });
         }
 
         // Initialize connection with retry configuration
