@@ -72,6 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setupPrizeModal();
         setupLeaderboardModal();
         initializeReels();
+        loadGameStats(); // Load grand totals
         
         // Set default cost per spin
         document.getElementById('cost-per-spin').value = SPIN_COST;
