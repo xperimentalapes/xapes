@@ -680,6 +680,31 @@
     font-size: 12px;
 }
 
+/* Exit Home Button */
+.exit-home-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    padding: 8px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.exit-home-btn:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px);
+}
+
+.exit-home-btn svg {
+    width: 100%;
+    height: 100%;
+}
+
 /* Wallet Button */
 .wallet-button-container {
     display: flex;

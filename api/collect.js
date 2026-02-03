@@ -3,12 +3,20 @@
 
 const { Connection, PublicKey, Transaction, Keypair } = require('@solana/web3.js');
 const { getAssociatedTokenAddress, createTransferInstruction } = require('@solana/spl-token');
+const { createClient } = require('@supabase/supabase-js');
 
 const TREASURY_WALLET = '5eZ3Qt1jKCGdXkCES791W68T87bGG62j9ZHcmBaMUtTP';
 const XMA_TOKEN_MINT = 'HVSruatutKcgpZJXYyeRCWAnyT7mzYq1io9YoJ6F4yMP';
 const TOKEN_DECIMALS = 6;
 // Use Helius RPC endpoint (dedicated service, no rate limits)
 const RPC_URL = 'https://mainnet.helius-rpc.com/?api-key=277997e8-09ce-4516-a03e-5b062b51c6ac';
+
+// Initialize Supabase client for database operations
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
+const supabase = supabaseUrl && supabaseServiceKey 
+    ? createClient(supabaseUrl, supabaseServiceKey)
+    : null;
 
 // Security limits
 const MAX_WIN_AMOUNT = 10000000; // Maximum win amount (10M XMA)
@@ -200,6 +208,25 @@ module.exports = async function handler(req, res) {
             requireAllSignatures: false,
             verifySignatures: false
         });
+
+        // Clear unclaimed rewards in database after successful transaction creation
+        // Note: This clears it optimistically - if transaction fails, it will be restored on next spin
+        if (collectSupabase) {
+            try {
+                const { error: updateError } = await collectSupabase
+                    .from('players')
+                    .update({ unclaimed_rewards: '0' })
+                    .eq('wallet_address', userWallet);
+                
+                if (updateError) {
+                    console.error('Error clearing unclaimed rewards:', updateError);
+                    // Don't fail the request - transaction is still valid
+                }
+            } catch (dbError) {
+                console.error('Database error clearing unclaimed rewards:', dbError);
+                // Continue - transaction is still valid
+            }
+        }
 
         // Return the signed transaction as base64
         return res.status(200).json({

@@ -218,6 +218,7 @@ async function setupWalletConnection() {
                     }
                     
                     await updateBalance();
+                    await loadPlayerData(); // Load saved player data from database
                     updateButtonStates();
                 }
             }
@@ -269,6 +270,7 @@ async function setupWalletConnection() {
                 }
                 
                 await updateBalance();
+                await loadPlayerData(); // Load saved player data from database
                 updateButtonStates();
             } catch (err) {
                 console.error('Wallet connection error:', err);
@@ -637,9 +639,15 @@ async function spin() {
     setTimeout(() => stopReel(3, results[2]), 2000);
     
     // Calculate win after all reels stop
-    setTimeout(() => {
+    setTimeout(async () => {
         const costPerSpin = parseFloat(document.getElementById('cost-per-spin').value) || SPIN_COST;
-        calculateWin(results, costPerSpin);
+        const winAmount = await calculateWin(results, costPerSpin);
+        
+        // Save game data to database
+        if (wallet) {
+            await saveGameData(costPerSpin, results, winAmount);
+        }
+        
         isSpinning = false;
         updateDisplay();
         updateButtonStates();
@@ -697,7 +705,7 @@ function stopReel(reelNum, symbolIndex) {
 }
 
 // Calculate Win
-function calculateWin(results, bet) {
+async function calculateWin(results, bet) {
     const winDisplay = document.getElementById('win-display');
     const winMessage = document.getElementById('win-message');
     
@@ -724,6 +732,8 @@ function calculateWin(results, bet) {
     
     updateDisplay();
     updateButtonStates();
+    
+    return win; // Return win amount for database saving
 }
 
 // Withdraw Winnings - Transfer XMA tokens from treasury to user wallet
@@ -810,9 +820,14 @@ async function withdrawWinnings() {
         // Wait for confirmation
         await connection.confirmTransaction(signature, 'confirmed');
 
-        // Reset total won
+        // Reset total won and update database
         const amount = totalWon;
         totalWon = 0;
+        
+        // Clear unclaimed rewards in database
+        if (wallet) {
+            await saveGameData(0, [], 0, 0); // Save with unclaimed rewards = 0
+        }
 
         // Update balance
         await updateBalance();
@@ -890,6 +905,71 @@ function setupPrizeModal() {
             modal.classList.remove('show');
         }
     });
+}
+
+// Database Functions
+
+// Load player data from database
+async function loadPlayerData() {
+    if (!wallet) return;
+    
+    try {
+        const response = await fetch(`/api/load-player?walletAddress=${encodeURIComponent(wallet)}`);
+        
+        if (!response.ok) {
+            console.error('Failed to load player data:', response.statusText);
+            return;
+        }
+        
+        const data = await response.json();
+        
+        // Restore unclaimed rewards
+        if (data.unclaimedRewards > 0) {
+            totalWon = data.unclaimedRewards;
+            updateDisplay();
+            updateButtonStates();
+        }
+        
+        console.log('Player data loaded:', {
+            totalSpins: data.totalSpins,
+            totalWon: data.totalWon,
+            unclaimedRewards: data.unclaimedRewards
+        });
+    } catch (error) {
+        console.error('Error loading player data:', error);
+        // Don't show error to user - just continue without saved data
+    }
+}
+
+// Save game data to database
+async function saveGameData(spinCost, resultSymbols, wonAmount, unclaimedRewards = null) {
+    if (!wallet) return;
+    
+    try {
+        const response = await fetch('/api/save-game', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                walletAddress: wallet,
+                spinCost: spinCost,
+                resultSymbols: resultSymbols,
+                wonAmount: wonAmount,
+                updateUnclaimedRewards: unclaimedRewards !== null ? unclaimedRewards : totalWon
+            })
+        });
+        
+        if (!response.ok) {
+            console.error('Failed to save game data:', response.statusText);
+            return;
+        }
+        
+        console.log('Game data saved successfully');
+    } catch (error) {
+        console.error('Error saving game data:', error);
+        // Don't show error to user - game continues even if save fails
+    }
 }
 
 // Update Button States
