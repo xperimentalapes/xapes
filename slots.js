@@ -1026,9 +1026,9 @@ function updateButtonStates() {
     const spinBtn = document.getElementById('spin-button');
     const withdrawBtn = document.getElementById('withdraw-button');
     
-    // Enable purchase button when wallet is connected
-    purchaseBtn.disabled = !wallet;
-    if (wallet) {
+    // Enable purchase button when wallet is connected and not collecting
+    purchaseBtn.disabled = !wallet || isCollecting;
+    if (wallet && !isCollecting) {
         purchaseBtn.style.opacity = '1';
         purchaseBtn.style.cursor = 'pointer';
     } else {
@@ -1036,9 +1036,29 @@ function updateButtonStates() {
         purchaseBtn.style.cursor = 'not-allowed';
     }
     
-    // Enable spin button when spins > 0 and not spinning
-    spinBtn.disabled = spinsRemaining <= 0 || isSpinning;
+    // Enable spin button when spins > 0 and not spinning/collecting
+    spinBtn.disabled = spinsRemaining <= 0 || isSpinning || isCollecting;
+    if (spinsRemaining > 0 && !isSpinning && !isCollecting) {
+        spinBtn.style.opacity = '1';
+        spinBtn.style.cursor = 'pointer';
+    } else {
+        spinBtn.style.opacity = '0.5';
+        spinBtn.style.cursor = 'not-allowed';
+    }
     
-    // Enable collect button when wallet connected and total won > 0
-    withdrawBtn.disabled = !wallet || totalWon <= 0;
+    // Enable collect button when wallet connected, total won > 0, and not already collecting
+    withdrawBtn.disabled = !wallet || totalWon <= 0 || isCollecting;
+    if (totalWon > 0 && !isCollecting) {
+        withdrawBtn.style.opacity = '1';
+        withdrawBtn.style.cursor = 'pointer';
+        withdrawBtn.textContent = 'COLLECT';
+    } else {
+        withdrawBtn.style.opacity = '0.5';
+        withdrawBtn.style.cursor = 'not-allowed';
+        if (isCollecting) {
+            withdrawBtn.textContent = 'Collecting...';
+        } else {
+            withdrawBtn.textContent = 'COLLECT';
+        }
+    }
 }
