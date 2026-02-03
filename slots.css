@@ -1452,14 +1452,6 @@
         font-size: 11px;
     }
     
-    .game-stats-bar .btn-leaderboard-desktop {
-        flex: 0 0 calc(50% - 3px) !important;
-        order: 5 !important;
-        margin: 0 auto !important;
-        width: 40px !important;
-        height: 40px !important;
-    }
-    
     .spin-button-hint {
         font-size: 9px !important;
     }
