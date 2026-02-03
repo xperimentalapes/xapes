@@ -141,6 +141,37 @@
     color: var(--text-primary);
 }
 
+.stat-item-grand-totals {
+    flex: 1 1 100%;
+    min-width: 200px;
+}
+
+.grand-totals {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 4px;
+}
+
+.grand-total-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+}
+
+.grand-total-label {
+    color: var(--text-secondary);
+    font-weight: 500;
+    font-size: 12px;
+}
+
+.grand-total-value {
+    color: var(--text-primary);
+    font-weight: 700;
+    font-size: 14px;
+}
+
 /* Slot Machine Main */
 .slot-machine-main {
     position: relative;
