@@ -599,8 +599,9 @@ async function purchaseSpins() {
         
         // Save spins purchase to database
         if (wallet) {
-            console.log('Saving spins purchase to database...', { numSpins, spinsRemaining });
-            await saveGameData(0, [], 0, undefined, undefined, numSpins); // Save spins purchase
+            console.log('Saving spins purchase to database...', { numSpins, spinsRemaining, costPerSpin });
+            // CRITICAL: Pass the actual costPerSpin so it's stored in the database
+            await saveGameData(costPerSpin, [], 0, undefined, undefined, numSpins); // Save spins purchase
         } else {
             console.warn('Cannot save spins purchase - wallet not connected');
         }

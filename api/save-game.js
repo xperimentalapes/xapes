@@ -87,12 +87,23 @@ module.exports = async function handler(req, res) {
                 ? BigInt(Math.floor(updateUnclaimedRewards * 1e6)).toString()
                 : BigInt(Math.floor(wonAmount * 1e6)).toString();
             // If spins were purchased, set spins_remaining and cost_per_spin
-            if (spinsPurchased !== undefined) {
+            if (spinsPurchased !== undefined && spinsPurchased > 0) {
                 playerUpdate.spins_remaining = spinsPurchased;
+                // CRITICAL: Use spinCost from request (the actual cost per spin used for purchase)
+                // If spinCost is 0 or not provided, this is an error
+                if (spinCost <= 0) {
+                    console.error('Invalid spinCost for new player purchase:', spinCost);
+                    return res.status(400).json({ error: 'spinCost must be provided and > 0 when purchasing spins' });
+                }
                 playerUpdate.cost_per_spin = Math.floor(spinCost); // Store cost per spin for remaining spins
             } else {
                 playerUpdate.spins_remaining = 0; // First spin, so no remaining after this
-                playerUpdate.cost_per_spin = Math.floor(spinCost); // Store cost per spin
+                // For first spin, use spinCost from request
+                if (spinCost > 0) {
+                    playerUpdate.cost_per_spin = Math.floor(spinCost); // Store cost per spin
+                } else {
+                    playerUpdate.cost_per_spin = 100; // Default if not provided
+                }
             }
         } else {
             // Update existing player
@@ -113,6 +124,12 @@ module.exports = async function handler(req, res) {
                         });
                     }
                     playerUpdate.spins_remaining = (currentPlayer.spins_remaining || 0) + spinsPurchased;
+                    // CRITICAL: Use spinCost from request (the actual cost per spin used for purchase)
+                    // If spinCost is 0 or not provided, this is an error
+                    if (spinCost <= 0) {
+                        console.error('Invalid spinCost for purchase:', spinCost);
+                        return res.status(400).json({ error: 'spinCost must be provided and > 0 when purchasing spins' });
+                    }
                     playerUpdate.cost_per_spin = Math.floor(spinCost); // Store cost per spin for remaining spins
                     // Don't increment total_spins or update wagered/won for purchases
                 } 
