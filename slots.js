@@ -1269,17 +1269,22 @@ function updateButtonStates() {
 // Update spin button text based on autospin state
 function updateSpinButtonText() {
     const spinBtn = document.getElementById('spin-button');
+    const spinBtnMain = spinBtn?.querySelector('.spin-button-main');
     const spinBtnHint = document.getElementById('spin-button-hint');
     
     if (!spinBtn) return;
     
     if (isAutoSpinning) {
-        spinBtn.textContent = 'SPINNING...';
+        if (spinBtnMain) {
+            spinBtnMain.textContent = 'SPINNING...';
+        }
         if (spinBtnHint) {
             spinBtnHint.textContent = 'DOUBLE CLICK TO STOP AUTOSPIN';
         }
     } else {
-        spinBtn.textContent = 'SPIN';
+        if (spinBtnMain) {
+            spinBtnMain.textContent = 'SPIN';
+        }
         if (spinBtnHint) {
             spinBtnHint.textContent = 'DOUBLE CLICK FOR AUTOSPIN';
         }
