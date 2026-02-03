@@ -95,8 +95,16 @@ module.exports = async function handler(req, res) {
             treasuryPublicKey
         );
 
+        // Security: Validate and calculate transfer amount
+        const transferAmountRaw = amount * Math.pow(10, TOKEN_DECIMALS);
+        if (!isFinite(transferAmountRaw) || transferAmountRaw <= 0 || transferAmountRaw > MAX_WIN_AMOUNT * Math.pow(10, TOKEN_DECIMALS)) {
+            console.error(`Invalid transfer amount calculation: ${transferAmountRaw} from amount ${amount}`);
+            return res.status(400).json({ error: 'Invalid transfer amount calculation' });
+        }
+        
+        const transferAmount = BigInt(Math.floor(transferAmountRaw));
+        
         // Create transfer instruction (from treasury to user)
-        const transferAmount = BigInt(Math.floor(amount * Math.pow(10, TOKEN_DECIMALS)));
         const transferInstruction = createTransferInstruction(
             treasuryTokenAccount,
             userTokenAccount,

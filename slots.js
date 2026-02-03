@@ -39,6 +39,12 @@ const XMA_TOKEN_MINT = 'HVSruatutKcgpZJXYyeRCWAnyT7mzYq1io9YoJ6F4yMP'; // XMA to
 const TREASURY_WALLET = '5eZ3Qt1jKCGdXkCES791W68T87bGG62j9ZHcmBaMUtTP'; // Treasury wallet address
 const TOKEN_DECIMALS = 6; // XMA token decimals
 
+// Security limits
+const MAX_COST_PER_SPIN = 10000; // Maximum cost per spin (100 XMA default, 10,000 XMA max)
+const MAX_NUMBER_OF_SPINS = 100; // Maximum number of spins per purchase
+const MAX_TOTAL_COST = 1000000; // Maximum total cost per transaction (1M XMA)
+const MAX_WIN_AMOUNT = 10000000; // Maximum win amount (10M XMA) - safety limit
+
 let wallet = null;
 let connection = null;
 let xmaBalance = 0;
@@ -374,18 +380,50 @@ async function purchaseSpins() {
         return;
     }
     
-    const costPerSpin = parseFloat(document.getElementById('cost-per-spin').value);
-    const numSpins = parseInt(document.getElementById('number-of-spins').value);
+    // Get and sanitize inputs
+    const costPerSpinInput = document.getElementById('cost-per-spin').value;
+    const numSpinsInput = document.getElementById('number-of-spins').value;
     
-    if (!costPerSpin || costPerSpin <= 0 || !numSpins || numSpins <= 0) {
+    // Validate inputs are not empty
+    if (!costPerSpinInput || !numSpinsInput) {
         alert('Please enter valid cost per spin and number of spins');
         return;
     }
     
+    // Parse and validate numeric values
+    const costPerSpin = parseFloat(costPerSpinInput);
+    const numSpins = parseInt(numSpinsInput);
+    
+    // Validate inputs are valid numbers and within limits
+    if (isNaN(costPerSpin) || isNaN(numSpins) || 
+        costPerSpin <= 0 || numSpins <= 0 ||
+        !isFinite(costPerSpin) || !isFinite(numSpins)) {
+        alert('Please enter valid numeric values for cost per spin and number of spins');
+        return;
+    }
+    
+    // Security: Enforce maximum limits
+    if (costPerSpin > MAX_COST_PER_SPIN) {
+        alert(`Cost per spin cannot exceed ${MAX_COST_PER_SPIN.toLocaleString()} XMA`);
+        return;
+    }
+    
+    if (numSpins > MAX_NUMBER_OF_SPINS) {
+        alert(`Number of spins cannot exceed ${MAX_NUMBER_OF_SPINS}`);
+        return;
+    }
+    
+    // Calculate total cost and validate
     const totalCost = costPerSpin * numSpins;
     
+    if (totalCost > MAX_TOTAL_COST) {
+        alert(`Total transaction amount cannot exceed ${MAX_TOTAL_COST.toLocaleString()} XMA`);
+        return;
+    }
+    
+    // Validate user has sufficient balance
     if (xmaBalance < totalCost) {
-        alert(`Insufficient balance. You need ${totalCost} XMA but only have ${xmaBalance.toFixed(2)} XMA`);
+        alert(`Insufficient balance. You need ${totalCost.toLocaleString()} XMA but only have ${xmaBalance.toFixed(2)} XMA`);
         return;
     }
     
@@ -414,8 +452,21 @@ async function purchaseSpins() {
             treasuryPublicKey
         );
         
+        // Security: Double-check amount before creating transaction
+        // Round to prevent floating point precision issues
+        const transferAmountRaw = totalCost * Math.pow(10, TOKEN_DECIMALS);
+        if (!isFinite(transferAmountRaw) || transferAmountRaw <= 0 || transferAmountRaw > MAX_TOTAL_COST * Math.pow(10, TOKEN_DECIMALS)) {
+            throw new Error('Invalid transfer amount');
+        }
+        
+        const transferAmount = BigInt(Math.floor(transferAmountRaw));
+        
+        // Verify treasury address matches expected
+        if (treasuryPublicKey.toString() !== TREASURY_WALLET) {
+            throw new Error('Invalid treasury wallet address');
+        }
+        
         // Create transfer instruction
-        const transferAmount = BigInt(Math.floor(totalCost * Math.pow(10, TOKEN_DECIMALS)));
         const transferInstruction = createTransferInstruction(
             userTokenAccount,
             treasuryTokenAccount,
@@ -691,6 +742,23 @@ async function withdrawWinnings() {
     // Check if SPL token library is loaded
     if (!window.splToken) {
         alert('SPL token library is still loading. Please wait a moment and try again.');
+        return;
+    }
+    
+    // Security: Validate win amount before withdrawal
+    if (totalWon > MAX_WIN_AMOUNT) {
+        alert(`Win amount exceeds maximum limit. Please contact support.`);
+        console.error('Win amount exceeds maximum:', totalWon);
+        return;
+    }
+    
+    // Security: Validate wallet address format
+    try {
+        const { PublicKey } = window.solanaWeb3 || solanaWeb3;
+        new PublicKey(wallet); // Will throw if invalid
+    } catch (error) {
+        alert('Invalid wallet address');
+        console.error('Invalid wallet address:', wallet);
         return;
     }
     
