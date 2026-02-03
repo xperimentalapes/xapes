@@ -644,8 +644,12 @@ async function spin() {
         const winAmount = await calculateWin(results, costPerSpin);
         
         // Save game data to database
+        console.log('Spin complete - checking wallet:', wallet ? 'connected' : 'NOT CONNECTED');
         if (wallet) {
+            console.log('Wallet connected, calling saveGameData...');
             await saveGameData(costPerSpin, results, winAmount);
+        } else {
+            console.warn('Cannot save game data - wallet not connected');
         }
         
         isSpinning = false;
