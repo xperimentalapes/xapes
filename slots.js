@@ -943,9 +943,20 @@ async function loadPlayerData() {
 
 // Save game data to database
 async function saveGameData(spinCost, resultSymbols, wonAmount, unclaimedRewards = null) {
-    if (!wallet) return;
+    if (!wallet) {
+        console.log('saveGameData: No wallet connected, skipping save');
+        return;
+    }
     
     try {
+        console.log('saveGameData: Attempting to save game data...', {
+            wallet: wallet.slice(0, 8) + '...',
+            spinCost,
+            resultSymbols,
+            wonAmount,
+            unclaimedRewards: unclaimedRewards !== null ? unclaimedRewards : totalWon
+        });
+        
         const response = await fetch('/api/save-game', {
             method: 'POST',
             headers: {
@@ -960,12 +971,16 @@ async function saveGameData(spinCost, resultSymbols, wonAmount, unclaimedRewards
             })
         });
         
+        console.log('saveGameData: Response status:', response.status, response.statusText);
+        
         if (!response.ok) {
-            console.error('Failed to save game data:', response.statusText);
+            const errorText = await response.text();
+            console.error('Failed to save game data:', response.status, response.statusText, errorText);
             return;
         }
         
-        console.log('Game data saved successfully');
+        const result = await response.json();
+        console.log('Game data saved successfully:', result);
     } catch (error) {
         console.error('Error saving game data:', error);
         // Don't show error to user - game continues even if save fails
