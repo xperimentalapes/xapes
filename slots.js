@@ -55,15 +55,36 @@ document.addEventListener('DOMContentLoaded', () => {
     FIXED_REEL_ORDER = createFixedReelOrder();
     
     checkOrientation();
-    setupWalletConnection();
-    setupGameControls();
-    setupPrizeModal();
-    initializeReels();
     
-    // Set default cost per spin
-    document.getElementById('cost-per-spin').value = SPIN_COST;
-    updateDisplay();
-    updateButtonStates();
+    // Wait for SPL token library to load before setting up wallet
+    const initWhenReady = () => {
+        setupWalletConnection();
+        setupGameControls();
+        setupPrizeModal();
+        initializeReels();
+        
+        // Set default cost per spin
+        document.getElementById('cost-per-spin').value = SPIN_COST;
+        updateDisplay();
+        updateButtonStates();
+    };
+    
+    // Check if SPL token is already loaded
+    if (window.splToken) {
+        initWhenReady();
+    } else {
+        // Wait for SPL token to load
+        window.addEventListener('splTokenLoaded', initWhenReady);
+        // Fallback timeout in case event doesn't fire
+        setTimeout(() => {
+            if (window.splToken) {
+                initWhenReady();
+            } else {
+                console.warn('SPL token library not loaded, some features may not work');
+                initWhenReady(); // Initialize anyway
+            }
+        }, 2000);
+    }
     
     // Check orientation on resize
     window.addEventListener('resize', checkOrientation);
@@ -227,9 +248,15 @@ async function setupWalletConnection() {
 async function updateBalance() {
     if (!wallet || !connection) return;
     
+    // Check if SPL token library is loaded
+    if (!window.splToken) {
+        console.warn('SPL token library not loaded yet');
+        return;
+    }
+    
     try {
         const { PublicKey } = window.solanaWeb3 || solanaWeb3;
-        const { getAssociatedTokenAddress, getAccount } = window.splToken || splToken;
+        const { getAssociatedTokenAddress, getAccount } = window.splToken;
         
         const tokenMint = new PublicKey(XMA_TOKEN_MINT);
         const userPublicKey = new PublicKey(wallet);
@@ -295,9 +322,15 @@ async function purchaseSpins() {
         return;
     }
     
+    // Check if SPL token library is loaded
+    if (!window.splToken) {
+        alert('SPL token library is still loading. Please wait a moment and try again.');
+        return;
+    }
+    
     try {
         const { PublicKey, Transaction } = window.solanaWeb3 || solanaWeb3;
-        const { getAssociatedTokenAddress, createTransferInstruction } = window.splToken || splToken;
+        const { getAssociatedTokenAddress, createTransferInstruction } = window.splToken;
         
         const tokenMint = new PublicKey(XMA_TOKEN_MINT);
         const userPublicKey = new PublicKey(wallet);
@@ -536,6 +569,12 @@ async function withdrawWinnings() {
     
     if (!wallet || !connection) {
         alert('Please connect your wallet');
+        return;
+    }
+    
+    // Check if SPL token library is loaded
+    if (!window.splToken) {
+        alert('SPL token library is still loading. Please wait a moment and try again.');
         return;
     }
     

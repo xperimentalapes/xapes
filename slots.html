@@ -11,7 +11,16 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
-    <script src="https://unpkg.com/@solana/spl-token@latest/lib/index.iife.min.js"></script>
+    <script type="module">
+        // Load SPL token library dynamically
+        import('https://esm.sh/@solana/spl-token@0.3.9').then(splToken => {
+            window.splToken = splToken;
+            // Dispatch event when loaded
+            window.dispatchEvent(new Event('splTokenLoaded'));
+        }).catch(err => {
+            console.error('Failed to load SPL token library:', err);
+        });
+    </script>
 </head>
 <body class="slots-page">
     <!-- Landscape Orientation Prompt -->
