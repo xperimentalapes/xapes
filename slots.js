@@ -1164,6 +1164,37 @@ async function loadLeaderboard(sortBy = 'spins') {
 
 // Database Functions
 
+// Load game stats (grand totals)
+async function loadGameStats() {
+    try {
+        const response = await fetch('/api/game-stats');
+        
+        if (!response.ok) {
+            console.error('Failed to load game stats:', response.statusText);
+            return;
+        }
+        
+        const data = await response.json();
+        
+        // Update grand totals display
+        const grandTotalSpinsEl = document.getElementById('grand-total-spins');
+        const grandTotalWonEl = document.getElementById('grand-total-won');
+        
+        if (grandTotalSpinsEl) {
+            grandTotalSpinsEl.textContent = data.grandTotalSpins.toLocaleString();
+        }
+        
+        if (grandTotalWonEl) {
+            grandTotalWonEl.textContent = `${data.grandTotalWon.toFixed(2)} XMA`;
+        }
+        
+        console.log('Game stats loaded:', data);
+    } catch (error) {
+        console.error('Error loading game stats:', error);
+        // Don't show error to user - just continue without stats
+    }
+}
+
 // Load player data from database
 let isLoadingPlayerData = false; // Prevent duplicate calls
 async function loadPlayerData() {
