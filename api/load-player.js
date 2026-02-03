@@ -59,7 +59,7 @@ module.exports = async function handler(req, res) {
         // Get player data
         const { data: player, error } = await supabase
             .from('players')
-            .select('*')
+            .select('wallet_address, total_spins, total_won, total_wagered, unclaimed_rewards, spins_remaining, cost_per_spin, created_at')
             .eq('wallet_address', walletAddress)
             .single();
 
@@ -77,6 +77,7 @@ module.exports = async function handler(req, res) {
                 totalWagered: 0,
                 unclaimedRewards: 0,
                 spinsRemaining: 0,
+                costPerSpin: 100, // Default cost per spin
                 createdAt: null
             });
         }
@@ -94,6 +95,7 @@ module.exports = async function handler(req, res) {
             totalWagered: totalWagered,
             unclaimedRewards: unclaimedRewards,
             spinsRemaining: player.spins_remaining || 0,
+            costPerSpin: player.cost_per_spin || 100, // Return stored cost per spin or default to 100
             createdAt: player.created_at
         });
 

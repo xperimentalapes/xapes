@@ -719,8 +719,8 @@ async function spin() {
     setTimeout(() => stopReel(3, results[2]), 2000);
     
     // Calculate win after all reels stop
+    // Use the costPerSpin captured at the start of the spin
     setTimeout(async () => {
-        const costPerSpin = parseFloat(document.getElementById('cost-per-spin').value) || SPIN_COST;
         const winAmount = await calculateWin(results, costPerSpin);
         
         // Save game data to database (with spin stats and current spins remaining)
@@ -795,7 +795,7 @@ function stopReel(reelNum, symbolIndex) {
 }
 
 // Calculate Win
-async function calculateWin(results, bet) {
+async function calculateWin(results, costPerSpin) {
     const winDisplay = document.getElementById('win-display');
     const winMessage = document.getElementById('win-message');
     
@@ -805,8 +805,19 @@ async function calculateWin(results, bet) {
     if (results[0] === results[1] && results[1] === results[2]) {
         // All symbols match - use payout table
         const symbolIndex = results[0];
-        const costPerSpin = parseFloat(document.getElementById('cost-per-spin').value) || SPIN_COST;
-        win = getPayoutAmount(symbolIndex, costPerSpin);
+        const multiplier = PAYOUT_MULTIPLIERS[symbolIndex];
+        
+        // CRITICAL FIX: Use the costPerSpin parameter passed in, not reading from input again
+        // This ensures we use the actual cost per spin from when the spin was initiated
+        win = multiplier * costPerSpin;
+        
+        console.log('Win calculation:', {
+            symbolIndex,
+            symbolName: SYMBOL_NAMES[symbolIndex],
+            multiplier,
+            costPerSpin,
+            winAmount: win
+        });
         
         if (win > 0) {
             totalWon += win;
@@ -1181,6 +1192,15 @@ async function loadPlayerData() {
         spinsRemaining = data.spinsRemaining || 0;
         console.log('Restored spins remaining:', spinsRemaining);
         
+        // Restore cost per spin for remaining spins
+        if (data.costPerSpin && spinsRemaining > 0) {
+            const costPerSpinInput = document.getElementById('cost-per-spin');
+            if (costPerSpinInput) {
+                costPerSpinInput.value = data.costPerSpin;
+                console.log('Restored cost per spin:', data.costPerSpin);
+            }
+        }
+        
         // Update display and buttons
         updateDisplay();
         updateButtonStates();
@@ -1189,7 +1209,8 @@ async function loadPlayerData() {
             totalSpins: data.totalSpins,
             totalWon: data.totalWon,
             unclaimedRewards: data.unclaimedRewards,
-            spinsRemaining: data.spinsRemaining
+            spinsRemaining: data.spinsRemaining,
+            costPerSpin: data.costPerSpin
         });
     } catch (error) {
         // Only log if it's not an abort/timeout (which are expected in some cases)
@@ -1262,9 +1283,10 @@ function updateButtonStates() {
     const spinBtn = document.getElementById('spin-button');
     const withdrawBtn = document.getElementById('withdraw-button');
     
-    // Enable purchase button when wallet is connected and not collecting
-    purchaseBtn.disabled = !wallet || isCollecting;
-    if (wallet && !isCollecting) {
+    // Enable purchase button when wallet is connected, not collecting, and no spins remaining
+    // Disable if spins remaining > 0 to prevent mixed cost per spin purchases
+    purchaseBtn.disabled = !wallet || isCollecting || spinsRemaining > 0;
+    if (wallet && !isCollecting && spinsRemaining === 0) {
         purchaseBtn.style.opacity = '1';
         purchaseBtn.style.cursor = 'pointer';
     } else {

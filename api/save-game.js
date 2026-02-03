@@ -86,11 +86,13 @@ module.exports = async function handler(req, res) {
             playerUpdate.unclaimed_rewards = updateUnclaimedRewards 
                 ? BigInt(Math.floor(updateUnclaimedRewards * 1e6)).toString()
                 : BigInt(Math.floor(wonAmount * 1e6)).toString();
-            // If spins were purchased, set spins_remaining, otherwise start at 0 and decrement
+            // If spins were purchased, set spins_remaining and cost_per_spin
             if (spinsPurchased !== undefined) {
                 playerUpdate.spins_remaining = spinsPurchased;
+                playerUpdate.cost_per_spin = Math.floor(spinCost); // Store cost per spin for remaining spins
             } else {
                 playerUpdate.spins_remaining = 0; // First spin, so no remaining after this
+                playerUpdate.cost_per_spin = Math.floor(spinCost); // Store cost per spin
             }
         } else {
             // Update existing player
@@ -103,39 +105,64 @@ module.exports = async function handler(req, res) {
             if (currentPlayer) {
                 // If spins were purchased, add to remaining (don't increment total_spins)
                 if (spinsPurchased !== undefined && spinsPurchased > 0) {
+                    // Only allow purchase if no spins remaining (to prevent mixed cost per spin)
+                    if ((currentPlayer.spins_remaining || 0) > 0) {
+                        return res.status(400).json({ 
+                            error: 'Cannot purchase spins while spins are remaining. Please use existing spins first.',
+                            spinsRemaining: currentPlayer.spins_remaining
+                        });
+                    }
                     playerUpdate.spins_remaining = (currentPlayer.spins_remaining || 0) + spinsPurchased;
+                    playerUpdate.cost_per_spin = Math.floor(spinCost); // Store cost per spin for remaining spins
                     // Don't increment total_spins or update wagered/won for purchases
                 } 
                 // If updateSpinsRemaining is set AND spinCost > 0, this is a spin (increment stats)
                 else if (updateSpinsRemaining !== undefined && spinCost > 0) {
                     // This is a spin - increment total_spins and update wagered/won
+                    // Use stored cost_per_spin from database for prize calculations
+                    const storedCostPerSpin = currentPlayer.cost_per_spin || 100;
                     playerUpdate.total_spins = (currentPlayer.total_spins || 0) + 1;
                     playerUpdate.spins_remaining = updateSpinsRemaining;
                     playerUpdate.total_wagered = (
                         BigInt(currentPlayer.total_wagered || 0) + 
-                        BigInt(Math.floor(spinCost * 1e6))
+                        BigInt(Math.floor(storedCostPerSpin * 1e6))
                     ).toString();
                     playerUpdate.total_won = (
                         BigInt(currentPlayer.total_won || 0) + 
                         BigInt(Math.floor(wonAmount * 1e6))
                     ).toString();
+                    // Clear cost_per_spin when all spins are used
+                    if (updateSpinsRemaining === 0) {
+                        playerUpdate.cost_per_spin = null;
+                    }
                 }
                 // If updateSpinsRemaining is set but spinCost is 0, just update spins_remaining (no stats update)
                 else if (updateSpinsRemaining !== undefined) {
                     playerUpdate.spins_remaining = updateSpinsRemaining;
+                    // Clear cost_per_spin when all spins are used
+                    if (updateSpinsRemaining === 0) {
+                        playerUpdate.cost_per_spin = null;
+                    }
                 }
                 // Otherwise, this is a regular spin (spinCost > 0, no special flags)
                 else if (spinCost > 0) {
+                    // Use stored cost_per_spin from database for prize calculations
+                    const storedCostPerSpin = currentPlayer.cost_per_spin || 100;
                     playerUpdate.total_spins = (currentPlayer.total_spins || 0) + 1;
-                    playerUpdate.spins_remaining = Math.max(0, (currentPlayer.spins_remaining || 0) - 1);
+                    const newSpinsRemaining = Math.max(0, (currentPlayer.spins_remaining || 0) - 1);
+                    playerUpdate.spins_remaining = newSpinsRemaining;
                     playerUpdate.total_wagered = (
                         BigInt(currentPlayer.total_wagered || 0) + 
-                        BigInt(Math.floor(spinCost * 1e6))
+                        BigInt(Math.floor(storedCostPerSpin * 1e6))
                     ).toString();
                     playerUpdate.total_won = (
                         BigInt(currentPlayer.total_won || 0) + 
                         BigInt(Math.floor(wonAmount * 1e6))
                     ).toString();
+                    // Clear cost_per_spin when all spins are used
+                    if (newSpinsRemaining === 0) {
+                        playerUpdate.cost_per_spin = null;
+                    }
                 }
                 
                 // Only update wagered/won if not already set above
