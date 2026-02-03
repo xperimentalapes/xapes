@@ -1237,9 +1237,12 @@ function updateButtonStates() {
         purchaseBtn.style.cursor = 'not-allowed';
     }
     
-    // Enable spin button when spins > 0 and not spinning/collecting
-    spinBtn.disabled = spinsRemaining <= 0 || isSpinning || isCollecting;
-    if (spinsRemaining > 0 && !isSpinning && !isCollecting) {
+    // Enable spin button when spins > 0 and not collecting
+    // Keep button enabled during autospin so user can double-click to stop
+    const shouldDisableSpin = spinsRemaining <= 0 || isCollecting || (isSpinning && !isAutoSpinning);
+    spinBtn.disabled = shouldDisableSpin;
+    
+    if (spinsRemaining > 0 && !isCollecting && (isAutoSpinning || !isSpinning)) {
         spinBtn.style.opacity = '1';
         spinBtn.style.cursor = 'pointer';
     } else {
