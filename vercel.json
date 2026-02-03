@@ -7,10 +7,5 @@
     }
   ],
   "buildCommand": "npm run build",
-  "outputDirectory": "public",
-  "functions": {
-    "api/**/*.js": {
-      "runtime": "nodejs18.x"
-    }
-  }
+  "outputDirectory": "public"
 }
