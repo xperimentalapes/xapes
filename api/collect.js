@@ -10,7 +10,58 @@ const TOKEN_DECIMALS = 6;
 // Use Helius RPC endpoint (dedicated service, no rate limits)
 const RPC_URL = 'https://mainnet.helius-rpc.com/?api-key=277997e8-09ce-4516-a03e-5b062b51c6ac';
 
+// Security limits
+const MAX_WIN_AMOUNT = 10000000; // Maximum win amount (10M XMA)
+const MAX_REQUESTS_PER_MINUTE = 10; // Rate limiting: max 10 requests per minute per wallet
+
+// Simple in-memory rate limiting (for production, use Redis or similar)
+const rateLimitMap = new Map();
+
+function checkRateLimit(walletAddress) {
+    const now = Date.now();
+    const key = walletAddress;
+    const requests = rateLimitMap.get(key) || [];
+    
+    // Remove requests older than 1 minute
+    const recentRequests = requests.filter(timestamp => now - timestamp < 60000);
+    
+    if (recentRequests.length >= MAX_REQUESTS_PER_MINUTE) {
+        return false; // Rate limited
+    }
+    
+    // Add current request
+    recentRequests.push(now);
+    rateLimitMap.set(key, recentRequests);
+    
+    // Clean up old entries periodically (keep map size manageable)
+    if (rateLimitMap.size > 1000) {
+        const oldestKey = rateLimitMap.keys().next().value;
+        rateLimitMap.delete(oldestKey);
+    }
+    
+    return true; // Allowed
+}
+
 module.exports = async function handler(req, res) {
+    // CORS: Only allow requests from same origin (Vercel handles this, but we can be explicit)
+    const origin = req.headers.origin;
+    const allowedOrigins = [
+        'https://xapes.vercel.app',
+        'http://localhost:8000',
+        'http://localhost:3000'
+    ];
+    
+    if (origin && allowedOrigins.includes(origin)) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+    }
+    res.setHeader('Access-Control-Allow-Methods', 'POST');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    
+    // Handle preflight
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
+    
     // Only allow POST requests
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
@@ -22,6 +73,29 @@ module.exports = async function handler(req, res) {
         // Validate inputs
         if (!userWallet || !amount || amount <= 0) {
             return res.status(400).json({ error: 'Invalid request: userWallet and amount required' });
+        }
+        
+        // Security: Validate wallet address format
+        try {
+            new PublicKey(userWallet); // Will throw if invalid
+        } catch (error) {
+            return res.status(400).json({ error: 'Invalid wallet address format' });
+        }
+        
+        // Security: Validate amount is a valid number
+        if (isNaN(amount) || !isFinite(amount) || amount <= 0) {
+            return res.status(400).json({ error: 'Invalid amount: must be a positive number' });
+        }
+        
+        // Security: Enforce maximum win amount
+        if (amount > MAX_WIN_AMOUNT) {
+            console.error(`Win amount exceeds maximum: ${amount} from wallet ${userWallet}`);
+            return res.status(400).json({ error: `Win amount exceeds maximum limit of ${MAX_WIN_AMOUNT.toLocaleString()} XMA` });
+        }
+        
+        // Security: Rate limiting
+        if (!checkRateLimit(userWallet)) {
+            return res.status(429).json({ error: 'Too many requests. Please wait before trying again.' });
         }
 
         // Get treasury private key from environment variable
@@ -103,7 +177,7 @@ module.exports = async function handler(req, res) {
         }
         
         const transferAmount = BigInt(Math.floor(transferAmountRaw));
-        
+
         // Create transfer instruction (from treasury to user)
         const transferInstruction = createTransferInstruction(
             treasuryTokenAccount,
@@ -139,4 +213,4 @@ module.exports = async function handler(req, res) {
             message: error.message 
         });
     }
-}
+};
