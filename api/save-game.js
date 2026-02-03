@@ -101,28 +101,56 @@ module.exports = async function handler(req, res) {
                 .single();
 
             if (currentPlayer) {
-                // If spins were purchased, add to remaining
+                // If spins were purchased, add to remaining (don't increment total_spins)
                 if (spinsPurchased !== undefined && spinsPurchased > 0) {
                     playerUpdate.spins_remaining = (currentPlayer.spins_remaining || 0) + spinsPurchased;
+                    // Don't increment total_spins or update wagered/won for purchases
                 } 
-                // If updateSpinsRemaining is explicitly set, use that value
+                // If updateSpinsRemaining is set AND spinCost > 0, this is a spin (increment stats)
+                else if (updateSpinsRemaining !== undefined && spinCost > 0) {
+                    // This is a spin - increment total_spins and update wagered/won
+                    playerUpdate.total_spins = (currentPlayer.total_spins || 0) + 1;
+                    playerUpdate.spins_remaining = updateSpinsRemaining;
+                    playerUpdate.total_wagered = (
+                        BigInt(currentPlayer.total_wagered || 0) + 
+                        BigInt(Math.floor(spinCost * 1e6))
+                    ).toString();
+                    playerUpdate.total_won = (
+                        BigInt(currentPlayer.total_won || 0) + 
+                        BigInt(Math.floor(wonAmount * 1e6))
+                    ).toString();
+                }
+                // If updateSpinsRemaining is set but spinCost is 0, just update spins_remaining (no stats update)
                 else if (updateSpinsRemaining !== undefined) {
                     playerUpdate.spins_remaining = updateSpinsRemaining;
                 }
-                // Otherwise, decrement by 1 (a spin was played)
-                else {
+                // Otherwise, this is a regular spin (spinCost > 0, no special flags)
+                else if (spinCost > 0) {
                     playerUpdate.total_spins = (currentPlayer.total_spins || 0) + 1;
                     playerUpdate.spins_remaining = Math.max(0, (currentPlayer.spins_remaining || 0) - 1);
+                    playerUpdate.total_wagered = (
+                        BigInt(currentPlayer.total_wagered || 0) + 
+                        BigInt(Math.floor(spinCost * 1e6))
+                    ).toString();
+                    playerUpdate.total_won = (
+                        BigInt(currentPlayer.total_won || 0) + 
+                        BigInt(Math.floor(wonAmount * 1e6))
+                    ).toString();
                 }
                 
-                playerUpdate.total_wagered = (
-                    BigInt(currentPlayer.total_wagered || 0) + 
-                    BigInt(Math.floor(spinCost * 1e6))
-                ).toString();
-                playerUpdate.total_won = (
-                    BigInt(currentPlayer.total_won || 0) + 
-                    BigInt(Math.floor(wonAmount * 1e6))
-                ).toString();
+                // Only update wagered/won if not already set above
+                if (playerUpdate.total_wagered === undefined && spinCost > 0) {
+                    playerUpdate.total_wagered = (
+                        BigInt(currentPlayer.total_wagered || 0) + 
+                        BigInt(Math.floor(spinCost * 1e6))
+                    ).toString();
+                }
+                if (playerUpdate.total_won === undefined && wonAmount > 0) {
+                    playerUpdate.total_won = (
+                        BigInt(currentPlayer.total_won || 0) + 
+                        BigInt(Math.floor(wonAmount * 1e6))
+                    ).toString();
+                }
                 
                 if (updateUnclaimedRewards !== undefined) {
                     playerUpdate.unclaimed_rewards = BigInt(Math.floor(updateUnclaimedRewards * 1e6)).toString();
