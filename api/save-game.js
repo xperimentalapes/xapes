@@ -118,7 +118,15 @@ module.exports = async function handler(req, res) {
         }
 
         // Upsert player
-        const { error: playerError } = await supabase
+        console.log('Attempting to upsert player:', {
+            wallet_address: playerUpdate.wallet_address,
+            total_spins: playerUpdate.total_spins,
+            total_wagered: playerUpdate.total_wagered,
+            total_won: playerUpdate.total_won,
+            unclaimed_rewards: playerUpdate.unclaimed_rewards
+        });
+        
+        const { data: playerData, error: playerError } = await supabase
             .from('players')
             .upsert(playerUpdate, { onConflict: 'wallet_address' });
 
@@ -127,25 +135,35 @@ module.exports = async function handler(req, res) {
             return res.status(500).json({ error: 'Failed to save player data', details: playerError.message });
         }
 
+        console.log('Player data saved successfully:', playerData);
+
         // Save game history entry
-        const { error: historyError } = await supabase
+        const historyData = {
+            wallet_address: walletAddress,
+            spin_cost: BigInt(Math.floor(spinCost * 1e6)).toString(),
+            result_symbols: resultSymbols,
+            won_amount: BigInt(Math.floor(wonAmount * 1e6)).toString(),
+            timestamp: new Date().toISOString()
+        };
+        
+        console.log('Attempting to insert game history:', historyData);
+        
+        const { data: historyDataResult, error: historyError } = await supabase
             .from('game_history')
-            .insert({
-                wallet_address: walletAddress,
-                spin_cost: BigInt(Math.floor(spinCost * 1e6)).toString(),
-                result_symbols: resultSymbols,
-                won_amount: BigInt(Math.floor(wonAmount * 1e6)).toString(),
-                timestamp: new Date().toISOString()
-            });
+            .insert(historyData);
 
         if (historyError) {
             console.error('Error saving game history:', historyError);
             // Don't fail the request if history fails, but log it
+        } else {
+            console.log('Game history saved successfully:', historyDataResult);
         }
 
         return res.status(200).json({ 
             success: true,
-            message: 'Game data saved successfully'
+            message: 'Game data saved successfully',
+            playerData: playerData,
+            historyData: historyDataResult
         });
 
     } catch (error) {
