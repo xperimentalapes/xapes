@@ -557,6 +557,62 @@
     transform: translateY(-1px);
 }
 
+/* Leaderboard Button - Match win % button style */
+.btn-leaderboard-desktop {
+    background: var(--bg-card);
+    color: #F59E0B;
+    border: 2px solid #F59E0B;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    width: auto;
+    flex: 0 0 auto;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-left: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-leaderboard-desktop:hover {
+    background: rgba(245, 158, 11, 0.1);
+    transform: translateY(-1px);
+}
+
+.btn-leaderboard-desktop svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* Grand Totals - Stack vertically */
+.grand-totals {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: center;
+}
+
+.grand-total-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.grand-total-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.grand-total-value {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
 /* Prize Modal */
 .prize-modal {
     display: none;
