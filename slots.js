@@ -782,8 +782,14 @@ async function withdrawWinnings() {
                     console.error('Failed to fetch simulation logs for collect (preflight):', logErr);
                 }
                 
+                // If it's a simulation error about treasury account, provide helpful error message
+                if (errorMsg.includes('attempt to debit') || errorMsg.includes('no record of a prior credit')) {
+                    // This error specifically means treasury account doesn't have balance
+                    throw new Error(`Transaction failed: Treasury token account has insufficient balance or doesn't exist. This usually happens when:\n1. No purchases have been made with the new treasury wallet yet\n2. The treasury account hasn't received tokens\n\nPlease make a purchase first to fund the treasury, or contact support if purchases have already been made.`);
+                }
+                
                 // If it's a simulation error and we haven't tried without preflight yet, try that
-                if (errorMsg.includes('Simulation failed') || errorMsg.includes('attempt to debit')) {
+                if (errorMsg.includes('Simulation failed')) {
                     console.warn('Preflight simulation failed, trying without preflight...');
                     try {
                         signature = await connection.sendRawTransaction(transaction.serialize(), {
@@ -794,6 +800,11 @@ async function withdrawWinnings() {
                     } catch (skipPreflightError) {
                         console.error('Transaction failed even without preflight:', skipPreflightError);
                         const skipErrorMsg = skipPreflightError.message || skipPreflightError.toString() || '';
+                        
+                        // Check for treasury account error
+                        if (skipErrorMsg.includes('attempt to debit') || skipErrorMsg.includes('no record of a prior credit')) {
+                            throw new Error(`Transaction failed: Treasury token account has insufficient balance or doesn't exist. Please make a purchase first to fund the treasury, or contact support if purchases have already been made.`);
+                        }
                         
                         // Try to get logs if it's a SendTransactionError
                         let detailedError = skipErrorMsg;
