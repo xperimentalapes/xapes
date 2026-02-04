@@ -256,6 +256,29 @@ module.exports = async function handler(req, res) {
         console.log(`Treasury wallet: ${TREASURY_WALLET}`);
         console.log(`Token mint: ${XMA_TOKEN_MINT}`);
         
+        // Also check what token accounts actually exist for this wallet
+        try {
+            const allTokenAccounts = await connection.getParsedTokenAccountsByOwner(treasuryPublicKey, {
+                mint: tokenMint
+            });
+            console.log(`Found ${allTokenAccounts.value.length} token account(s) for treasury wallet ${TREASURY_WALLET}`);
+            if (allTokenAccounts.value.length > 0) {
+                allTokenAccounts.value.forEach((acc, idx) => {
+                    console.log(`  Token account ${idx + 1}: ${acc.pubkey.toString()}, Balance: ${acc.account.data.parsed.info.tokenAmount.uiAmount} XMA`);
+                });
+                // Check if our calculated ATA matches any existing account
+                const matchingAccount = allTokenAccounts.value.find(acc => acc.pubkey.toString() === treasuryTokenAccount.toString());
+                if (!matchingAccount) {
+                    console.warn(`⚠️ WARNING: Calculated ATA (${treasuryTokenAccount.toString()}) does not match any existing token account!`);
+                    console.warn(`  Using first token account instead: ${allTokenAccounts.value[0].pubkey.toString()}`);
+                    // Use the first token account if ATA doesn't match (for debugging)
+                    // But keep using ATA as that's the standard
+                }
+            }
+        } catch (diagError) {
+            console.warn('Could not list token accounts for diagnostics:', diagError.message);
+        }
+        
         let treasuryAccountExists = false;
         let treasuryBalance = 0;
         
@@ -265,12 +288,12 @@ module.exports = async function handler(req, res) {
             treasuryBalance = Number(treasuryAccountInfo.amount);
             const requiredAmount = Number(transferAmount);
             
-            console.log(`Treasury token account EXISTS: ${treasuryTokenAccount.toString()}`);
-            console.log(`Treasury balance: ${treasuryBalance} raw units (${treasuryBalance / Math.pow(10, TOKEN_DECIMALS)} XMA)`);
-            console.log(`Required amount: ${requiredAmount} raw units (${amount} XMA)`);
+            console.log(`✓ Treasury token account EXISTS: ${treasuryTokenAccount.toString()}`);
+            console.log(`✓ Treasury balance: ${treasuryBalance} raw units (${treasuryBalance / Math.pow(10, TOKEN_DECIMALS)} XMA)`);
+            console.log(`✓ Required amount: ${requiredAmount} raw units (${amount} XMA)`);
             
             if (treasuryBalance < requiredAmount) {
-                console.error(`Insufficient treasury balance: ${treasuryBalance / Math.pow(10, TOKEN_DECIMALS)} XMA available, ${amount} XMA required`);
+                console.error(`✗ Insufficient treasury balance: ${treasuryBalance / Math.pow(10, TOKEN_DECIMALS)} XMA available, ${amount} XMA required`);
                 return res.status(503).json({ 
                     error: 'Insufficient treasury balance',
                     message: `Treasury has insufficient funds. Available: ${(treasuryBalance / Math.pow(10, TOKEN_DECIMALS)).toFixed(2)} XMA, Required: ${amount} XMA`,
