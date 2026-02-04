@@ -1170,6 +1170,83 @@
     color: var(--primary-color);
 }
 
+/* Desktop - Scale up with increased padding */
+@media (min-width: 1025px) {
+    .slots-container {
+        padding: 20px;
+        padding-top: 100px;
+    }
+    
+    .slot-machine-wrapper {
+        gap: 16px;
+        padding: 0 20px;
+    }
+    
+    .game-stats-bar {
+        padding: 16px 20px;
+        gap: 12px;
+        border-radius: 12px;
+    }
+    
+    .game-totals-header-text {
+        font-size: 16px;
+    }
+    
+    .grand-total-item .grand-total-label {
+        font-size: 12px;
+    }
+    
+    .grand-total-item .grand-total-value {
+        font-size: 20px;
+    }
+    
+    .stat-label {
+        font-size: 12px;
+    }
+    
+    .stat-value {
+        font-size: 18px;
+    }
+    
+    .slot-machine-main {
+        padding: 20px;
+        gap: 20px;
+        border-radius: 16px;
+    }
+    
+    .reels-container {
+        gap: 20px;
+    }
+    
+    .controls-panel {
+        padding: 16px 20px;
+        gap: 16px;
+        border-radius: 12px;
+    }
+    
+    .control-group label {
+        font-size: 14px;
+    }
+    
+    .control-group input {
+        padding: 12px 16px;
+        font-size: 18px;
+    }
+    
+    .btn {
+        padding: 16px 24px;
+        font-size: 16px;
+        border-radius: 8px;
+    }
+    
+    .btn-win-percent-desktop,
+    .btn-leaderboard-desktop {
+        padding: 10px 20px;
+        font-size: 14px;
+        height: auto;
+    }
+}
+
 /* Responsive - Mobile Portrait */
 @media (max-width: 1024px) {
     .slots-container {
