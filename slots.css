@@ -141,37 +141,6 @@
     color: var(--text-primary);
 }
 
-.stat-item-grand-totals {
-    flex: 1 1 100%;
-    min-width: 200px;
-}
-
-.grand-totals {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    margin-top: 4px;
-}
-
-.grand-total-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 14px;
-}
-
-.grand-total-label {
-    color: var(--text-secondary);
-    font-weight: 500;
-    font-size: 12px;
-}
-
-.grand-total-value {
-    color: var(--text-primary);
-    font-weight: 700;
-    font-size: 14px;
-}
-
 /* Slot Machine Main */
 .slot-machine-main {
     position: relative;
@@ -529,11 +498,6 @@
     font-size: 28px;
     font-weight: 800;
     box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
 }
 
 .btn-spin:hover:not(:disabled) {
@@ -591,46 +555,6 @@
 .btn-win-percent-desktop:hover {
     background: rgba(245, 158, 11, 0.1);
     transform: translateY(-1px);
-}
-
-.btn-leaderboard-desktop {
-    background: var(--bg-card);
-    color: #F59E0B;
-    border: 2px solid #F59E0B;
-    padding: 8px;
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    flex: 0 0 auto;
-}
-
-.btn-leaderboard-desktop:hover {
-    background: rgba(245, 158, 11, 0.1);
-    transform: translateY(-1px);
-}
-
-.btn-leaderboard-desktop svg {
-    width: 20px;
-    height: 20px;
-}
-
-.spin-button-main {
-    font-size: 28px;
-    font-weight: 800;
-    line-height: 1;
-}
-
-.spin-button-hint {
-    font-size: 10px;
-    color: rgba(255, 255, 255, 0.8);
-    text-align: center;
-    font-weight: 500;
-    line-height: 1;
 }
 
 /* Prize Modal */
@@ -1299,68 +1223,16 @@
         order: 3 !important;
     }
     
-    .game-stats-bar .stat-item-grand-totals {
-        flex: 0 0 100% !important;
-        order: 6 !important;
-        margin-top: 4px !important;
-    }
-    
-    .grand-totals {
-        flex-direction: row !important;
-        justify-content: center !important;
-        gap: 12px !important;
-        flex-wrap: wrap !important;
-    }
-    
-    .grand-total-item {
-        font-size: 12px !important;
-    }
-    
-    .grand-total-label {
-        font-size: 10px !important;
-    }
-    
-    .grand-total-value {
-        font-size: 12px !important;
-    }
-    
     .game-stats-bar .btn-win-percent-desktop {
-        flex: 0 0 auto !important;
-        padding: 6px 10px !important;
-        font-size: 11px !important;
+        flex: 0 0 calc(50% - 3px) !important;
+        padding: 6px 12px !important;
+        font-size: 14px !important; /* Bigger but not too big */
         font-weight: 700 !important;
-        order: 4 !important;
-        width: auto !important;
-        max-width: none !important;
-        margin: 0 !important;
-    }
-    
-    .game-stats-bar .btn-leaderboard-desktop {
-        flex: 0 0 auto !important;
-        order: 4 !important;
-        width: 28px !important;
-        height: 28px !important;
-        padding: 4px !important;
-        margin: 0 0 0 4px !important;
+        margin: 0 auto !important; /* Center horizontally */
         align-self: center !important;
-    }
-    
-    /* Center both buttons together in their column */
-    .game-stats-bar .stat-item:nth-child(3) ~ .btn-win-percent-desktop {
-        margin-left: auto !important;
-    }
-    
-    .game-stats-bar .btn-win-percent-desktop ~ .btn-leaderboard-desktop {
-        margin-right: auto !important;
-    }
-    
-    .game-stats-bar .btn-leaderboard-desktop svg {
-        width: 14px !important;
-        height: 14px !important;
-    }
-    
-    .spin-button-hint {
-        font-size: 9px !important;
+        order: 4 !important;
+        width: fit-content !important;
+        max-width: 100% !important;
     }
     
     .game-stats-bar .stat-label {
@@ -1515,197 +1387,5 @@
     
     .prize-small-print {
         font-size: 11px;
-    }
-    
-    .spin-button-hint {
-        font-size: 9px !important;
-    }
-}
-
-/* Leaderboard Modal */
-.leaderboard-modal {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.95);
-    z-index: 10000;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-}
-
-.leaderboard-modal.show {
-    display: flex;
-}
-
-.leaderboard-modal-content {
-    background: var(--bg-primary);
-    border-radius: 16px;
-    max-width: 800px;
-    width: 100%;
-    max-height: 90vh;
-    overflow-y: auto;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-    border: 1px solid var(--border-color);
-    display: flex;
-    flex-direction: column;
-    opacity: 1;
-}
-
-.leaderboard-modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 16px 24px;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.leaderboard-modal-header h2 {
-    margin: 0;
-    color: var(--text-primary);
-    font-size: 24px;
-    font-weight: 700;
-}
-
-.leaderboard-modal-body {
-    padding: 24px;
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-}
-
-.leaderboard-controls {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 20px;
-}
-
-.leaderboard-controls label {
-    color: var(--text-primary);
-    font-weight: 600;
-    font-size: 14px;
-}
-
-.leaderboard-sort {
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
-    color: var(--text-primary);
-    padding: 8px 12px;
-    border-radius: 8px;
-    font-size: 14px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.leaderboard-sort:hover {
-    border-color: #F59E0B;
-}
-
-.leaderboard-sort:focus {
-    outline: none;
-    border-color: #F59E0B;
-    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
-}
-
-.leaderboard-loading,
-.leaderboard-error {
-    text-align: center;
-    padding: 40px;
-    color: var(--text-secondary);
-}
-
-.leaderboard-error {
-    color: #EF4444;
-}
-
-.leaderboard-list {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.leaderboard-item {
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
-    padding: 16px;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    transition: all 0.2s ease;
-}
-
-.leaderboard-item:hover {
-    border-color: #F59E0B;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.leaderboard-rank {
-    font-size: 20px;
-    font-weight: 700;
-    color: #F59E0B;
-    min-width: 40px;
-    text-align: center;
-}
-
-.leaderboard-wallet {
-    font-family: 'Courier New', monospace;
-    font-size: 14px;
-    color: var(--text-primary);
-    font-weight: 600;
-    flex: 1;
-}
-
-.leaderboard-stats {
-    display: flex;
-    gap: 24px;
-    flex-wrap: wrap;
-}
-
-.leaderboard-stat {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.leaderboard-stat .stat-label {
-    font-size: 11px;
-    color: var(--text-secondary);
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.leaderboard-stat .stat-value {
-    font-size: 16px;
-    color: var(--text-primary);
-    font-weight: 700;
-}
-
-@media (max-width: 768px) {
-    .leaderboard-modal-content {
-        max-width: 95%;
-        max-height: 95vh;
-    }
-    
-    .leaderboard-item {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 12px;
-    }
-    
-    .leaderboard-stats {
-        width: 100%;
-        justify-content: space-between;
-    }
-    
-    .leaderboard-rank {
-        align-self: flex-start;
     }
 }
