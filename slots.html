@@ -202,6 +202,28 @@
         </div>
     </div>
 
+    <!-- Leaderboard Modal -->
+    <div id="leaderboard-modal" class="leaderboard-modal">
+        <div class="leaderboard-modal-content">
+            <div class="leaderboard-modal-header">
+                <h2>Leaderboard</h2>
+                <button id="close-leaderboard-modal" class="close-modal-btn">&times;</button>
+            </div>
+            <div class="leaderboard-modal-body">
+                <div class="leaderboard-sort">
+                    <label for="leaderboard-sort">Sort by:</label>
+                    <select id="leaderboard-sort">
+                        <option value="spins">Most Spins</option>
+                        <option value="won">Most Won</option>
+                        <option value="winRate">Best Win %</option>
+                    </select>
+                </div>
+                <div id="leaderboard-loading" class="leaderboard-loading" style="display: none;">Loading...</div>
+                <div id="leaderboard-list" class="leaderboard-list"></div>
+            </div>
+        </div>
+    </div>
+
     <script src="slots.js"></script>
 </body>
 </html>

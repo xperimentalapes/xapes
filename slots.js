@@ -985,6 +985,10 @@ function setupLeaderboardModal() {
     const sortSelect = document.getElementById('leaderboard-sort');
     
     const openModal = async () => {
+        if (!modal) {
+            console.error('Leaderboard modal not found');
+            return;
+        }
         modal.classList.add('show');
         await loadLeaderboard('spins'); // Default sort
     };
