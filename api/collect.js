@@ -76,7 +76,8 @@ module.exports = async function handler(req, res) {
     }
 
     try {
-        const { userWallet, amount } = req.body;
+        // amount is mutable because we may override it with the DB value (source of truth)
+        let { userWallet, amount } = req.body;
 
         // Validate inputs
         if (!userWallet || !amount || amount <= 0) {

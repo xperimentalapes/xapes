@@ -544,16 +544,15 @@ function createFixedReelOrder() {
     return ordered;
 }
 
-// Generate weighted random symbol for a reel
-// Since reels have fixed order, we select a random position and return its symbol
-function getWeightedRandomSymbol() {
+// Generate weighted random position for a reel
+// We select a random index in the fixed reel order; symbol probabilities follow SYMBOL_COUNTS
+function getWeightedRandomPosition() {
     // Use the pre-created fixed order (same for all reels)
     if (!FIXED_REEL_ORDER) {
         FIXED_REEL_ORDER = createFixedReelOrder();
     }
     // Select random position in the reel (this naturally gives weighted probability)
-    const randomPosition = Math.floor(Math.random() * FIXED_REEL_ORDER.length);
-    return FIXED_REEL_ORDER[randomPosition];
+    return Math.floor(Math.random() * FIXED_REEL_ORDER.length);
 }
 
 // Spin
@@ -578,17 +577,20 @@ async function spin() {
         }
     }
     
-    // Generate weighted random results based on symbol distribution
-    const results = [
-        getWeightedRandomSymbol(),
-        getWeightedRandomSymbol(),
-        getWeightedRandomSymbol()
+    // Generate weighted random positions based on symbol distribution
+    const resultPositions = [
+        getWeightedRandomPosition(),
+        getWeightedRandomPosition(),
+        getWeightedRandomPosition()
     ];
     
-    // Stop reels with delay for visual effect
-    setTimeout(() => stopReel(1, results[0]), 1000);
-    setTimeout(() => stopReel(2, results[1]), 1500);
-    setTimeout(() => stopReel(3, results[2]), 2000);
+    // Derive symbol indices from positions for win calculation
+    const results = resultPositions.map(pos => FIXED_REEL_ORDER[pos]);
+    
+    // Stop reels with delay for visual effect, positioning the chosen symbol in the center
+    setTimeout(() => stopReel(1, resultPositions[0]), 1000);
+    setTimeout(() => stopReel(2, resultPositions[1]), 1500);
+    setTimeout(() => stopReel(3, resultPositions[2]), 2000);
     
     // Calculate win after all reels stop
     setTimeout(() => {
@@ -600,52 +602,20 @@ async function spin() {
     }, 2500);
 }
 
-// Stop Reel
-function stopReel(reelNum, symbolIndex) {
+// Stop Reel - position a specific symbol index from the reel strip in the center
+function stopReel(reelNum, targetPosition) {
     const reel = document.getElementById(`reel-${reelNum}`);
     const strip = reel.querySelector('.reel-strip');
     
     reel.classList.remove('spinning');
     reel.classList.add('stopping');
     
-    // Get all symbols
-    const symbols = strip.querySelectorAll('.reel-symbol');
-    const centerIndex = 18; // Center symbol index (out of 36)
-    
-    // Update the center symbol to show the result
-    if (symbols[centerIndex]) {
-        const imageNumber = 8 - symbolIndex;
-        const img = symbols[centerIndex].querySelector('.symbol-image');
-        if (img) {
-            img.src = `/images/symbols/${imageNumber}.png`;
-            img.alt = ''; // Empty alt to prevent text fallback
-            img.onerror = function() {
-                console.error(`Failed to load image: /images/symbols/${imageNumber}.png`);
-                this.style.display = 'none';
-            };
-        } else {
-            // If no image exists, create one
-            symbols[centerIndex].innerHTML = '';
-            const newImg = document.createElement('img');
-            newImg.src = `/images/symbols/${imageNumber}.png`;
-            newImg.alt = ''; // Empty alt to prevent text fallback
-            newImg.className = 'symbol-image';
-            newImg.onerror = function() {
-                console.error(`Failed to load image: /images/symbols/${imageNumber}.png`);
-                this.style.display = 'none';
-            };
-            symbols[centerIndex].appendChild(newImg);
-        }
-    }
-    
     // Calculate position using pixels for accuracy
     const reelHeight = reel.offsetHeight;
-    // Position so center symbol (index 18) is centered on winline
-    // This shows: bottom half of symbol 17, full symbol 18, top half of symbol 19
-    // Symbol 18's center is at (centerIndex * reelHeight) + (reelHeight / 2) in the strip
-    // We want it at reelHeight / 2 in the visible reel
-    // So: offset = -(centerIndex * reelHeight)
-    const offset = -(centerIndex * reelHeight);
+    // Position so the chosen symbol (at targetPosition) is centered on the winline
+    // Each symbol occupies exactly reelHeight in the strip, so:
+    // offset = -(targetPosition * reelHeight)
+    const offset = -(targetPosition * reelHeight);
     strip.style.transform = `translateY(${offset}px)`;
     strip.style.transition = 'transform 0.5s ease-out';
 }
