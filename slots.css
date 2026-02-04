@@ -92,10 +92,10 @@
     display: none;
 }
 
-/* Game Stats Bar - 2x2 grid */
+/* Game Stats Bar - Header + 2x2 grid */
 .game-stats-bar {
-    display: grid;
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
     gap: 8px;
     background: var(--bg-card);
     border: 1px solid var(--border-color);
@@ -106,6 +106,21 @@
     max-width: 100%;
     box-sizing: border-box;
     min-height: 200px;
+}
+
+/* Game Totals Header */
+.game-totals-header {
+    text-align: center;
+    width: 100%;
+    margin-bottom: 4px;
+}
+
+.game-totals-header-text {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
 }
 
 /* 2x2 grid */
