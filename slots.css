@@ -125,7 +125,9 @@
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
     gap: 8px;
+    text-align: center;
 }
 
 .stat-label {
@@ -133,12 +135,14 @@
     color: var(--text-secondary);
     text-transform: uppercase;
     letter-spacing: 0.05em;
+    text-align: center;
 }
 
 .stat-value {
     font-size: 20px;
     font-weight: 700;
     color: var(--text-primary);
+    text-align: center;
 }
 
 /* Slot Machine Main */
@@ -586,18 +590,35 @@
     height: 20px;
 }
 
-/* Grand Totals - Stack vertically */
+/* Grand Totals - 2 column layout with labels on top, values below */
 .grand-totals {
     display: flex;
     flex-direction: column;
     gap: 4px;
     align-items: center;
+    width: 100%;
 }
 
-.grand-total-item {
+.grand-totals-labels {
     display: flex;
-    align-items: center;
-    gap: 8px;
+    flex-direction: row;
+    gap: 16px;
+    justify-content: center;
+    width: 100%;
+}
+
+.grand-totals-values {
+    display: flex;
+    flex-direction: row;
+    gap: 16px;
+    justify-content: center;
+    width: 100%;
+}
+
+.grand-totals-labels .grand-total-label,
+.grand-totals-values .grand-total-value {
+    flex: 0 0 auto;
+    text-align: center;
 }
 
 .grand-total-label {
@@ -1067,8 +1088,19 @@
         display: flex !important;
         flex-direction: column !important;
         align-items: center !important;
+        justify-content: center !important;
         order: 1 !important;
         margin-bottom: 4px;
+    }
+    
+    .game-stats-bar .stat-item-grand-totals .grand-totals {
+        width: 100%;
+        max-width: 300px; /* Limit width so columns don't spread too far */
+    }
+    
+    .game-stats-bar .stat-item-grand-totals .grand-totals-labels,
+    .game-stats-bar .stat-item-grand-totals .grand-totals-values {
+        gap: 20px; /* More space between columns on mobile */
     }
     
     /* Row 2: Balance - left half */
@@ -1077,6 +1109,8 @@
         display: flex !important;
         flex-direction: column !important;
         align-items: center !important;
+        justify-content: center !important;
+        text-align: center !important;
         order: 2 !important;
     }
     
@@ -1086,6 +1120,8 @@
         display: flex !important;
         flex-direction: column !important;
         align-items: center !important;
+        justify-content: center !important;
+        text-align: center !important;
         order: 3 !important;
     }
     
@@ -1096,6 +1132,8 @@
         display: flex !important;
         flex-direction: column !important;
         align-items: center !important;
+        justify-content: center !important;
+        text-align: center !important;
         order: 4 !important;
     }
     
@@ -1298,8 +1336,19 @@
         display: flex !important;
         flex-direction: column !important;
         align-items: center !important;
+        justify-content: center !important;
         order: 1 !important;
         margin-bottom: 2px;
+    }
+    
+    .game-stats-bar .stat-item-grand-totals .grand-totals {
+        width: 100%;
+        max-width: 280px; /* Slightly smaller on very small screens */
+    }
+    
+    .game-stats-bar .stat-item-grand-totals .grand-totals-labels,
+    .game-stats-bar .stat-item-grand-totals .grand-totals-values {
+        gap: 16px; /* Less space on very small screens */
     }
     
     /* Row 2: Balance - left half */
@@ -1308,6 +1357,8 @@
         display: flex !important;
         flex-direction: column !important;
         align-items: center !important;
+        justify-content: center !important;
+        text-align: center !important;
         order: 2 !important;
     }
     
@@ -1317,6 +1368,8 @@
         display: flex !important;
         flex-direction: column !important;
         align-items: center !important;
+        justify-content: center !important;
+        text-align: center !important;
         order: 3 !important;
     }
     
@@ -1327,6 +1380,8 @@
         display: flex !important;
         flex-direction: column !important;
         align-items: center !important;
+        justify-content: center !important;
+        text-align: center !important;
         order: 4 !important;
     }
     
