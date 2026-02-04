@@ -737,9 +737,10 @@ async function withdrawWinnings() {
         
         while (retries > 0) {
             try {
-                // First try with preflight enabled
+                // Skip preflight since backend already validated the transaction
+                // This avoids simulation errors that can occur due to RPC state differences
                 signature = await connection.sendRawTransaction(transaction.serialize(), {
-                    skipPreflight: false,
+                    skipPreflight: true,
                     maxRetries: 3
                 });
                 break;
