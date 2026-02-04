@@ -199,25 +199,7 @@
     padding: 1px;
 }
 
-/* Top row items have grand totals above regular stats - Compacted */
-.game-stats-grid > .stat-item:nth-child(1) .grand-total-label,
-.game-stats-grid > .stat-item:nth-child(2) .grand-total-label {
-    font-size: clamp(8px, 1.5vw, 10px);
-    color: var(--text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-    margin-bottom: 1px;
-    line-height: 1.1;
-}
-
-.game-stats-grid > .stat-item:nth-child(1) .grand-total-value,
-.game-stats-grid > .stat-item:nth-child(2) .grand-total-value {
-    font-size: clamp(11px, 2vw, 13px);
-    font-weight: 700;
-    color: var(--text-primary);
-    margin-bottom: 3px;
-    line-height: 1.2;
-}
+/* Player stats grid - grand totals are now in separate section above */
 
 /* Top Left: Balance */
 .game-stats-grid > .stat-item:nth-child(1) {
