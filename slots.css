@@ -146,6 +146,12 @@
     align-items: center;
     justify-content: center;
     gap: 8px;
+    white-space: nowrap;
+}
+
+.stat-item-buttons button {
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .game-stats-bar .btn-win-percent-desktop {
