@@ -68,21 +68,28 @@
                 <div class="game-totals-header">
                     <span class="game-totals-header-text">GAME TOTALS</span>
                 </div>
-                <!-- Horizontal divider under Game Totals -->
-                <div class="game-totals-divider"></div>
-                <!-- 2x2 Grid -->
-                <div class="game-stats-grid">
-                    <!-- Top Left: SPINS above Balance -->
-                    <div class="stat-item">
+                <!-- Grand Totals (Universal Stats) -->
+                <div class="grand-totals-row">
+                    <div class="grand-total-item">
                         <span class="grand-total-label">SPINS</span>
                         <span id="grand-total-spins" class="grand-total-value">0</span>
+                    </div>
+                    <div class="grand-total-item">
+                        <span class="grand-total-label">WON</span>
+                        <span id="grand-total-won" class="grand-total-value">0 XMA</span>
+                    </div>
+                </div>
+                <!-- Horizontal divider under Grand Totals -->
+                <div class="game-totals-divider"></div>
+                <!-- Player Stats Grid -->
+                <div class="game-stats-grid">
+                    <!-- Top Left: Balance -->
+                    <div class="stat-item">
                         <span class="stat-label">Balance:</span>
                         <span id="xma-balance" class="stat-value">0 XMA</span>
                     </div>
-                    <!-- Top Right: WON above Total Won -->
+                    <!-- Top Right: Total Won -->
                     <div class="stat-item">
-                        <span class="grand-total-label">WON</span>
-                        <span id="grand-total-won" class="grand-total-value">0 XMA</span>
                         <span class="stat-label">Total Won:</span>
                         <span id="total-won" class="stat-value">0 XMA</span>
                     </div>
