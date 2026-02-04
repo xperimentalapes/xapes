@@ -350,6 +350,13 @@ module.exports = async function handler(req, res) {
         }
 
         // Create transfer instruction (from treasury to user)
+        // Log the accounts being used for debugging
+        console.log(`Creating transfer instruction:`);
+        console.log(`  From (treasury token account): ${treasuryTokenAccount.toString()}`);
+        console.log(`  To (user token account): ${userTokenAccount.toString()}`);
+        console.log(`  Authority (treasury wallet): ${treasuryPublicKey.toString()}`);
+        console.log(`  Amount: ${transferAmount.toString()} raw units (${amount} XMA)`);
+        
         const transferInstruction = createTransferInstruction(
             treasuryTokenAccount,
             userTokenAccount,
@@ -363,6 +370,13 @@ module.exports = async function handler(req, res) {
 
         // Sign transaction with treasury keypair
         transaction.sign(treasuryKeypair);
+        
+        // Log transaction details for debugging
+        console.log(`Transaction created:`);
+        console.log(`  Instructions: ${transaction.instructions.length}`);
+        console.log(`  Signers: ${transaction.signatures.length}`);
+        console.log(`  Fee payer: ${transaction.feePayer.toString()}`);
+        console.log(`  Recent blockhash: ${transaction.recentBlockhash}`);
 
         // Serialize transaction
         const serializedTransaction = transaction.serialize({
