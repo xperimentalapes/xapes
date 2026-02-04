@@ -1489,6 +1489,120 @@
     }
 }
 
+/* Very small viewports - optimize for Phantom browser (600px or less height) */
+@media (max-height: 600px) {
+    .slots-container {
+        padding: 2px !important;
+        padding-top: 70px !important;
+    }
+    
+    .slot-machine-wrapper {
+        gap: 4px !important;
+        padding: 0 2px !important;
+    }
+    
+    .game-stats-bar {
+        padding: 4px 6px !important;
+        gap: 2px !important;
+        min-height: 100px !important;
+        border-radius: 6px !important;
+    }
+    
+    .game-totals-header-text {
+        font-size: 9px !important;
+        margin-bottom: 1px !important;
+    }
+    
+    .game-stats-grid {
+        gap: 2px !important;
+    }
+    
+    .game-stats-grid > .stat-item {
+        gap: 1px !important;
+    }
+    
+    .grand-total-label {
+        font-size: 9px !important;
+    }
+    
+    .grand-total-value {
+        font-size: 12px !important;
+    }
+    
+    .stat-label {
+        font-size: 9px !important;
+    }
+    
+    .stat-value {
+        font-size: 14px !important;
+    }
+    
+    .btn-win-percent-desktop,
+    .btn-leaderboard-desktop {
+        padding: 4px 8px !important;
+        font-size: 10px !important;
+        height: 28px !important;
+    }
+    
+    .btn-leaderboard-desktop svg {
+        width: 12px !important;
+        height: 12px !important;
+    }
+    
+    .slot-machine-main {
+        padding: 4px !important;
+        gap: 4px !important;
+        border-radius: 8px !important;
+    }
+    
+    .reels-container {
+        gap: 4px !important;
+    }
+    
+    .reel-wrapper {
+        max-height: 120px !important;
+    }
+    
+    .reel {
+        min-height: 100px !important;
+        border-radius: 8px !important;
+        border-width: 1px !important;
+    }
+    
+    .controls-panel {
+        padding: 6px !important;
+        gap: 6px !important;
+        border-radius: 8px !important;
+    }
+    
+    .control-group {
+        gap: 4px !important;
+    }
+    
+    .control-group label {
+        font-size: 12px !important;
+    }
+    
+    .control-group input {
+        padding: 6px 8px !important;
+        font-size: 14px !important;
+    }
+    
+    .inputs-row {
+        gap: 6px !important;
+    }
+    
+    .button-group {
+        gap: 6px !important;
+    }
+    
+    .btn {
+        padding: 8px 6px !important;
+        font-size: 14px !important;
+        min-height: 40px !important;
+    }
+}
+
 /* Hide scrollbars */
 .slots-page::-webkit-scrollbar {
     display: none;
