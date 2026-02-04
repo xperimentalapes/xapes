@@ -56,10 +56,13 @@ module.exports = async function handler(req, res) {
             return res.status(400).json({ error: 'Invalid wallet address format' });
         }
 
-        // Verify transaction signature exists and is valid
-        try {
-            new PublicKey(signature);
-        } catch (error) {
+        // Validate signature format (should be a non-empty string)
+        if (typeof signature !== 'string' || signature.trim().length === 0) {
+            return res.status(400).json({ error: 'Invalid transaction signature format' });
+        }
+        
+        // Basic validation: signature should be base58-like (alphanumeric, typically 87-88 chars)
+        if (signature.length < 80 || signature.length > 100) {
             return res.status(400).json({ error: 'Invalid transaction signature format' });
         }
 
