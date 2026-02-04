@@ -900,9 +900,9 @@ async function withdrawWinnings() {
                     } else if (finalStatus && finalStatus.value && finalStatus.value.err) {
                         throw new Error(`Transaction failed: ${JSON.stringify(finalStatus.value.err)}`);
                     } else {
-                        // Still pending or unknown - proceed optimistically
-                        console.warn('Transaction status still unknown after timeout, proceeding optimistically');
-                        transactionConfirmed = true; // Proceed optimistically - user can check manually
+                        // Still pending or unknown - DO NOT proceed optimistically
+                        console.error('Transaction status still unknown after timeout');
+                        throw new Error('Transaction confirmation timed out. Please check the transaction signature manually to verify if it succeeded.');
                     }
                 }
             }
@@ -923,14 +923,12 @@ async function withdrawWinnings() {
                         // Transaction failed
                         throw new Error(`Transaction failed: ${JSON.stringify(status.value.err)}`);
                     } else {
-                        // Still pending or unknown - proceed optimistically
-                        console.warn('Transaction status unknown, proceeding optimistically');
-                        transactionConfirmed = true; // Proceed optimistically - user can check manually
+                        // Still pending or unknown - DO NOT proceed optimistically
+                        throw new Error(`Transaction status unknown after timeout. Signature: ${signature}. Please check manually on Solscan.`);
                     }
                 } catch (statusError) {
-                    // If we can't check status, assume it might have succeeded
-                    console.warn('Could not verify transaction status, proceeding optimistically');
-                    transactionConfirmed = true; // Proceed optimistically - user can check manually
+                    // If we can't check status, DO NOT assume success
+                    throw new Error(`Could not verify transaction status. Signature: ${signature}. Please check manually on Solscan to see if it succeeded.`);
                 }
             } else {
                 // Other confirmation error - rethrow
