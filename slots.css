@@ -1173,13 +1173,19 @@
 /* Desktop - Scale up with increased padding */
 @media (min-width: 1025px) {
     .slots-container {
-        padding: 20px;
-        padding-top: 100px;
+        padding: 0;
+        padding-top: 80px;
+        height: 100vh;
+        max-height: 100vh;
+        grid-template-rows: 1fr 1fr 1fr;
+        gap: 20px;
     }
     
     .slot-machine-wrapper {
         gap: 16px;
-        padding: 0 20px;
+        padding: 0;
+        height: 100%;
+        max-height: 100%;
     }
     
     .game-stats-bar {
@@ -1212,6 +1218,8 @@
         padding: 20px;
         gap: 20px;
         border-radius: 16px;
+        height: 100%;
+        max-height: 100%;
     }
     
     .reels-container {
@@ -1222,6 +1230,8 @@
         padding: 16px 20px;
         gap: 16px;
         border-radius: 12px;
+        height: 100%;
+        max-height: 100%;
     }
     
     .control-group label {
