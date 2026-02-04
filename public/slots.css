@@ -1729,6 +1729,67 @@
         padding: 0 2px !important;
     }
     
+    /* Leaderboard modal for very small screens */
+    .leaderboard-modal {
+        padding: 4px !important;
+    }
+    
+    .leaderboard-modal-content {
+        max-height: 95vh !important;
+        border-radius: 8px !important;
+    }
+    
+    .leaderboard-modal-header {
+        padding: 8px !important;
+    }
+    
+    .leaderboard-modal-header h2 {
+        font-size: 14px !important;
+    }
+    
+    .leaderboard-modal-body {
+        padding: 8px !important;
+    }
+    
+    .leaderboard-sort {
+        margin-bottom: 8px !important;
+        gap: 4px !important;
+    }
+    
+    .leaderboard-sort label {
+        font-size: 10px !important;
+    }
+    
+    .leaderboard-sort select {
+        padding: 4px 8px !important;
+        font-size: 11px !important;
+    }
+    
+    .leaderboard-item {
+        padding: 8px !important;
+        gap: 6px !important;
+    }
+    
+    .leaderboard-rank {
+        font-size: 14px !important;
+    }
+    
+    .leaderboard-wallet {
+        font-size: 11px !important;
+    }
+    
+    .leaderboard-stats {
+        gap: 6px !important;
+    }
+    
+    .leaderboard-stat .stat-label {
+        font-size: 9px !important;
+    }
+    
+    .leaderboard-stat .stat-value {
+        font-size: 12px !important;
+    }
+    
     .game-stats-bar {
         padding: 4px 6px !important;
         gap: 2px !important;
