@@ -733,7 +733,17 @@ async function withdrawWinnings() {
 
         if (!response.ok) {
             const errorData = await response.json();
-            const errorMessage = errorData.error || errorData.message || 'Failed to create collect transaction';
+            let errorMessage = errorData.error || errorData.message || 'Failed to create collect transaction';
+            
+            // Add more details if available
+            if (errorData.treasuryAccount) {
+                errorMessage += ` (Treasury account: ${errorData.treasuryAccount})`;
+            }
+            if (errorData.availableBalance !== undefined) {
+                errorMessage += ` (Available: ${errorData.availableBalance} XMA)`;
+            }
+            
+            console.error('Collect API error:', errorData);
             throw new Error(errorMessage);
         }
 
@@ -746,23 +756,92 @@ async function withdrawWinnings() {
         const transaction = Transaction.from(transactionBytes);
 
         // Send the transaction with retry logic for rate limits
+        // Try with preflight first, then without if it fails (for mobile/Phantom browser compatibility)
         let retries = 3;
         let signature;
+        let lastError = null;
+        
         while (retries > 0) {
             try {
+                // First try with preflight enabled
                 signature = await connection.sendRawTransaction(transaction.serialize(), {
                     skipPreflight: false,
                     maxRetries: 3
                 });
                 break;
             } catch (error) {
-                retries--;
-                if (retries === 0 || (!error.message || !error.message.includes('403') && !error.message.includes('429'))) {
-                    throw error;
+                lastError = error;
+                const errorMsg = error.message || error.toString() || '';
+                
+                // If this is a SendTransactionError, try to pull full simulation logs
+                try {
+                    if (typeof error.getLogs === 'function') {
+                        const logs = await error.getLogs(connection);
+                        if (logs && logs.length) {
+                            console.error('Collect transaction simulation logs (preflight):', logs);
+                        } else {
+                            console.error('Collect transaction simulation logs (preflight): <no logs>');
+                        }
+                    } else if (Array.isArray(error.logs)) {
+                        console.error('Collect transaction simulation logs (preflight, from error.logs):', error.logs);
+                    }
+                } catch (logErr) {
+                    console.error('Failed to fetch simulation logs for collect (preflight):', logErr);
                 }
-                console.warn(`RPC rate limited on send, retrying... (${3 - retries}/3)`);
-                await new Promise(resolve => setTimeout(resolve, 1000 * (4 - retries)));
+                
+                // If it's a simulation error and we haven't tried without preflight yet, try that
+                if (errorMsg.includes('Simulation failed') || errorMsg.includes('attempt to debit')) {
+                    console.warn('Preflight simulation failed, trying without preflight...');
+                    try {
+                        signature = await connection.sendRawTransaction(transaction.serialize(), {
+                            skipPreflight: true,
+                            maxRetries: 3
+                        });
+                        break;
+                    } catch (skipPreflightError) {
+                        console.error('Transaction failed even without preflight:', skipPreflightError);
+                        const skipErrorMsg = skipPreflightError.message || skipPreflightError.toString() || '';
+                        
+                        // Try to get logs if it's a SendTransactionError
+                        let detailedError = skipErrorMsg;
+                        try {
+                            if (typeof skipPreflightError.getLogs === 'function') {
+                                const logs = await skipPreflightError.getLogs(connection);
+                                if (logs && logs.length) {
+                                    console.error('Collect transaction simulation logs (skipPreflight):', logs);
+                                    detailedError += `\nSimulation logs:\n${logs.join('\n')}`;
+                                } else {
+                                    detailedError += '\nSimulation logs: <no logs>';
+                                }
+                            } else if (Array.isArray(skipPreflightError.logs)) {
+                                console.error('Collect transaction simulation logs (skipPreflight, from error.logs):', skipPreflightError.logs);
+                                detailedError += `\nSimulation logs:\n${skipPreflightError.logs.join('\n')}`;
+                            }
+                        } catch (logErr) {
+                            console.error('Failed to fetch simulation logs for collect (skipPreflight):', logErr);
+                        }
+                        
+                        throw new Error(`Transaction simulation failed: ${detailedError}. This usually means the treasury token account doesn't exist or has insufficient balance. If you just switched treasury wallets, make sure at least one purchase has been made to create the treasury token account.`);
+                    }
+                }
+                
+                // Handle rate limiting
+                if (errorMsg.includes('403') || errorMsg.includes('429')) {
+                    retries--;
+                    if (retries > 0) {
+                        console.warn(`RPC rate limited on send, retrying... (${3 - retries}/3)`);
+                        await new Promise(resolve => setTimeout(resolve, 1000 * (4 - retries)));
+                        continue;
+                    }
+                }
+                
+                // If we get here, it's not a rate limit issue
+                throw error;
             }
+        }
+        
+        if (!signature && lastError) {
+            throw lastError;
         }
 
         // Wait for confirmation

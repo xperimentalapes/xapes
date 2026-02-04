@@ -251,33 +251,85 @@ module.exports = async function handler(req, res) {
         }
 
         // CRITICAL: Verify treasury token account exists and has sufficient balance
+        console.log(`Checking treasury token account: ${treasuryTokenAccount.toString()}`);
+        console.log(`Treasury wallet: ${TREASURY_WALLET}`);
+        console.log(`Token mint: ${XMA_TOKEN_MINT}`);
+        
+        let treasuryAccountExists = false;
+        let treasuryBalance = 0;
+        
         try {
             const treasuryAccountInfo = await getAccount(connection, treasuryTokenAccount);
-            const treasuryBalance = Number(treasuryAccountInfo.amount);
+            treasuryAccountExists = true;
+            treasuryBalance = Number(treasuryAccountInfo.amount);
             const requiredAmount = Number(transferAmount);
+            
+            console.log(`Treasury token account EXISTS: ${treasuryTokenAccount.toString()}`);
+            console.log(`Treasury balance: ${treasuryBalance} raw units (${treasuryBalance / Math.pow(10, TOKEN_DECIMALS)} XMA)`);
+            console.log(`Required amount: ${requiredAmount} raw units (${amount} XMA)`);
             
             if (treasuryBalance < requiredAmount) {
                 console.error(`Insufficient treasury balance: ${treasuryBalance / Math.pow(10, TOKEN_DECIMALS)} XMA available, ${amount} XMA required`);
                 return res.status(503).json({ 
                     error: 'Insufficient treasury balance',
-                    message: `Treasury has insufficient funds. Available: ${(treasuryBalance / Math.pow(10, TOKEN_DECIMALS)).toFixed(2)} XMA, Required: ${amount} XMA`
+                    message: `Treasury has insufficient funds. Available: ${(treasuryBalance / Math.pow(10, TOKEN_DECIMALS)).toFixed(2)} XMA, Required: ${amount} XMA`,
+                    treasuryAccount: treasuryTokenAccount.toString(),
+                    availableBalance: treasuryBalance / Math.pow(10, TOKEN_DECIMALS),
+                    requiredAmount: amount
                 });
             }
             
-            console.log(`Treasury balance verified: ${treasuryBalance / Math.pow(10, TOKEN_DECIMALS)} XMA available`);
+            console.log(`✓ Treasury balance verified: ${treasuryBalance / Math.pow(10, TOKEN_DECIMALS)} XMA available`);
         } catch (accountError) {
             // Token account doesn't exist or other error
-            if (accountError.message && accountError.message.includes('could not find account')) {
-                console.error(`Treasury token account does not exist: ${treasuryTokenAccount.toString()}`);
+            const errorMsg = accountError.message || accountError.toString() || 'Unknown error';
+            console.error(`✗ Error checking treasury token account (${treasuryTokenAccount.toString()}):`, errorMsg);
+            console.error(`Full error object:`, accountError);
+            
+            // Check treasury wallet SOL balance for diagnostics
+            try {
+                const treasuryBalanceSOL = await connection.getBalance(treasuryPublicKey);
+                console.log(`Treasury wallet SOL balance: ${treasuryBalanceSOL / 1e9} SOL`);
+                
+                // Try to find any token accounts for this wallet
+                const tokenAccounts = await connection.getParsedTokenAccountsByOwner(treasuryPublicKey, {
+                    mint: tokenMint
+                });
+                console.log(`Found ${tokenAccounts.value.length} token account(s) for treasury wallet`);
+                if (tokenAccounts.value.length > 0) {
+                    console.log(`Token accounts:`, tokenAccounts.value.map(acc => ({
+                        address: acc.pubkey.toString(),
+                        balance: acc.account.data.parsed.info.tokenAmount.uiAmount
+                    })));
+                }
+            } catch (diagError) {
+                console.error('Error getting diagnostics:', diagError);
+            }
+            
+            if (errorMsg.includes('could not find account') || errorMsg.includes('Invalid param') || errorMsg.includes('not found')) {
                 return res.status(503).json({ 
                     error: 'Treasury token account not found',
-                    message: 'The treasury token account does not exist. Please contact support.'
+                    message: `The treasury token account does not exist at ${treasuryTokenAccount.toString()}. This usually means no one has purchased spins yet with the new treasury wallet. The account will be created automatically when the first purchase is made.`,
+                    treasuryAccount: treasuryTokenAccount.toString(),
+                    treasuryWallet: TREASURY_WALLET,
+                    tokenMint: XMA_TOKEN_MINT,
+                    suggestion: 'Please make a purchase first to create the treasury token account, or contact support if purchases have already been made.'
                 });
             }
-            console.error('Error checking treasury token account:', accountError);
             return res.status(500).json({ 
                 error: 'Failed to verify treasury balance',
-                message: accountError.message 
+                message: errorMsg,
+                treasuryAccount: treasuryTokenAccount.toString(),
+                details: 'Check server logs for more information'
+            });
+        }
+        
+        if (!treasuryAccountExists) {
+            return res.status(503).json({ 
+                error: 'Treasury token account not found',
+                message: `The treasury token account does not exist. Please make a purchase first to create it.`,
+                treasuryAccount: treasuryTokenAccount.toString(),
+                treasuryWallet: TREASURY_WALLET
             });
         }
 
