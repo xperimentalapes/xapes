@@ -737,12 +737,23 @@ async function withdrawWinnings() {
         
         while (retries > 0) {
             try {
-                // Skip preflight since backend already validated the transaction
-                // This avoids simulation errors that can occur due to RPC state differences
+                // Send transaction with preflight to ensure it's valid before sending
+                // This helps catch issues before the transaction is sent
                 signature = await connection.sendRawTransaction(transaction.serialize(), {
-                    skipPreflight: true,
-                    maxRetries: 3
+                    skipPreflight: false,
+                    maxRetries: 3,
+                    preflightCommitment: 'confirmed'
                 });
+                
+                console.log(`Transaction sent successfully. Signature: ${signature}`);
+                console.log(`View on Solscan: https://solscan.io/tx/${signature}`);
+                
+                // Immediately check if transaction was accepted
+                const immediateStatus = await connection.getSignatureStatus(signature);
+                if (immediateStatus && immediateStatus.value && immediateStatus.value.err) {
+                    throw new Error(`Transaction failed immediately: ${JSON.stringify(immediateStatus.value.err)}`);
+                }
+                
                 break;
             } catch (error) {
                 lastError = error;

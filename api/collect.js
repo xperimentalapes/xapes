@@ -400,12 +400,31 @@ module.exports = async function handler(req, res) {
         console.log(`  Signers: ${transaction.signatures.length}`);
         console.log(`  Fee payer: ${transaction.feePayer.toString()}`);
         console.log(`  Recent blockhash: ${transaction.recentBlockhash}`);
-
+        
+        // Verify transaction is properly signed
+        if (!transaction.signature) {
+            console.error('ERROR: Transaction is not signed!');
+            return res.status(500).json({ error: 'Transaction signing failed' });
+        }
+        
+        console.log(`Transaction signature (before serialization): ${transaction.signature.toString()}`);
+        
+        // Verify all required signatures are present
+        const requiredSignatures = transaction.signatures.filter(sig => sig.signature !== null);
+        if (requiredSignatures.length === 0) {
+            console.error('ERROR: No signatures found on transaction!');
+            return res.status(500).json({ error: 'Transaction has no signatures' });
+        }
+        
+        console.log(`Transaction has ${requiredSignatures.length} signature(s)`);
+        
         // Serialize transaction
         const serializedTransaction = transaction.serialize({
             requireAllSignatures: false,
             verifySignatures: false
         });
+        
+        console.log(`Transaction serialized: ${serializedTransaction.length} bytes`);
 
         // Note: Unclaimed rewards will be cleared in confirm-collect endpoint after transaction is confirmed
         // This prevents losing rewards if transaction fails
