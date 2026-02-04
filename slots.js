@@ -62,7 +62,9 @@ document.addEventListener('DOMContentLoaded', () => {
         setupWalletConnection();
         setupGameControls();
         setupPrizeModal();
+        setupLeaderboardModal();
         initializeReels();
+        loadGameStats(); // Load grand totals
         
         // Set default cost per spin
         document.getElementById('cost-per-spin').value = SPIN_COST;
@@ -217,6 +219,7 @@ async function setupWalletConnection() {
                     }
                     
                     await updateBalance();
+                    await loadPlayerData(); // Load saved player data from database
                     updateButtonStates();
                 }
             }
@@ -268,6 +271,7 @@ async function setupWalletConnection() {
                 }
                 
                 await updateBalance();
+                await loadPlayerData(); // Load saved player data from database
                 updateButtonStates();
             } catch (err) {
                 console.error('Wallet connection error:', err);
@@ -932,6 +936,123 @@ function setupPrizeModal() {
     });
 }
 
+// Setup Leaderboard Modal
+function setupLeaderboardModal() {
+    const leaderboardBtn = document.getElementById('leaderboard-btn-desktop');
+    const modal = document.getElementById('leaderboard-modal');
+    const closeBtn = document.getElementById('close-leaderboard-modal');
+    const sortSelect = document.getElementById('leaderboard-sort');
+    
+    const openModal = async () => {
+        modal.classList.add('show');
+        await loadLeaderboard('spins'); // Default sort
+    };
+    
+    // Open modal from button
+    if (leaderboardBtn) {
+        leaderboardBtn.addEventListener('click', openModal);
+    }
+    
+    // Close modal
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => {
+            modal.classList.remove('show');
+        });
+    }
+    
+    // Close on background click
+    if (modal) {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.classList.remove('show');
+            }
+        });
+    }
+    
+    // Close on Escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.classList.contains('show')) {
+            modal.classList.remove('show');
+        }
+    });
+    
+    // Handle sort change
+    if (sortSelect) {
+        sortSelect.addEventListener('change', (e) => {
+            loadLeaderboard(e.target.value);
+        });
+    }
+}
+
+// Load leaderboard data
+async function loadLeaderboard(sortBy = 'spins') {
+    const loadingEl = document.getElementById('leaderboard-loading');
+    const errorEl = document.getElementById('leaderboard-error');
+    const listEl = document.getElementById('leaderboard-list');
+    
+    // Show loading
+    if (loadingEl) loadingEl.style.display = 'block';
+    if (errorEl) errorEl.style.display = 'none';
+    if (listEl) listEl.innerHTML = '';
+    
+    try {
+        const response = await fetch(`/api/leaderboard?sortBy=${sortBy}&limit=100`);
+        
+        if (!response.ok) {
+            throw new Error(`Failed to load leaderboard: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.error) {
+            throw new Error(data.error);
+        }
+        
+        // Display leaderboard
+        if (listEl && data.leaderboard) {
+            if (data.leaderboard.length === 0) {
+                listEl.innerHTML = '<p style="text-align: center; color: #888; padding: 20px;">No players yet. Be the first!</p>';
+            } else {
+                listEl.innerHTML = data.leaderboard.map((player, index) => {
+                    const rank = index + 1;
+                    const winRate = player.winRate.toFixed(2);
+                    const totalWon = player.totalWon.toFixed(2);
+                    const totalWagered = player.totalWagered.toFixed(2);
+                    
+                    return `
+                        <div class="leaderboard-item">
+                            <div class="leaderboard-rank">#${rank}</div>
+                            <div class="leaderboard-wallet">${player.displayAddress}</div>
+                            <div class="leaderboard-stats">
+                                <div class="leaderboard-stat">
+                                    <span class="stat-label">Spins:</span>
+                                    <span class="stat-value">${player.totalSpins.toLocaleString()}</span>
+                                </div>
+                                <div class="leaderboard-stat">
+                                    <span class="stat-label">Won:</span>
+                                    <span class="stat-value">${totalWon} XMA</span>
+                                </div>
+                                <div class="leaderboard-stat">
+                                    <span class="stat-label">Win %:</span>
+                                    <span class="stat-value">${winRate}%</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+    } catch (error) {
+        console.error('Error loading leaderboard:', error);
+        if (errorEl) {
+            errorEl.textContent = error.message || 'Failed to load leaderboard';
+            errorEl.style.display = 'block';
+        }
+    } finally {
+        if (loadingEl) loadingEl.style.display = 'none';
+    }
+}
+
 // Update Button States
 function updateButtonStates() {
     const purchaseBtn = document.getElementById('purchase-spins');
@@ -953,4 +1074,109 @@ function updateButtonStates() {
     
     // Enable collect button when wallet connected and total won > 0, but disable if collecting
     withdrawBtn.disabled = !wallet || totalWon <= 0 || isCollecting;
+}
+
+// Database Functions
+
+// Load game stats (grand totals)
+async function loadGameStats() {
+    try {
+        const response = await fetch('/api/game-stats');
+        
+        if (!response.ok) {
+            console.error('Failed to load game stats:', response.statusText);
+            return;
+        }
+        
+        const data = await response.json();
+        
+        // Update grand totals display
+        const grandTotalSpinsEl = document.getElementById('grand-total-spins');
+        const grandTotalWonEl = document.getElementById('grand-total-won');
+        
+        if (grandTotalSpinsEl) {
+            grandTotalSpinsEl.textContent = data.grandTotalSpins.toLocaleString();
+        }
+        
+        if (grandTotalWonEl) {
+            grandTotalWonEl.textContent = `${data.grandTotalWon.toFixed(2)} XMA`;
+        }
+        
+        console.log('Game stats loaded:', data);
+    } catch (error) {
+        console.error('Error loading game stats:', error);
+        // Don't show error to user - just continue without stats
+    }
+}
+
+// Load player data from database
+let isLoadingPlayerData = false; // Prevent duplicate calls
+async function loadPlayerData() {
+    if (!wallet) return;
+    
+    // Prevent duplicate simultaneous calls
+    if (isLoadingPlayerData) {
+        console.log('loadPlayerData: Already loading, skipping duplicate call');
+        return;
+    }
+    
+    isLoadingPlayerData = true;
+    
+    try {
+        const response = await fetch(`/api/load-player?walletAddress=${encodeURIComponent(wallet)}`, {
+            signal: AbortSignal.timeout(10000) // 10 second timeout
+        });
+        
+        if (!response.ok) {
+            console.error('Failed to load player data:', response.status, response.statusText);
+            return;
+        }
+        
+        const data = await response.json();
+        
+        console.log('Player data loaded from database:', data);
+        
+        // Restore unclaimed rewards
+        if (data.unclaimedRewards > 0) {
+            totalWon = data.unclaimedRewards;
+            console.log('Restored unclaimed rewards:', data.unclaimedRewards);
+        }
+        
+        // Restore spins remaining (always restore, even if 0, to sync with database)
+        spinsRemaining = data.spinsRemaining || 0;
+        console.log('Restored spins remaining:', spinsRemaining);
+        
+        // Restore cost per spin for remaining spins
+        if (data.costPerSpin && spinsRemaining > 0) {
+            const costPerSpinInput = document.getElementById('cost-per-spin');
+            if (costPerSpinInput) {
+                costPerSpinInput.value = data.costPerSpin;
+                console.log('Restored cost per spin:', data.costPerSpin);
+            }
+        }
+        
+        // Update display and buttons
+        updateDisplay();
+        updateButtonStates();
+        
+        console.log('Player data loaded:', {
+            totalSpins: data.totalSpins,
+            totalWon: data.totalWon,
+            unclaimedRewards: data.unclaimedRewards,
+            spinsRemaining: data.spinsRemaining,
+            costPerSpin: data.costPerSpin
+        });
+    } catch (error) {
+        // Only log if it's not an abort/timeout (which are expected in some cases)
+        if (error.name === 'AbortError' || error.name === 'TimeoutError') {
+            console.warn('loadPlayerData: Request timeout or aborted');
+        } else if (error.name === 'TypeError' && error.message.includes('NetworkError')) {
+            console.warn('loadPlayerData: Network error - API may be unavailable or request was aborted');
+        } else {
+            console.error('Error loading player data:', error);
+        }
+        // Don't show error to user - just continue without saved data
+    } finally {
+        isLoadingPlayerData = false;
+    }
 }
