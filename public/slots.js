@@ -749,15 +749,34 @@ async function withdrawWinnings() {
                 
                 // If this is a SendTransactionError, try to pull full simulation logs
                 try {
+                    // Log the full error object for debugging
+                    console.error('Collect transaction error details:', {
+                        message: error.message,
+                        name: error.name,
+                        stack: error.stack,
+                        logs: error.logs,
+                        hasGetLogs: typeof error.getLogs === 'function'
+                    });
+                    
                     if (typeof error.getLogs === 'function') {
-                        const logs = await error.getLogs(connection);
-                        if (logs && logs.length) {
-                            console.error('Collect transaction simulation logs (preflight):', logs);
-                        } else {
-                            console.error('Collect transaction simulation logs (preflight): <no logs>');
+                        try {
+                            const logs = await error.getLogs(connection);
+                            if (logs && logs.length) {
+                                console.error('Collect transaction simulation logs (preflight):', logs);
+                            } else {
+                                console.error('Collect transaction simulation logs (preflight): <no logs>');
+                            }
+                        } catch (getLogsError) {
+                            console.error('Error calling getLogs():', getLogsError);
+                            // Try to get logs from error object directly
+                            if (error.logs && Array.isArray(error.logs)) {
+                                console.error('Collect transaction logs (from error.logs):', error.logs);
+                            }
                         }
                     } else if (Array.isArray(error.logs)) {
                         console.error('Collect transaction simulation logs (preflight, from error.logs):', error.logs);
+                    } else {
+                        console.error('No logs available in error object');
                     }
                 } catch (logErr) {
                     console.error('Failed to fetch simulation logs for collect (preflight):', logErr);
