@@ -2,7 +2,7 @@
 // Signs transaction on behalf of treasury wallet
 
 const { Connection, PublicKey, Transaction, Keypair } = require('@solana/web3.js');
-const { getAssociatedTokenAddress, createTransferInstruction } = require('@solana/spl-token');
+const { getAssociatedTokenAddress, createTransferInstruction, getAccount } = require('@solana/spl-token');
 const { createClient } = require('@supabase/supabase-js');
 
 const TREASURY_WALLET = '6auNHk39Mut82FhjY9iBZXjqm7xJabFVrY3bVgrYSMvj';
@@ -239,6 +239,37 @@ module.exports = async function handler(req, res) {
         }
         
         const transferAmount = BigInt(Math.floor(transferAmountRaw));
+
+        // CRITICAL: Verify treasury token account exists and has sufficient balance
+        try {
+            const treasuryAccountInfo = await getAccount(connection, treasuryTokenAccount);
+            const treasuryBalance = Number(treasuryAccountInfo.amount);
+            const requiredAmount = Number(transferAmount);
+            
+            if (treasuryBalance < requiredAmount) {
+                console.error(`Insufficient treasury balance: ${treasuryBalance / Math.pow(10, TOKEN_DECIMALS)} XMA available, ${amount} XMA required`);
+                return res.status(503).json({ 
+                    error: 'Insufficient treasury balance',
+                    message: `Treasury has insufficient funds. Available: ${(treasuryBalance / Math.pow(10, TOKEN_DECIMALS)).toFixed(2)} XMA, Required: ${amount} XMA`
+                });
+            }
+            
+            console.log(`Treasury balance verified: ${treasuryBalance / Math.pow(10, TOKEN_DECIMALS)} XMA available`);
+        } catch (accountError) {
+            // Token account doesn't exist or other error
+            if (accountError.message && accountError.message.includes('could not find account')) {
+                console.error(`Treasury token account does not exist: ${treasuryTokenAccount.toString()}`);
+                return res.status(503).json({ 
+                    error: 'Treasury token account not found',
+                    message: 'The treasury token account does not exist. Please contact support.'
+                });
+            }
+            console.error('Error checking treasury token account:', accountError);
+            return res.status(500).json({ 
+                error: 'Failed to verify treasury balance',
+                message: accountError.message 
+            });
+        }
 
         // Create transfer instruction (from treasury to user)
         const transferInstruction = createTransferInstruction(
