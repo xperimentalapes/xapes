@@ -301,24 +301,27 @@
     justify-content: center;
     gap: 6px;
     margin-bottom: 0;
-    align-items: center;
+    align-items: stretch;
     min-width: 0;
     width: 100%;
     max-width: 100%;
+    height: 100%;
     max-height: 100%;
     overflow: hidden;
     box-sizing: border-box;
+    flex: 1;
 }
 
 .reel-wrapper {
     flex: 1;
     max-width: none;
-    aspect-ratio: 3/4;
     position: relative;
     min-width: 0;
-    max-height: 100%;
     height: 100%;
+    max-height: 100%;
     box-sizing: border-box;
+    display: flex;
+    align-items: stretch;
 }
 
 .reel {
