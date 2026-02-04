@@ -69,11 +69,34 @@ module.exports = async function handler(req, res) {
         // Connect to Solana and verify transaction
         const connection = new Connection(RPC_URL, 'confirmed');
         
-        // Check if transaction is confirmed
-        const status = await connection.getSignatureStatus(signature);
+        // Check if transaction is confirmed (with retry logic for RPC propagation delay)
+        let status = null;
+        let retries = 5;
+        let waitTime = 1000; // Start with 1 second
+        
+        while (retries > 0) {
+            status = await connection.getSignatureStatus(signature);
+            
+            if (status && status.value) {
+                break; // Transaction found
+            }
+            
+            // Transaction not found yet, wait and retry
+            retries--;
+            if (retries > 0) {
+                console.log(`Transaction not found yet, waiting ${waitTime}ms before retry (${5 - retries}/5)...`);
+                await new Promise(resolve => setTimeout(resolve, waitTime));
+                waitTime *= 1.5; // Exponential backoff
+            }
+        }
         
         if (!status || !status.value) {
-            return res.status(400).json({ error: 'Transaction not found' });
+            console.error(`Transaction ${signature} not found after 5 retries`);
+            return res.status(400).json({ 
+                error: 'Transaction not found',
+                message: 'Transaction may still be propagating. Please try again in a few seconds.',
+                signature: signature
+            });
         }
 
         if (status.value.err) {
