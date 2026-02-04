@@ -45,6 +45,7 @@ let xmaBalance = 0;
 let spinsRemaining = 0;
 let totalWon = 0;
 let isSpinning = false;
+let isCollecting = false;
 
 // Fixed reel order (created once, same for all reels)
 let FIXED_REEL_ORDER = null;
@@ -192,7 +193,11 @@ async function setupWalletConnection() {
     const connectContainer = document.getElementById('connect-wallet');
     
     // Check if Phantom wallet is installed
-    if (typeof window.solana !== 'undefined' && window.solana.isPhantom) {
+    // Phantom injects window.solana, check for isPhantom or if it has connect method
+    const isPhantomInstalled = typeof window.solana !== 'undefined' && 
+        (window.solana.isPhantom || typeof window.solana.connect === 'function');
+    
+    if (isPhantomInstalled) {
         // Check if already connected
         try {
             if (window.solana.isConnected) {
@@ -694,7 +699,26 @@ async function withdrawWinnings() {
         return;
     }
     
+    // Security: Validate wallet address format
     try {
+        const { PublicKey } = window.solanaWeb3 || solanaWeb3;
+        new PublicKey(wallet); // Will throw if invalid
+    } catch (error) {
+        alert('Invalid wallet address');
+        console.error('Invalid wallet address:', wallet);
+        return;
+    }
+    
+    // Set collecting flag and disable button immediately
+    isCollecting = true;
+    const withdrawBtn = document.getElementById('withdraw-button');
+    if (withdrawBtn) {
+        withdrawBtn.disabled = true;
+    }
+    
+    try {
+        const amount = totalWon;
+        
         // Call backend API to get presigned transaction
         const response = await fetch('/api/collect', {
             method: 'POST',
@@ -703,16 +727,17 @@ async function withdrawWinnings() {
             },
             body: JSON.stringify({
                 userWallet: wallet,
-                amount: totalWon
+                amount: amount
             })
         });
 
         if (!response.ok) {
             const errorData = await response.json();
-            throw new Error(errorData.error || 'Failed to create collect transaction');
+            const errorMessage = errorData.error || errorData.message || 'Failed to create collect transaction';
+            throw new Error(errorMessage);
         }
 
-        const { transaction: transactionBase64 } = await response.json();
+        const { transaction: transactionBase64, actualAmount } = await response.json();
 
         // Deserialize the presigned transaction
         const { Transaction } = window.solanaWeb3 || solanaWeb3;
@@ -727,6 +752,7 @@ async function withdrawWinnings() {
             try {
                 signature = await connection.sendRawTransaction(transaction.serialize(), {
                     skipPreflight: false,
+                    maxRetries: 3
                 });
                 break;
             } catch (error) {
@@ -741,9 +767,35 @@ async function withdrawWinnings() {
 
         // Wait for confirmation
         await connection.confirmTransaction(signature, 'confirmed');
+        
+        // Call backend to confirm collect and clear unclaimed_rewards in DB
+        try {
+            const confirmResponse = await fetch('/api/confirm-collect', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    userWallet: wallet,
+                    signature: signature,
+                    amount: actualAmount || amount
+                })
+            });
 
-        // Reset total won
-        const amount = totalWon;
+            if (!confirmResponse.ok) {
+                const errorData = await confirmResponse.json();
+                console.error('Failed to confirm collect in database:', errorData);
+                // Don't throw - transaction already succeeded, just log the error
+                // The user got their tokens, we'll just need to manually fix the DB if needed
+            } else {
+                console.log('Successfully confirmed collect in database');
+            }
+        } catch (confirmError) {
+            console.error('Error confirming collect in database:', confirmError);
+            // Don't throw - transaction already succeeded
+        }
+
+        // Reset total won (now that database is updated)
         totalWon = 0;
 
         // Update balance
@@ -751,7 +803,7 @@ async function withdrawWinnings() {
         updateDisplay();
         updateButtonStates();
 
-        alert(`Successfully collected ${amount.toLocaleString()} XMA!`);
+        alert(`Successfully collected ${(actualAmount || amount).toLocaleString()} XMA!`);
     } catch (error) {
         console.error('Withdrawal error:', error);
         const errorMsg = error.message || error.toString() || '';
@@ -759,11 +811,18 @@ async function withdrawWinnings() {
         // Handle user rejection gracefully
         if (errorMsg.includes('User rejected') || errorMsg.includes('User cancelled') || errorMsg.includes('rejected')) {
             // User intentionally rejected - don't show error, just return silently
+            // But re-enable button
+            isCollecting = false;
+            updateButtonStates();
             return;
         }
         
         // Show error for other cases
         alert('Failed to collect winnings: ' + errorMsg);
+    } finally {
+        // Always reset collecting flag and re-enable button
+        isCollecting = false;
+        updateButtonStates();
     }
 }
 
@@ -830,9 +889,9 @@ function updateButtonStates() {
     const spinBtn = document.getElementById('spin-button');
     const withdrawBtn = document.getElementById('withdraw-button');
     
-    // Enable purchase button when wallet is connected
-    purchaseBtn.disabled = !wallet;
-    if (wallet) {
+    // Enable purchase button when wallet is connected, but disable if spins remaining or collecting
+    purchaseBtn.disabled = !wallet || isCollecting || spinsRemaining > 0;
+    if (wallet && !isCollecting && spinsRemaining === 0) {
         purchaseBtn.style.opacity = '1';
         purchaseBtn.style.cursor = 'pointer';
     } else {
@@ -841,8 +900,8 @@ function updateButtonStates() {
     }
     
     // Enable spin button when spins > 0 and not spinning
-    spinBtn.disabled = spinsRemaining <= 0 || isSpinning;
+    spinBtn.disabled = spinsRemaining <= 0 || isSpinning || isCollecting;
     
-    // Enable collect button when wallet connected and total won > 0
-    withdrawBtn.disabled = !wallet || totalWon <= 0;
+    // Enable collect button when wallet connected and total won > 0, but disable if collecting
+    withdrawBtn.disabled = !wallet || totalWon <= 0 || isCollecting;
 }
