@@ -957,8 +957,35 @@ async function withdrawWinnings() {
         // Wait for confirmation
         await connection.confirmTransaction(signature, 'confirmed');
 
-        // Reset total won (database already updated by backend)
+        // Now that transaction is confirmed, clear unclaimed_rewards in database
         const amount = totalWon;
+        try {
+            const confirmResponse = await fetch('/api/confirm-collect', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    userWallet: wallet,
+                    signature: signature,
+                    amount: amount
+                })
+            });
+
+            if (!confirmResponse.ok) {
+                const errorData = await confirmResponse.json();
+                console.error('Failed to confirm collect in database:', errorData);
+                // Don't throw - transaction already succeeded, just log the error
+                // The user got their tokens, we'll just need to manually fix the DB if needed
+            } else {
+                console.log('Successfully confirmed collect in database');
+            }
+        } catch (confirmError) {
+            console.error('Error confirming collect in database:', confirmError);
+            // Don't throw - transaction already succeeded
+        }
+
+        // Reset total won (now that database is updated)
         totalWon = 0;
 
         // Update balance

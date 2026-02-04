@@ -144,30 +144,10 @@ module.exports = async function handler(req, res) {
                     amount = dbUnclaimedRewards;
                 }
 
-                // Atomically update unclaimed_rewards to 0 ONLY if it matches current value
-                // This prevents race conditions - if another collect happened, this will fail
-                const { data: updateData, error: updateError } = await supabase
-                    .from('players')
-                    .update({ unclaimed_rewards: '0' })
-                    .eq('wallet_address', userWallet)
-                    .eq('unclaimed_rewards', playerData.unclaimed_rewards) // Only update if value hasn't changed
-                    .select();
-
-                if (updateError) {
-                    console.error('Error updating unclaimed rewards:', updateError);
-                    return res.status(500).json({ error: 'Failed to update unclaimed rewards' });
-                }
-
-                // If no rows were updated, it means another collect happened (race condition)
-                if (!updateData || updateData.length === 0) {
-                    console.warn(`Race condition detected: unclaimed rewards already collected. Wallet: ${userWallet}`);
-                    return res.status(409).json({ 
-                        error: 'Unclaimed rewards have already been collected',
-                        actualAmount: 0
-                    });
-                }
-
-                console.log(`Successfully reserved ${amount} XMA for collection. Wallet: ${userWallet}`);
+                // Store the expected unclaimed_rewards value for later verification
+                // We'll clear it only after transaction is confirmed (in confirm-collect endpoint)
+                // This prevents losing rewards if transaction fails
+                console.log(`Verified ${amount} XMA available for collection. Wallet: ${userWallet}`);
             } catch (dbError) {
                 console.error('Database error during collect verification:', dbError);
                 return res.status(500).json({ 
@@ -283,8 +263,8 @@ module.exports = async function handler(req, res) {
             verifySignatures: false
         });
 
-        // Note: Unclaimed rewards already cleared atomically above before creating transaction
-        // This prevents race conditions - if transaction fails, we'll need to handle that separately
+        // Note: Unclaimed rewards will be cleared in confirm-collect endpoint after transaction is confirmed
+        // This prevents losing rewards if transaction fails
 
         // Return the signed transaction as base64 and actual amount collected
         return res.status(200).json({
