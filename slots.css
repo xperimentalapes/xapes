@@ -111,6 +111,7 @@
     max-height: 100%;
     overflow: hidden;
     grid-row: 1;
+    margin: 0;
 }
 
 /* Game Totals Header */
@@ -266,6 +267,7 @@
     width: 100%;
     max-width: 100%;
     grid-row: 2;
+    margin: 0;
 }
 
 .reels-container {
