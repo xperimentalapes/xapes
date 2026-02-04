@@ -596,11 +596,14 @@
 }
 
 /* Grand Totals - Header centered, then 2x2 grid, then divider line */
-.stat-item-grand-totals {
+.game-stats-bar .stat-item-grand-totals {
+    flex: 0 0 100%;
+    order: -1; /* Put at the very top */
     display: flex;
     flex-direction: column;
     align-items: center;
     width: 100%;
+    margin-bottom: 8px;
 }
 
 .stat-item-grand-totals .stat-label {
@@ -626,6 +629,7 @@
     justify-content: center;
     gap: 4px;
     text-align: center;
+    flex: 0 0 auto; /* Don't grow, just take needed space */
 }
 
 .grand-total-label {
