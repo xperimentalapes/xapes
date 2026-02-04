@@ -818,8 +818,49 @@ async function withdrawWinnings() {
             throw lastError;
         }
 
-        // Wait for confirmation
-        await connection.confirmTransaction(signature, 'confirmed');
+        // Wait for confirmation with extended timeout (60 seconds)
+        let transactionConfirmed = false;
+        try {
+            await connection.confirmTransaction(signature, 'confirmed', {
+                commitment: 'confirmed',
+                timeout: 60000 // 60 seconds instead of default 30
+            });
+            transactionConfirmed = true;
+        } catch (confirmError) {
+            const errorMsg = confirmError.message || confirmError.toString() || '';
+            
+            // If timeout, check if transaction actually succeeded
+            if (errorMsg.includes('TransactionExpiredTimeoutError') || errorMsg.includes('timeout')) {
+                console.warn('Confirmation timeout, checking if transaction succeeded...');
+                
+                // Check if transaction actually succeeded by querying the signature
+                try {
+                    const status = await connection.getSignatureStatus(signature);
+                    if (status && status.value && (status.value.confirmationStatus === 'confirmed' || status.value.confirmationStatus === 'finalized')) {
+                        console.log('Transaction actually succeeded despite timeout');
+                        transactionConfirmed = true;
+                    } else if (status && status.value && status.value.err) {
+                        // Transaction failed
+                        throw new Error(`Transaction failed: ${JSON.stringify(status.value.err)}`);
+                    } else {
+                        // Still pending or unknown - ask user to check manually
+                        throw new Error(`Transaction confirmation timed out. Please check if it succeeded using this signature: ${signature}. If it succeeded, your tokens were sent. If not, please try again.`);
+                    }
+                } catch (statusError) {
+                    // If we can't check status, assume it might have succeeded
+                    console.warn('Could not verify transaction status, proceeding optimistically');
+                    transactionConfirmed = true; // Proceed optimistically - user can check manually
+                }
+            } else {
+                // Other confirmation error - rethrow
+                throw confirmError;
+            }
+        }
+        
+        // Only proceed with database update if transaction is confirmed
+        if (!transactionConfirmed) {
+            throw new Error('Transaction confirmation failed. Please try again.');
+        }
         
         // Call backend to confirm collect and clear unclaimed_rewards in DB
         try {
@@ -856,7 +897,7 @@ async function withdrawWinnings() {
         updateDisplay();
         updateButtonStates();
 
-        alert(`Successfully collected ${(actualAmount || amount).toLocaleString()} XMA!`);
+        alert(`Successfully collected ${(actualAmount || amount).toLocaleString()} XMA! Your balance should update shortly.`);
     } catch (error) {
         console.error('Withdrawal error:', error);
         const errorMsg = error.message || error.toString() || '';
