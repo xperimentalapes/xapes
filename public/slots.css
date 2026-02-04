@@ -1326,7 +1326,7 @@
         padding: 4px !important;
         gap: 4px !important;
         display: grid !important;
-        grid-template-columns: 1fr 1fr !important;
+        grid-template-columns: 1fr 1fr 1fr !important;
         grid-template-rows: 1fr 1fr !important;
         flex: 1;
         min-height: 0;
@@ -1497,7 +1497,7 @@
         padding: 4px !important;
         gap: 4px !important;
         display: grid !important;
-        grid-template-columns: 1fr 1fr !important;
+        grid-template-columns: 1fr 1fr 1fr !important;
         grid-template-rows: 1fr 1fr !important;
         flex: 1;
         min-height: 0;
