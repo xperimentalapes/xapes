@@ -132,6 +132,15 @@
     line-height: 1.2;
 }
 
+/* Horizontal divider under Game Totals */
+.game-totals-divider {
+    width: 100%;
+    height: 1px;
+    background: var(--border-color);
+    margin-bottom: 4px;
+    flex-shrink: 0;
+}
+
 /* 2x2 grid - Compacted */
 .game-stats-grid {
     display: grid;
