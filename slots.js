@@ -944,30 +944,61 @@ async function withdrawWinnings() {
         }
         
         // Call backend to confirm collect and clear unclaimed_rewards in DB
-        try {
-            const confirmResponse = await fetch('/api/confirm-collect', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    userWallet: wallet,
-                    signature: signature,
-                    amount: actualAmount || amount
-                })
-            });
+        // Retry logic for RPC propagation delays
+        let confirmSuccess = false;
+        let confirmRetries = 3;
+        let confirmWaitTime = 2000; // Start with 2 seconds
+        
+        while (confirmRetries > 0 && !confirmSuccess) {
+            try {
+                const confirmResponse = await fetch('/api/confirm-collect', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        userWallet: wallet,
+                        signature: signature,
+                        amount: actualAmount || amount
+                    })
+                });
 
-            if (!confirmResponse.ok) {
-                const errorData = await confirmResponse.json();
-                console.error('Failed to confirm collect in database:', errorData);
-                // Don't throw - transaction already succeeded, just log the error
-                // The user got their tokens, we'll just need to manually fix the DB if needed
-            } else {
-                console.log('Successfully confirmed collect in database');
+                if (confirmResponse.ok) {
+                    console.log('Successfully confirmed collect in database');
+                    confirmSuccess = true;
+                } else {
+                    const errorData = await confirmResponse.json();
+                    
+                    // If transaction not found, retry after waiting
+                    if (errorData.error === 'Transaction not found' && confirmRetries > 1) {
+                        console.warn(`Transaction not found in database confirmation, retrying in ${confirmWaitTime}ms... (${4 - confirmRetries}/3)`);
+                        await new Promise(resolve => setTimeout(resolve, confirmWaitTime));
+                        confirmWaitTime *= 1.5; // Exponential backoff
+                        confirmRetries--;
+                        continue;
+                    }
+                    
+                    console.error('Failed to confirm collect in database:', errorData);
+                    // Don't throw - transaction already succeeded, just log the error
+                    // The user got their tokens, we'll just need to manually fix the DB if needed
+                    break;
+                }
+            } catch (confirmError) {
+                if (confirmRetries > 1) {
+                    console.warn(`Error confirming collect, retrying in ${confirmWaitTime}ms... (${4 - confirmRetries}/3):`, confirmError);
+                    await new Promise(resolve => setTimeout(resolve, confirmWaitTime));
+                    confirmWaitTime *= 1.5;
+                    confirmRetries--;
+                    continue;
+                }
+                console.error('Error confirming collect in database:', confirmError);
+                // Don't throw - transaction already succeeded
+                break;
             }
-        } catch (confirmError) {
-            console.error('Error confirming collect in database:', confirmError);
-            // Don't throw - transaction already succeeded
+        }
+        
+        if (!confirmSuccess) {
+            console.warn('Could not confirm collect in database after retries. Transaction succeeded, but database may need manual update.');
         }
 
         // Reset total won (now that database is updated)
