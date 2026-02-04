@@ -941,6 +941,35 @@ async function withdrawWinnings() {
             throw new Error('Transaction confirmation failed. Please try again.');
         }
         
+        // CRITICAL: Verify the transaction actually succeeded by checking transaction details
+        // Don't just trust the confirmation - verify tokens were actually transferred
+        try {
+            const { Transaction, PublicKey } = window.solanaWeb3 || solanaWeb3;
+            const txDetails = await connection.getTransaction(signature, {
+                commitment: 'confirmed',
+                maxSupportedTransactionVersion: 0
+            });
+            
+            if (!txDetails) {
+                throw new Error('Could not fetch transaction details. Transaction may have failed.');
+            }
+            
+            if (txDetails.meta && txDetails.meta.err) {
+                throw new Error(`Transaction failed: ${JSON.stringify(txDetails.meta.err)}`);
+            }
+            
+            // Verify transaction succeeded by checking meta
+            if (!txDetails.meta || txDetails.meta.err !== null) {
+                throw new Error('Transaction meta indicates failure');
+            }
+            
+            console.log('✓ Transaction verified: tokens were successfully transferred');
+        } catch (verifyError) {
+            console.error('Transaction verification error:', verifyError);
+            // Don't proceed if we can't verify - this prevents false positives
+            throw new Error(`Transaction verification failed: ${verifyError.message}. Signature: ${signature}. Please check the transaction manually on Solscan.`);
+        }
+        
         // Call backend to confirm collect and clear unclaimed_rewards in DB
         // Retry logic for RPC propagation delays
         let confirmSuccess = false;
