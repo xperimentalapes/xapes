@@ -64,19 +64,8 @@
         <div class="slot-machine-wrapper">
             <!-- Game Stats -->
             <div class="game-stats-bar">
-                <div class="stat-item">
-                    <span class="stat-label">Balance:</span>
-                    <span id="xma-balance" class="stat-value">0 XMA</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">Spins Remaining:</span>
-                    <span id="spins-remaining" class="stat-value">0</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">Total Won:</span>
-                    <span id="total-won" class="stat-value">0 XMA</span>
-                </div>
-                <div class="stat-item stat-item-grand-totals">
+                <!-- Top 30%: Game Totals -->
+                <div class="stat-item-grand-totals">
                     <span class="stat-label">Game Totals:</span>
                     <div class="grand-totals">
                         <div class="grand-total-column">
@@ -90,14 +79,36 @@
                     </div>
                     <div class="grand-totals-divider"></div>
                 </div>
-                <button id="prize-structure-btn-desktop" class="btn-win-percent-desktop">win %</button>
-                <button id="leaderboard-btn-desktop" class="btn-leaderboard-desktop" title="Leaderboard">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M6.5,12h-4a.5.5,0,0,0-.5.5V20H7V12.5A.5.5,0,0,0,6.5,12Z" fill="currentColor"/>
-                        <path d="M14,4H10a.5.5,0,0,0-.5.5V20h5V4.5A.5.5,0,0,0,14,4Z" fill="currentColor"/>
-                        <path d="M21.5,8h-4a.5.5,0,0,0-.5.5V20h5V8.5A.5.5,0,0,0,21.5,8Z" fill="currentColor"/>
-                    </svg>
-                </button>
+                
+                <!-- Bottom 70%: 2x2 Grid -->
+                <div class="game-stats-grid">
+                    <!-- Top Left: Balance -->
+                    <div class="stat-item">
+                        <span class="stat-label">Balance:</span>
+                        <span id="xma-balance" class="stat-value">0 XMA</span>
+                    </div>
+                    <!-- Top Right: Total Won -->
+                    <div class="stat-item">
+                        <span class="stat-label">Total Won:</span>
+                        <span id="total-won" class="stat-value">0 XMA</span>
+                    </div>
+                    <!-- Bottom Left: Spins Remaining -->
+                    <div class="stat-item">
+                        <span class="stat-label">Spins Remaining:</span>
+                        <span id="spins-remaining" class="stat-value">0</span>
+                    </div>
+                    <!-- Bottom Right: Buttons -->
+                    <div class="stat-item stat-item-buttons">
+                        <button id="prize-structure-btn-desktop" class="btn-win-percent-desktop">win %</button>
+                        <button id="leaderboard-btn-desktop" class="btn-leaderboard-desktop" title="Leaderboard">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M6.5,12h-4a.5.5,0,0,0-.5.5V20H7V12.5A.5.5,0,0,0,6.5,12Z" fill="currentColor"/>
+                                <path d="M14,4H10a.5.5,0,0,0-.5.5V20h5V4.5A.5.5,0,0,0,14,4Z" fill="currentColor"/>
+                                <path d="M21.5,8h-4a.5.5,0,0,0-.5.5V20h5V8.5A.5.5,0,0,0,21.5,8Z" fill="currentColor"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <!-- Slot Machine -->

@@ -92,30 +92,60 @@
     display: none;
 }
 
-/* Game Stats Bar */
+/* Game Stats Bar - Simple grid: Game Totals top 30%, then 2x2 grid below */
 .game-stats-bar {
-    display: flex;
-    justify-content: space-between;
-    align-items: stretch; /* Stretch all items to same height */
-    gap: 16px;
+    display: grid;
+    grid-template-rows: 30% 70%;
+    grid-template-columns: 1fr;
+    gap: 8px;
     background: var(--bg-card);
     border: 1px solid var(--border-color);
     border-radius: 12px;
     padding: 12px 16px;
-    flex-wrap: wrap;
     flex-shrink: 0;
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
+    min-height: 200px;
 }
 
-.game-stats-bar .stat-item {
-    flex: 1;
-    min-width: 0;
+/* Game Totals in top 30% */
+.stat-item-grand-totals {
+    grid-row: 1;
+    grid-column: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center; /* Center content vertically within column */
+    justify-content: center;
+}
+
+/* Bottom 70%: 2x2 grid */
+.game-stats-grid {
+    grid-row: 2;
+    grid-column: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 8px;
+}
+
+/* All stat items centered */
+.stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 8px;
+}
+
+/* Buttons container in bottom right */
+.stat-item-buttons {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
 }
 
 .game-stats-bar .btn-win-percent-desktop {
@@ -1088,98 +1118,34 @@
         font-size: 14px;
     }
     
-    /* Mobile stats bar: 3 rows
-     * Row 1: Game Totals (Spins, Won) - full width
-     * Row 2: Balance, Total Won - 50% each
-     * Row 3: Spins Remaining, win % button, leaderboard button - all on same line
-     */
+    /* Mobile: Same grid structure, just smaller */
     .game-stats-bar {
-        display: flex !important;
-        padding: 10px;
-        gap: 8px;
-        flex-shrink: 0;
-        flex-wrap: wrap !important;
-        width: 100%;
+        grid-template-rows: 30% 70% !important;
+        padding: 10px !important;
+        gap: 6px !important;
+        min-height: 180px !important;
     }
     
-    /* Row 1: Game Totals - full width */
-    .game-stats-bar .stat-item-grand-totals {
-        flex: 0 0 100% !important;
-        display: flex !important;
-        flex-direction: column !important;
-        align-items: center !important;
-        justify-content: center !important;
-        order: 1 !important;
-        margin-bottom: 4px;
+    .game-stats-grid {
+        gap: 6px !important;
     }
     
-    .game-stats-bar .stat-item-grand-totals .grand-totals {
-        width: 100%;
-        max-width: 300px; /* Limit width so columns don't spread too far */
-        gap: 20px; /* More space between columns on mobile */
+    .stat-item-grand-totals .grand-totals {
+        gap: 16px !important;
     }
     
-    /* Row 2: Balance - left half */
-    .game-stats-bar .stat-item:nth-child(1) {
-        flex: 0 0 calc(50% - 4px) !important;
-        display: flex !important;
-        flex-direction: column !important;
-        align-items: center !important;
-        justify-content: center !important;
-        text-align: center !important;
-        order: 2 !important;
+    .stat-item-buttons {
+        flex-direction: row !important;
+        gap: 6px !important;
     }
     
-    /* Row 2: Total Won - right half */
-    .game-stats-bar .stat-item:nth-child(3) {
-        flex: 0 0 calc(50% - 4px) !important;
-        display: flex !important;
-        flex-direction: column !important;
-        align-items: center !important;
-        justify-content: center !important;
-        text-align: center !important;
-        order: 3 !important;
-    }
-    
-    /* Row 3: Spins Remaining - takes remaining space */
-    .game-stats-bar .stat-item:nth-child(2) {
-        flex: 1 1 auto !important;
-        min-width: 0 !important;
-        display: flex !important;
-        flex-direction: column !important;
-        align-items: center !important;
-        justify-content: center !important;
-        text-align: center !important;
-        order: 4 !important;
-    }
-    
-    /* Row 3: win % button - compact size to fit on same line */
-    .game-stats-bar .btn-win-percent-desktop {
-        flex: 0 0 auto !important;
+    .btn-win-percent-desktop,
+    .btn-leaderboard-desktop {
         padding: 6px 12px !important;
         font-size: 12px !important;
-        font-weight: 600 !important;
-        margin: 0 !important;
-        align-self: center !important;
-        order: 5 !important;
-        width: auto !important;
-        min-width: 60px !important;
     }
     
-    /* Row 3: leaderboard button - compact size to fit on same line */
-    .game-stats-bar .btn-leaderboard-desktop {
-        flex: 0 0 auto !important;
-        padding: 6px 12px !important;
-        font-size: 12px !important;
-        font-weight: 600 !important;
-        margin: 0 !important;
-        align-self: center !important;
-        order: 6 !important;
-        width: auto !important;
-        min-width: 44px !important;
-    }
-    
-    .game-stats-bar .btn-leaderboard-desktop svg {
+    .btn-leaderboard-desktop svg {
         width: 16px !important;
         height: 16px !important;
     }
@@ -1339,91 +1305,32 @@
     }
     
     .game-stats-bar {
-        padding: 6px;
-        gap: 4px;
-        flex-shrink: 0;
-        flex-wrap: wrap !important;
-        width: 100%;
+        grid-template-rows: 30% 70% !important;
+        padding: 6px !important;
+        gap: 4px !important;
+        min-height: 160px !important;
     }
     
-    /* Row 1: Game Totals - full width */
-    .game-stats-bar .stat-item-grand-totals {
-        flex: 0 0 100% !important;
-        display: flex !important;
-        flex-direction: column !important;
-        align-items: center !important;
-        justify-content: center !important;
-        order: 1 !important;
-        margin-bottom: 2px;
+    .game-stats-grid {
+        gap: 4px !important;
     }
     
-    .game-stats-bar .stat-item-grand-totals .grand-totals {
-        width: 100%;
-        max-width: 280px; /* Slightly smaller on very small screens */
-        gap: 16px; /* Less space on very small screens */
+    .stat-item-grand-totals .grand-totals {
+        gap: 12px !important;
     }
     
-    /* Row 2: Balance - left half */
-    .game-stats-bar .stat-item:nth-child(1) {
-        flex: 0 0 calc(50% - 2px) !important;
-        display: flex !important;
-        flex-direction: column !important;
-        align-items: center !important;
-        justify-content: center !important;
-        text-align: center !important;
-        order: 2 !important;
+    .stat-item-buttons {
+        flex-direction: row !important;
+        gap: 4px !important;
     }
     
-    /* Row 2: Total Won - right half */
-    .game-stats-bar .stat-item:nth-child(3) {
-        flex: 0 0 calc(50% - 2px) !important;
-        display: flex !important;
-        flex-direction: column !important;
-        align-items: center !important;
-        justify-content: center !important;
-        text-align: center !important;
-        order: 3 !important;
-    }
-    
-    /* Row 3: Spins Remaining - takes remaining space */
-    .game-stats-bar .stat-item:nth-child(2) {
-        flex: 1 1 auto !important;
-        min-width: 0 !important;
-        display: flex !important;
-        flex-direction: column !important;
-        align-items: center !important;
-        justify-content: center !important;
-        text-align: center !important;
-        order: 4 !important;
-    }
-    
-    /* Row 3: win % button - compact size to fit on same line */
-    .game-stats-bar .btn-win-percent-desktop {
-        flex: 0 0 auto !important;
+    .btn-win-percent-desktop,
+    .btn-leaderboard-desktop {
         padding: 5px 10px !important;
         font-size: 11px !important;
-        font-weight: 600 !important;
-        margin: 0 !important;
-        align-self: center !important;
-        order: 5 !important;
-        width: auto !important;
-        min-width: 55px !important;
     }
     
-    /* Row 3: leaderboard button - compact size to fit on same line */
-    .game-stats-bar .btn-leaderboard-desktop {
-        flex: 0 0 auto !important;
-        padding: 5px 10px !important;
-        font-size: 11px !important;
-        font-weight: 600 !important;
-        margin: 0 !important;
-        align-self: center !important;
-        order: 6 !important;
-        width: auto !important;
-        min-width: 40px !important;
-    }
-    
-    .game-stats-bar .btn-leaderboard-desktop svg {
+    .btn-leaderboard-desktop svg {
         width: 14px !important;
         height: 14px !important;
     }
