@@ -92,10 +92,9 @@
     display: none;
 }
 
-/* Game Stats Bar - Simple grid: Game Totals top 30%, then 2x2 grid below */
+/* Game Stats Bar - 2x2 grid */
 .game-stats-bar {
     display: grid;
-    grid-template-rows: 30% 70%;
     grid-template-columns: 1fr;
     gap: 8px;
     background: var(--bg-card);
@@ -109,22 +108,8 @@
     min-height: 200px;
 }
 
-/* Game Totals in top 30% */
-.stat-item-grand-totals {
-    grid-row: 1;
-    grid-column: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    box-sizing: border-box;
-}
-
-/* Bottom 70%: 2x2 grid */
+/* 2x2 grid */
 .game-stats-grid {
-    grid-row: 2;
-    grid-column: 1;
     display: grid;
     grid-template-columns: 1fr 1fr;
     grid-template-rows: 1fr 1fr;
@@ -139,9 +124,27 @@
     align-items: center;
     justify-content: center;
     text-align: center;
-    gap: 8px;
+    gap: 4px;
     width: 100%;
     box-sizing: border-box;
+}
+
+/* Top row items have grand totals above regular stats */
+.game-stats-grid > .stat-item:nth-child(1) .grand-total-label,
+.game-stats-grid > .stat-item:nth-child(2) .grand-total-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 2px;
+}
+
+.game-stats-grid > .stat-item:nth-child(1) .grand-total-value,
+.game-stats-grid > .stat-item:nth-child(2) .grand-total-value {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 8px;
 }
 
 /* Top Left: Balance */
@@ -614,7 +617,12 @@
     color: #F59E0B;
     border: 2px solid #F59E0B;
     padding: 8px 16px;
-    font-size: 14px;
+    font-size: 13px;
+    height: 36px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     font-weight: 600;
     width: auto;
     flex: 0 0 auto;
@@ -636,6 +644,11 @@
     border: 2px solid #F59E0B;
     padding: 8px 16px;
     font-size: 14px;
+    height: 36px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     font-weight: 600;
     width: auto;
     flex: 0 0 auto;
