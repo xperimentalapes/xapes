@@ -2,7 +2,7 @@
 // Signs transaction on behalf of treasury wallet
 
 const { Connection, PublicKey, Transaction, Keypair } = require('@solana/web3.js');
-const { getAssociatedTokenAddress, createTransferInstruction, getAccount } = require('@solana/spl-token');
+const { getAssociatedTokenAddress, createTransferInstruction, getAccount, createAssociatedTokenAccountInstruction } = require('@solana/spl-token');
 const { createClient } = require('@supabase/supabase-js');
 
 const TREASURY_WALLET = '6auNHk39Mut82FhjY9iBZXjqm7xJabFVrY3bVgrYSMvj';
@@ -240,6 +240,16 @@ module.exports = async function handler(req, res) {
         
         const transferAmount = BigInt(Math.floor(transferAmountRaw));
 
+        // Check if user's token account exists, create instruction if needed
+        let userAccountExists = false;
+        try {
+            await getAccount(connection, userTokenAccount);
+            userAccountExists = true;
+        } catch (error) {
+            // User token account doesn't exist - we'll need to create it
+            userAccountExists = false;
+        }
+
         // CRITICAL: Verify treasury token account exists and has sufficient balance
         try {
             const treasuryAccountInfo = await getAccount(connection, treasuryTokenAccount);
@@ -271,6 +281,21 @@ module.exports = async function handler(req, res) {
             });
         }
 
+        // Create transaction
+        const transaction = new Transaction();
+
+        // If user's token account doesn't exist, add instruction to create it first
+        if (!userAccountExists) {
+            const createAccountInstruction = createAssociatedTokenAccountInstruction(
+                treasuryPublicKey, // Payer (treasury pays for account creation)
+                userTokenAccount,  // New token account to create
+                userPublicKey,     // Owner of the token account
+                tokenMint          // Token mint
+            );
+            transaction.add(createAccountInstruction);
+            console.log(`Adding instruction to create user token account: ${userTokenAccount.toString()}`);
+        }
+
         // Create transfer instruction (from treasury to user)
         const transferInstruction = createTransferInstruction(
             treasuryTokenAccount,
@@ -278,9 +303,7 @@ module.exports = async function handler(req, res) {
             treasuryPublicKey,
             transferAmount
         );
-
-        // Create transaction
-        const transaction = new Transaction().add(transferInstruction);
+        transaction.add(transferInstruction);
         const { blockhash } = await connection.getLatestBlockhash();
         transaction.recentBlockhash = blockhash;
         transaction.feePayer = treasuryPublicKey;
