@@ -961,6 +961,14 @@ async function withdrawWinnings() {
             return;
         }
         
+        // Reload player data from database to restore correct totalWon value
+        // This ensures the UI shows the correct unclaimed rewards even if transaction failed
+        try {
+            await loadPlayerData();
+        } catch (loadError) {
+            console.error('Failed to reload player data after collect error:', loadError);
+        }
+        
         // Show error for other cases
         alert('Failed to collect winnings: ' + errorMsg);
     } finally {
