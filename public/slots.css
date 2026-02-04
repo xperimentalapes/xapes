@@ -590,34 +590,22 @@
     height: 20px;
 }
 
-/* Grand Totals - 2 column layout with labels on top, values below */
+/* Grand Totals - 2 column layout, each column has label over value, both columns centered */
 .grand-totals {
     display: flex;
+    flex-direction: row;
+    gap: 24px;
+    justify-content: center;
+    align-items: flex-start;
+    width: 100%;
+}
+
+.grand-total-column {
+    display: flex;
     flex-direction: column;
-    gap: 4px;
     align-items: center;
-    width: 100%;
-}
-
-.grand-totals-labels {
-    display: flex;
-    flex-direction: row;
-    gap: 16px;
     justify-content: center;
-    width: 100%;
-}
-
-.grand-totals-values {
-    display: flex;
-    flex-direction: row;
-    gap: 16px;
-    justify-content: center;
-    width: 100%;
-}
-
-.grand-totals-labels .grand-total-label,
-.grand-totals-values .grand-total-value {
-    flex: 0 0 auto;
+    gap: 4px;
     text-align: center;
 }
 
@@ -1096,10 +1084,6 @@
     .game-stats-bar .stat-item-grand-totals .grand-totals {
         width: 100%;
         max-width: 300px; /* Limit width so columns don't spread too far */
-    }
-    
-    .game-stats-bar .stat-item-grand-totals .grand-totals-labels,
-    .game-stats-bar .stat-item-grand-totals .grand-totals-values {
         gap: 20px; /* More space between columns on mobile */
     }
     
@@ -1344,10 +1328,6 @@
     .game-stats-bar .stat-item-grand-totals .grand-totals {
         width: 100%;
         max-width: 280px; /* Slightly smaller on very small screens */
-    }
-    
-    .game-stats-bar .stat-item-grand-totals .grand-totals-labels,
-    .game-stats-bar .stat-item-grand-totals .grand-totals-values {
         gap: 16px; /* Less space on very small screens */
     }
     
