@@ -1172,19 +1172,27 @@
 
 /* Desktop - Scale up with increased padding */
 @media (min-width: 1025px) {
+    .slots-page {
+        height: 100vh;
+        overflow: hidden;
+    }
+    
     .slots-container {
         padding: 0;
         padding-top: 80px;
-        height: 100vh;
-        max-height: 100vh;
+        height: calc(100vh - 80px);
+        min-height: calc(100vh - 80px);
+        max-height: calc(100vh - 80px);
         grid-template-rows: 1fr 1fr 1fr;
         gap: 20px;
+        flex: none;
     }
     
     .slot-machine-wrapper {
         gap: 16px;
         padding: 0;
         height: 100%;
+        min-height: 100%;
         max-height: 100%;
     }
     
@@ -1219,7 +1227,9 @@
         gap: 20px;
         border-radius: 16px;
         height: 100%;
+        min-height: 100%;
         max-height: 100%;
+        flex-shrink: 0;
     }
     
     .reels-container {
@@ -1231,7 +1241,9 @@
         gap: 16px;
         border-radius: 12px;
         height: 100%;
+        min-height: 100%;
         max-height: 100%;
+        flex-shrink: 0;
     }
     
     .control-group label {
