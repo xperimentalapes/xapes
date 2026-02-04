@@ -1322,10 +1322,11 @@
     }
     
     .controls-panel {
-        padding: 16px;
-        gap: 20px; /* Increased gap */
-        display: flex;
-        flex-direction: column;
+        padding: 4px !important;
+        gap: 4px !important;
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        grid-template-rows: 1fr 1fr !important;
         flex: 1;
         min-height: 0;
         justify-content: flex-start; /* Changed from space-around */
