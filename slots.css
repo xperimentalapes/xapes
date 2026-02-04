@@ -1188,7 +1188,7 @@
         max-height: 100vh;
         grid-template-rows: 1fr 1fr 1fr;
         gap: 20px;
-        flex: none;
+        flex: 1;
         box-sizing: border-box;
     }
     
