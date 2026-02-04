@@ -496,7 +496,7 @@
     min-width: 0;
 }
 
-/* Controls Panel - Takes 1/3 of viewport - 2 columns */
+/* Controls Panel - Takes 1/3 of viewport - 2 columns: left (inputs+buy), right (spin+collect) */
 .controls-panel {
     background: var(--bg-card);
     border: 1px solid var(--border-color);
@@ -504,10 +504,11 @@
     padding: 4px;
     display: grid;
     grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
     gap: 4px;
     flex-shrink: 0;
     width: 100%;
-    max-width: 100%;
+    max-width: 100vw;
     box-sizing: border-box;
     margin: 0;
     overflow: hidden;
@@ -521,17 +522,9 @@
     flex-direction: column;
     gap: 4px;
     grid-column: 1;
+    grid-row: 1;
     width: 100%;
     min-height: 0;
-}
-
-/* Buy button - left column, below inputs */
-#purchase-spins {
-    grid-column: 1;
-    width: 100%;
-    flex: 1;
-    min-height: 0;
-    margin-top: 4px;
 }
 
 .control-group {
@@ -581,25 +574,33 @@
 }
 
 .button-group {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    grid-column: 2;
+    display: contents;
+}
+
+/* Buy button - left column, below inputs */
+#purchase-spins {
+    grid-column: 1;
+    grid-row: 2;
     width: 100%;
+    height: 100%;
     min-height: 0;
 }
 
 /* Spin button - right column, top */
 #spin-button {
+    grid-column: 2;
+    grid-row: 1;
     width: 100%;
-    flex: 1;
+    height: 100%;
     min-height: 0;
 }
 
 /* Collect button - right column, bottom */
 #withdraw-button {
+    grid-column: 2;
+    grid-row: 2;
     width: 100%;
-    flex: 1;
+    height: 100%;
     min-height: 0;
 }
 
