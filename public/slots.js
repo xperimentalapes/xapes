@@ -1284,9 +1284,22 @@ function setupBackgroundMusic() {
     musicIconOn.style.display = 'block';
     musicIconOff.style.display = 'none';
     
+    // Function to update button visual state
+    const updateButtonState = (playing) => {
+        if (playing) {
+            musicToggleBtn.classList.add('active');
+            musicIconOn.style.display = 'block';
+            musicIconOff.style.display = 'none';
+        } else {
+            musicToggleBtn.classList.remove('active');
+            musicIconOn.style.display = 'none';
+            musicIconOff.style.display = 'block';
+        }
+    };
+    
     // Try to play music immediately (may require user interaction on some browsers)
     const playMusic = () => {
-        if (backgroundMusic && isMusicPlaying && backgroundMusic.paused) {
+        if (backgroundMusic && isMusicPlaying) {
             backgroundMusic.play().catch(() => {
                 // Silently fail - autoplay is blocked by browser policy
                 // Music will start when user interacts with the page
@@ -1297,9 +1310,10 @@ function setupBackgroundMusic() {
     // Try to play on page load
     playMusic();
     
-    // Also try to play after a short delay
+    // Also try to play after delays
     setTimeout(playMusic, 500);
     setTimeout(playMusic, 1500);
+    setTimeout(playMusic, 3000);
     
     // Toggle music on button click
     musicToggleBtn.addEventListener('click', (e) => {
@@ -1311,30 +1325,25 @@ function setupBackgroundMusic() {
             return;
         }
         
-        // Toggle state
-        isMusicPlaying = !isMusicPlaying;
+        // Check current playing state
+        const currentlyPlaying = !backgroundMusic.paused;
         
-        if (isMusicPlaying) {
-            // Turn music on
+        if (currentlyPlaying) {
+            // Music is playing - turn it off
+            backgroundMusic.pause();
+            isMusicPlaying = false;
+            updateButtonState(false);
+        } else {
+            // Music is paused - turn it on
+            isMusicPlaying = true;
             backgroundMusic.play().then(() => {
-                musicToggleBtn.classList.add('active');
-                musicIconOn.style.display = 'block';
-                musicIconOff.style.display = 'none';
+                updateButtonState(true);
             }).catch((err) => {
                 // If play fails, keep music off
                 console.error('Failed to play music:', err);
                 isMusicPlaying = false;
-                musicToggleBtn.classList.remove('active');
-                musicIconOn.style.display = 'none';
-                musicIconOff.style.display = 'block';
+                updateButtonState(false);
             });
-        } else {
-            // Turn music off
-            backgroundMusic.pause();
-            backgroundMusic.currentTime = 0; // Reset to beginning
-            musicToggleBtn.classList.remove('active');
-            musicIconOn.style.display = 'none';
-            musicIconOff.style.display = 'block';
         }
     });
     
@@ -1346,9 +1355,10 @@ function setupBackgroundMusic() {
     };
     
     // Listen for user interactions to start music if autoplay was blocked
-    document.addEventListener('click', enableMusicOnInteraction, { once: true });
-    document.addEventListener('keydown', enableMusicOnInteraction, { once: true });
-    document.addEventListener('touchstart', enableMusicOnInteraction, { once: true });
+    // Use multiple listeners to catch any interaction
+    ['click', 'keydown', 'touchstart', 'mousedown'].forEach(eventType => {
+        document.addEventListener(eventType, enableMusicOnInteraction, { once: true, passive: true });
+    });
 }
 
 function setupLeaderboardModal() {
