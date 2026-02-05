@@ -1129,6 +1129,45 @@
 }
 
 /* Wallet Button */
+/* Music Toggle Button */
+.music-toggle-btn {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 8px 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-primary);
+    transition: all 0.3s ease;
+    width: 40px;
+    height: 40px;
+}
+
+.music-toggle-btn:hover {
+    background: var(--bg-card);
+    border-color: var(--primary-color);
+    transform: scale(1.05);
+}
+
+.music-toggle-btn svg {
+    width: 20px;
+    height: 20px;
+    stroke: currentColor;
+    fill: currentColor;
+}
+
+.music-toggle-btn.active {
+    background: var(--gradient-1);
+    border-color: transparent;
+    color: white;
+}
+
+.music-toggle-btn.active svg {
+    color: white;
+}
+
 .wallet-button-container {
     display: flex;
     align-items: center;

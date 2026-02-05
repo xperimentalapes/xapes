@@ -47,6 +47,19 @@
                     </a>
                 </div>
                 <div class="nav-links">
+                    <button id="music-toggle" class="music-toggle-btn" title="Toggle Background Music">
+                        <svg id="music-icon-on" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M9 18V5L21 3V16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <circle cx="6" cy="18" r="3" fill="currentColor"/>
+                            <circle cx="18" cy="16" r="3" fill="currentColor"/>
+                        </svg>
+                        <svg id="music-icon-off" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="display: none;">
+                            <path d="M9 18V5L21 3V16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <circle cx="6" cy="18" r="3" fill="currentColor"/>
+                            <circle cx="18" cy="16" r="3" fill="currentColor"/>
+                            <line x1="2" y1="2" x2="22" y2="22" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    </button>
                     <div id="wallet-button-container" class="wallet-button-container">
                         <button id="connect-wallet" class="wallet-connect-btn">Connect Wallet</button>
                         <div id="wallet-info" class="wallet-info" style="display: none;">
@@ -177,6 +190,12 @@
                     <button id="purchase-spins" class="btn btn-primary" disabled>BUY</button>
                     <button id="spin-button" class="btn btn-spin" disabled>SPIN</button>
                     <button id="withdraw-button" class="btn btn-withdraw" disabled>COLLECT</button>
+                </div>
+                <div class="autospin-control">
+                    <label for="autospin-checkbox" class="autospin-label">
+                        <input type="checkbox" id="autospin-checkbox" class="autospin-checkbox">
+                        <span>Auto Spin</span>
+                    </label>
                 </div>
             </div>
         </div>

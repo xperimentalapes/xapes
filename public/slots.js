@@ -47,6 +47,8 @@ let totalWon = 0;
 let isSpinning = false;
 let isCollecting = false;
 let isAutoSpinning = false;
+let backgroundMusic = null;
+let isMusicPlaying = true; // Default to on
 
 // Fixed reel order (created once, same for all reels)
 let FIXED_REEL_ORDER = null;
@@ -64,6 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setupGameControls();
         setupPrizeModal();
         setupLeaderboardModal();
+        setupBackgroundMusic();
         initializeReels();
         loadGameStats(); // Load grand totals
         
@@ -1261,6 +1264,75 @@ function setupPrizeModal() {
 }
 
 // Setup Leaderboard Modal
+// Setup Background Music
+function setupBackgroundMusic() {
+    // Create audio element
+    backgroundMusic = new Audio('/music/the-night-circus-cory-alstad-main-version-43700-02-05.mp3');
+    backgroundMusic.loop = true;
+    backgroundMusic.volume = 0.5; // Set to 50% volume
+    
+    // Get music toggle button
+    const musicToggleBtn = document.getElementById('music-toggle');
+    const musicIconOn = document.getElementById('music-icon-on');
+    const musicIconOff = document.getElementById('music-icon-off');
+    
+    if (!musicToggleBtn) return;
+    
+    // Set initial state (music on by default)
+    musicToggleBtn.classList.add('active');
+    isMusicPlaying = true;
+    
+    // Try to play music (may require user interaction on some browsers)
+    const playMusic = () => {
+        if (backgroundMusic && isMusicPlaying) {
+            backgroundMusic.play().catch(err => {
+                console.log('Could not autoplay music (browser policy):', err);
+                // Music will start when user interacts with the page
+            });
+        }
+    };
+    
+    // Try to play on page load (may not work due to autoplay policies)
+    playMusic();
+    
+    // Also try to play after a short delay
+    setTimeout(playMusic, 1000);
+    
+    // Toggle music on button click
+    musicToggleBtn.addEventListener('click', () => {
+        if (!backgroundMusic) return;
+        
+        isMusicPlaying = !isMusicPlaying;
+        
+        if (isMusicPlaying) {
+            backgroundMusic.play().catch(err => {
+                console.error('Error playing music:', err);
+                isMusicPlaying = false;
+            });
+            musicToggleBtn.classList.add('active');
+            musicIconOn.style.display = 'block';
+            musicIconOff.style.display = 'none';
+        } else {
+            backgroundMusic.pause();
+            musicToggleBtn.classList.remove('active');
+            musicIconOn.style.display = 'none';
+            musicIconOff.style.display = 'block';
+        }
+    });
+    
+    // Try to play music on any user interaction (to bypass autoplay restrictions)
+    const enableMusicOnInteraction = () => {
+        if (backgroundMusic && isMusicPlaying && backgroundMusic.paused) {
+            backgroundMusic.play().catch(() => {});
+        }
+    };
+    
+    // Listen for user interactions
+    document.addEventListener('click', enableMusicOnInteraction, { once: true });
+    document.addEventListener('keydown', enableMusicOnInteraction, { once: true });
+    document.addEventListener('touchstart', enableMusicOnInteraction, { once: true });
+}
+
 function setupLeaderboardModal() {
     const leaderboardBtn = document.getElementById('leaderboard-btn-desktop');
     const modal = document.getElementById('leaderboard-modal');
