@@ -257,6 +257,7 @@ module.exports = async function handler(req, res) {
         console.log(`Token mint: ${XMA_TOKEN_MINT}`);
         
         // Also check what token accounts actually exist for this wallet
+        let actualTreasuryTokenAccount = treasuryTokenAccount; // Default to calculated ATA
         try {
             const allTokenAccounts = await connection.getParsedTokenAccountsByOwner(treasuryPublicKey, {
                 mint: tokenMint
@@ -270,9 +271,16 @@ module.exports = async function handler(req, res) {
                 const matchingAccount = allTokenAccounts.value.find(acc => acc.pubkey.toString() === treasuryTokenAccount.toString());
                 if (!matchingAccount) {
                     console.warn(`⚠️ WARNING: Calculated ATA (${treasuryTokenAccount.toString()}) does not match any existing token account!`);
-                    console.warn(`  Using first token account instead: ${allTokenAccounts.value[0].pubkey.toString()}`);
-                    // Use the first token account if ATA doesn't match (for debugging)
-                    // But keep using ATA as that's the standard
+                    // Use the first token account that actually has balance
+                    const accountWithBalance = allTokenAccounts.value.find(acc => acc.account.data.parsed.info.tokenAmount.uiAmount > 0);
+                    if (accountWithBalance) {
+                        console.warn(`  Using actual token account with balance: ${accountWithBalance.pubkey.toString()}`);
+                        actualTreasuryTokenAccount = accountWithBalance.pubkey;
+                    } else {
+                        console.error(`  No token account with balance found!`);
+                    }
+                } else {
+                    console.log(`✓ Calculated ATA matches existing account with balance: ${matchingAccount.account.data.parsed.info.tokenAmount.uiAmount} XMA`);
                 }
             }
         } catch (diagError) {

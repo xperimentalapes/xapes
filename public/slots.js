@@ -1285,34 +1285,48 @@ function setupBackgroundMusic() {
     // Try to play music (may require user interaction on some browsers)
     const playMusic = () => {
         if (backgroundMusic && isMusicPlaying) {
-            backgroundMusic.play().catch(err => {
-                console.log('Could not autoplay music (browser policy):', err);
-                // Music will start when user interacts with the page
+            backgroundMusic.play().catch(() => {
+                // Silently fail - autoplay is blocked by browser policy
+                // Music will start when user interacts with the page or clicks the button
             });
         }
     };
     
     // Try to play on page load (may not work due to autoplay policies)
+    // Don't log errors - this is expected browser behavior
     playMusic();
     
     // Also try to play after a short delay
     setTimeout(playMusic, 1000);
     
     // Toggle music on button click
-    musicToggleBtn.addEventListener('click', () => {
-        if (!backgroundMusic) return;
+    musicToggleBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        if (!backgroundMusic) {
+            console.error('Background music not initialized');
+            return;
+        }
         
         isMusicPlaying = !isMusicPlaying;
         
         if (isMusicPlaying) {
-            backgroundMusic.play().catch(err => {
-                console.error('Error playing music:', err);
+            // Turn music on
+            backgroundMusic.play().then(() => {
+                musicToggleBtn.classList.add('active');
+                musicIconOn.style.display = 'block';
+                musicIconOff.style.display = 'none';
+            }).catch((err) => {
+                // If play fails, keep music off
+                console.error('Failed to play music:', err);
                 isMusicPlaying = false;
+                musicToggleBtn.classList.remove('active');
+                musicIconOn.style.display = 'none';
+                musicIconOff.style.display = 'block';
             });
-            musicToggleBtn.classList.add('active');
-            musicIconOn.style.display = 'block';
-            musicIconOff.style.display = 'none';
         } else {
+            // Turn music off
             backgroundMusic.pause();
             musicToggleBtn.classList.remove('active');
             musicIconOn.style.display = 'none';
