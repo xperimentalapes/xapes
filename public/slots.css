@@ -621,6 +621,14 @@
 }
 
 /* Spin button - bottom row, column 2 (33% width) */
+.spin-button-subtitle {
+    font-size: 0.6em;
+    font-weight: 400;
+    display: block;
+    margin-top: 2px;
+    opacity: 0.8;
+}
+
 #spin-button {
     grid-column: 2;
     grid-row: 2;
@@ -677,9 +685,11 @@
 .btn-spin {
     background: var(--gradient-2);
     color: white;
-    font-size: 28px;
+    font-size: clamp(18px, 2.5vw, 28px);
     font-weight: 800;
     box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
+    flex-direction: column;
+    line-height: 1.1;
 }
 
 .btn-spin:hover:not(:disabled) {

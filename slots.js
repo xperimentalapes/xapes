@@ -46,6 +46,7 @@ let spinsRemaining = 0;
 let totalWon = 0;
 let isSpinning = false;
 let isCollecting = false;
+let isAutoSpinning = false;
 
 // Fixed reel order (created once, same for all reels)
 let FIXED_REEL_ORDER = null;
@@ -367,13 +368,16 @@ function setupGameControls() {
     const spinsInput = document.getElementById('number-of-spins');
     
     purchaseBtn.addEventListener('click', purchaseSpins);
-    spinBtn.addEventListener('click', spin);
+    spinBtn.addEventListener('click', toggleAutoSpin);
     withdrawBtn.addEventListener('click', withdrawWinnings);
     
     // Update button states when inputs change
     [costInput, spinsInput].forEach(input => {
         input.addEventListener('input', updateButtonStates);
     });
+    
+    // Initialize spin button text
+    updateSpinButtonText();
 }
 
 // Purchase Spins - Transfer XMA tokens to treasury wallet
@@ -486,6 +490,34 @@ async function purchaseSpins() {
         // Update spins remaining
         spinsRemaining += numSpins;
         
+        // Save purchase to database
+        try {
+            const saveResponse = await fetch('/api/save-game', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    walletAddress: wallet,
+                    spinCost: costPerSpin,
+                    resultSymbols: [],
+                    wonAmount: 0,
+                    spinsPurchased: numSpins
+                })
+            });
+            
+            if (!saveResponse.ok) {
+                const errorData = await saveResponse.json();
+                console.error('Failed to save purchase to database:', errorData);
+                // Don't fail the purchase if DB save fails, but log it
+            } else {
+                console.log('Purchase saved to database successfully');
+            }
+        } catch (saveError) {
+            console.error('Error saving purchase to database:', saveError);
+            // Don't fail the purchase if DB save fails, but log it
+        }
+        
         // Update balance
         await updateBalance();
         updateDisplay();
@@ -559,14 +591,49 @@ function getWeightedRandomPosition() {
     return Math.floor(Math.random() * FIXED_REEL_ORDER.length);
 }
 
-// Spin
-async function spin() {
-    if (isSpinning || spinsRemaining <= 0) return;
+// Toggle Auto Spin
+function toggleAutoSpin() {
+    // If autospin is currently on, turn it off (can do this even while spinning)
+    if (isAutoSpinning) {
+        isAutoSpinning = false;
+        updateSpinButtonText();
+        return;
+    }
+    
+    // Can't start autospin if no spins remaining
+    if (spinsRemaining <= 0) return;
+    
+    // Start autospin
+    isAutoSpinning = true;
+    updateSpinButtonText();
+    
+    // Begin spinning (only if not already spinning)
+    if (!isSpinning) {
+        performSpin();
+    }
+}
+
+// Perform a single spin
+async function performSpin() {
+    if (isSpinning || spinsRemaining <= 0) {
+        // Stop autospin if no spins remaining
+        if (isAutoSpinning && spinsRemaining <= 0) {
+            isAutoSpinning = false;
+            updateSpinButtonText();
+        }
+        return;
+    }
+    
+    // Stop autospin if user disabled it
+    if (!isAutoSpinning) {
+        return;
+    }
     
     isSpinning = true;
     spinsRemaining = Math.max(0, spinsRemaining - 1);
     updateDisplay();
     updateButtonStates();
+    updateSpinButtonText();
     
     // Start spinning animation
     for (let i = 1; i <= 3; i++) {
@@ -597,13 +664,71 @@ async function spin() {
     setTimeout(() => stopReel(3, resultPositions[2]), 2000);
     
     // Calculate win after all reels stop
-    setTimeout(() => {
+    setTimeout(async () => {
         const costPerSpin = parseFloat(document.getElementById('cost-per-spin').value) || SPIN_COST;
-        calculateWin(results, costPerSpin);
+        const winAmount = calculateWin(results, costPerSpin);
         isSpinning = false;
+        
+        // Save spin to database
+        if (wallet) {
+            try {
+                const saveResponse = await fetch('/api/save-game', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        walletAddress: wallet,
+                        spinCost: costPerSpin,
+                        resultSymbols: results,
+                        wonAmount: winAmount,
+                        updateSpinsRemaining: spinsRemaining
+                    })
+                });
+                
+                if (!saveResponse.ok) {
+                    const errorData = await saveResponse.json();
+                    console.error('Failed to save spin to database:', errorData);
+                    // Don't fail the spin if DB save fails, but log it
+                } else {
+                    console.log('Spin saved to database successfully');
+                }
+            } catch (saveError) {
+                console.error('Error saving spin to database:', saveError);
+                // Don't fail the spin if DB save fails, but log it
+            }
+        }
+        
         updateDisplay();
         updateButtonStates();
+        updateSpinButtonText();
+        
+        // Continue autospin if enabled and spins remaining
+        if (isAutoSpinning && spinsRemaining > 0) {
+            // Small delay before next spin
+            setTimeout(() => {
+                performSpin();
+            }, 500);
+        } else if (isAutoSpinning && spinsRemaining <= 0) {
+            // Stop autospin when spins run out
+            isAutoSpinning = false;
+            updateSpinButtonText();
+        }
     }, 2500);
+}
+
+// Update spin button text based on state
+function updateSpinButtonText() {
+    const spinBtn = document.getElementById('spin-button');
+    if (!spinBtn) return;
+    
+    if (isSpinning) {
+        spinBtn.innerHTML = 'SPINNING<br><span class="spin-button-subtitle">CLICK TO STOP AUTOSPIN</span>';
+    } else if (isAutoSpinning) {
+        spinBtn.innerHTML = 'SPINNING<br><span class="spin-button-subtitle">CLICK TO STOP AUTOSPIN</span>';
+    } else {
+        spinBtn.innerHTML = 'SPIN<br><span class="spin-button-subtitle">CLICK FOR AUTOSPIN</span>';
+    }
 }
 
 // Stop Reel - position a specific symbol index from the reel strip in the center
@@ -650,8 +775,8 @@ function calculateWin(results, bet) {
     }
     // No popup for losses - just update display silently
     
-    updateDisplay();
-    updateButtonStates();
+    // Return the win amount so it can be saved to database
+    return win;
 }
 
 // Withdraw Winnings - Transfer XMA tokens from treasury to user wallet
@@ -1272,8 +1397,12 @@ function updateButtonStates() {
         purchaseBtn.style.cursor = 'not-allowed';
     }
     
-    // Enable spin button when spins > 0 and not spinning
-    spinBtn.disabled = spinsRemaining <= 0 || isSpinning || isCollecting;
+    // Enable spin button when spins > 0 (can always click to toggle autospin)
+    // Disable only if collecting or no spins and not autospinning
+    spinBtn.disabled = (spinsRemaining <= 0 && !isAutoSpinning) || isCollecting;
+    
+    // Update spin button text
+    updateSpinButtonText();
     
     // Enable collect button when wallet connected and total won > 0, but disable if collecting
     withdrawBtn.disabled = !wallet || totalWon <= 0 || isCollecting;
