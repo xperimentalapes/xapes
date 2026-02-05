@@ -1147,7 +1147,6 @@
 }
 
 .music-toggle-btn:hover {
-    background: var(--bg-card);
     border-color: var(--primary-color);
     transform: scale(1.05);
 }
@@ -1159,16 +1158,6 @@
     fill: currentColor;
     position: relative;
     z-index: 1;
-}
-
-.music-toggle-btn.active {
-    background: var(--gradient-1);
-    border-color: transparent;
-    color: white;
-}
-
-.music-toggle-btn.active svg {
-    color: white;
 }
 
 .music-toggle-btn:not(.active) #music-icon-off {

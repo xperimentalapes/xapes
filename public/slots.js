@@ -1281,23 +1281,25 @@ function setupBackgroundMusic() {
     // Set initial state (music on by default)
     musicToggleBtn.classList.add('active');
     isMusicPlaying = true;
+    musicIconOn.style.display = 'block';
+    musicIconOff.style.display = 'none';
     
-    // Try to play music (may require user interaction on some browsers)
+    // Try to play music immediately (may require user interaction on some browsers)
     const playMusic = () => {
-        if (backgroundMusic && isMusicPlaying) {
+        if (backgroundMusic && isMusicPlaying && backgroundMusic.paused) {
             backgroundMusic.play().catch(() => {
                 // Silently fail - autoplay is blocked by browser policy
-                // Music will start when user interacts with the page or clicks the button
+                // Music will start when user interacts with the page
             });
         }
     };
     
-    // Try to play on page load (may not work due to autoplay policies)
-    // Don't log errors - this is expected browser behavior
+    // Try to play on page load
     playMusic();
     
     // Also try to play after a short delay
-    setTimeout(playMusic, 1000);
+    setTimeout(playMusic, 500);
+    setTimeout(playMusic, 1500);
     
     // Toggle music on button click
     musicToggleBtn.addEventListener('click', (e) => {
@@ -1309,6 +1311,7 @@ function setupBackgroundMusic() {
             return;
         }
         
+        // Toggle state
         isMusicPlaying = !isMusicPlaying;
         
         if (isMusicPlaying) {
@@ -1328,6 +1331,7 @@ function setupBackgroundMusic() {
         } else {
             // Turn music off
             backgroundMusic.pause();
+            backgroundMusic.currentTime = 0; // Reset to beginning
             musicToggleBtn.classList.remove('active');
             musicIconOn.style.display = 'none';
             musicIconOff.style.display = 'block';
@@ -1341,7 +1345,7 @@ function setupBackgroundMusic() {
         }
     };
     
-    // Listen for user interactions
+    // Listen for user interactions to start music if autoplay was blocked
     document.addEventListener('click', enableMusicOnInteraction, { once: true });
     document.addEventListener('keydown', enableMusicOnInteraction, { once: true });
     document.addEventListener('touchstart', enableMusicOnInteraction, { once: true });
