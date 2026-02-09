@@ -324,8 +324,9 @@ body {
     width: 100%;
     height: auto;
     display: block;
-    object-fit: cover;
-    max-height: 400px;
+    object-fit: contain;
+    object-position: top center;
+    max-height: min(70vh, 700px);
 }
 
 .scroll-indicator {

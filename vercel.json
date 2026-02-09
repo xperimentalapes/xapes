@@ -1,13 +1,1 @@
-{
-  "cleanUrls": true,
-  "rewrites": [
-    {
-      "source": "/slots",
-      "destination": "/slots.html"
-    }
-  ],
-  "buildCommand": "npm run build",
-  "outputDirectory": "public",
-  "framework": null
-}
-
+{"cleanUrls":true,"rewrites":[{"source":"/slots","destination":"/slots.html"},{"source":"/chests","destination":"/chests.html"}],"buildCommand":"npm run build","outputDirectory":"public","framework":null}

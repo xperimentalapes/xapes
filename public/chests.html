@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="XMA Chests - Open chests for NFTs and tokens from the shared treasury">
+    <title>XMA Chests | Xperimental Mutant Apes</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="chests.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
+    <script type="module">
+        import('https://esm.sh/@solana/spl-token@0.3.9').then(splToken => {
+            window.splToken = splToken;
+            window.dispatchEvent(new Event('splTokenLoaded'));
+        }).catch(() => {});
+    </script>
+</head>
+<body class="chests-page">
+    <nav class="navbar chests-nav">
+        <div class="container">
+            <div class="nav-content">
+                <div class="logo" style="display: flex; align-items: center; gap: 16px;">
+                    <a href="/">
+                        <img src="/images/logo.png" alt="Xperimental Mutant Apes" class="logo-img">
+                    </a>
+                    <a href="/" class="exit-home-btn" title="Exit to Homepage">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M9 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H9M16 17L21 12M21 12L16 7M21 12H9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </a>
+                </div>
+                <div class="nav-links">
+                    <a href="/slots" class="nav-link">Slots</a>
+                    <a href="/chests" class="nav-link nav-link-active">Chests</a>
+                    <div id="wallet-button-container" class="wallet-button-container">
+                        <button id="connect-wallet" class="wallet-connect-btn">Connect Wallet</button>
+                        <div id="wallet-info" class="wallet-info" style="display: none;">
+                            <span id="wallet-address"></span>
+                            <button id="disconnect-wallet" class="wallet-disconnect-btn">Disconnect</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="chests-main">
+        <!-- Hero: whole block (image + text + logos) centered -->
+        <section class="chests-hero">
+            <div class="chests-hero-inner">
+                <div class="chests-hero-img-wrap">
+                    <img src="images/chests.png" alt="" class="chests-hero-img">
+                </div>
+                <div class="chests-hero-content">
+                <h1 class="chests-hero-title">XMA Chests</h1>
+                <p class="chests-hero-subtitle">Purchase and open chests for a chance to win awesome prizes!</p>
+                <p class="chests-hero-partner-text">Prize pot loaded with NFTs and tokens from partner projects</p>
+                <div class="chests-partner-logos">
+                    <a href="https://magiceden.io" target="_blank" rel="noopener" class="partner-logo" title="Mnk3ys">
+                        <img src="https://img-cdn.magiceden.dev/rs:fill:400:0:0/plain/https%3A%2F%2Fcreator-hub-prod.s3.us-east-2.amazonaws.com%2Fmnk3ys_pfp_1724204870860.png" alt="Mnk3ys">
+                    </a>
+                    <a href="https://magiceden.io" target="_blank" rel="noopener" class="partner-logo" title="Frens">
+                        <img src="https://img-cdn.magiceden.dev/rs:fill:400:0:0/plain/https%3A%2F%2Fcreator-hub-prod.s3.us-east-2.amazonaws.com%2Ffrens_factory_pfp_1736409521055.gif" alt="Frens">
+                    </a>
+                    <a href="https://arweave.net" target="_blank" rel="noopener" class="partner-logo" title="MOSC">
+                        <img src="https://arweave.net/n1x7nzl6e8l2o24CA0ntXkX72SO9ne-pYzGlPMMBkSM" alt="MOSC">
+                    </a>
+                </div>
+            </div>
+            </div>
+        </section>
+
+        <!-- Chests row: Silver | Bronze | Gold (carousel arrows hidden on desktop) -->
+        <section class="chests-carousel-section">
+            <button type="button" id="carousel-prev" class="carousel-btn carousel-btn-prev" aria-label="Previous chest">‹</button>
+            <div class="chests-carousel-wrap">
+                <div id="chests-carousel" class="chests-carousel">
+                    <!-- Silver - Coming soon -->
+                    <article class="chest-card chest-card-silver chest-card-disabled" data-tier="silver">
+                        <div class="chest-visual">
+                            <img src="images/chests.png" alt="" class="chest-img">
+                        </div>
+                        <h2 class="chest-name">Silver</h2>
+                        <button class="btn btn-disabled" disabled>Coming soon</button>
+                    </article>
+                    <!-- Bronze - Live -->
+                    <article class="chest-card chest-card-bronze" data-tier="bronze">
+                        <div class="win-chance-badge" aria-hidden="true">
+                            <span class="win-chance-value">80%</span>
+                            <span class="win-chance-label">win<br>chance</span>
+                        </div>
+                        <div class="chest-visual">
+                            <img src="images/chests.png" alt="" class="chest-img">
+                        </div>
+                        <h2 class="chest-name">Bronze</h2>
+                        <p class="chest-price"><span id="bronze-price-xma" class="price-amount">--</span> XMA</p>
+                        <a href="#" id="available-prizes-link" class="available-prizes-link">Available prizes</a>
+                        <div class="chest-actions">
+                            <button id="buy-bronze" class="btn btn-chest" disabled>Connect wallet to buy</button>
+                            <button id="open-bronze" class="btn btn-open" style="display: none;" disabled>Open</button>
+                        </div>
+                        <p class="chest-owned" id="bronze-owned" style="display: none;"><span id="bronze-count">0</span> owned</p>
+                    </article>
+                    <!-- Gold - Coming soon -->
+                    <article class="chest-card chest-card-gold chest-card-disabled" data-tier="gold">
+                        <div class="chest-visual">
+                            <img src="images/chests.png" alt="" class="chest-img">
+                        </div>
+                        <h2 class="chest-name">Gold</h2>
+                        <button class="btn btn-disabled" disabled>Coming soon</button>
+                    </article>
+                </div>
+            </div>
+            <button type="button" id="carousel-next" class="carousel-btn carousel-btn-next" aria-label="Next chest">›</button>
+        </section>
+    </main>
+
+    <!-- Available prizes modal -->
+    <div id="available-prizes-modal" class="chest-modal available-prizes-modal" aria-hidden="true">
+        <div class="chest-modal-backdrop"></div>
+        <div class="chest-modal-content">
+            <button id="close-available-prizes" class="chest-modal-close" aria-label="Close">&times;</button>
+            <h3>Available prizes</h3>
+            <ul class="available-prizes-list">
+                <li class="prize-item">
+                    <img src="https://img-cdn.magiceden.dev/rs:fill:400:0:0/plain/https%3A%2F%2Fcreator-hub-prod.s3.us-east-2.amazonaws.com%2Fmnk3ys_pfp_1724204870860.png" alt="" class="prize-thumb">
+                    <span class="prize-label">Mnk3ys NFT</span>
+                </li>
+                <li class="prize-item">
+                    <img src="https://img-cdn.magiceden.dev/rs:fill:400:0:0/plain/https%3A%2F%2Fcreator-hub-prod.s3.us-east-2.amazonaws.com%2Ffrens_factory_pfp_1736409521055.gif" alt="" class="prize-thumb">
+                    <span class="prize-label">Frens Factory NFT</span>
+                </li>
+                <li class="prize-item">
+                    <img src="https://arweave.net/n1x7nzl6e8l2o24CA0ntXkX72SO9ne-pYzGlPMMBkSM" alt="" class="prize-thumb">
+                    <span class="prize-label">MOSC NFT</span>
+                </li>
+                <li class="prize-item">
+                    <img src="images/logo.png" alt="" class="prize-thumb">
+                    <span class="prize-label">2,000,000 XMA</span>
+                </li>
+                <li class="prize-item">
+                    <img src="images/logo.png" alt="" class="prize-thumb">
+                    <span class="prize-label">1,000,000 XMA</span>
+                </li>
+                <li class="prize-item">
+                    <img src="images/logo.png" alt="" class="prize-thumb">
+                    <span class="prize-label">350,000 XMA</span>
+                </li>
+                <li class="prize-item">
+                    <img src="https://ipfs.io/ipfs/QmTKRAZEcTfDeVDt8hebrCv27DctYghtdfXRMc9FRA6NU3" alt="" class="prize-thumb">
+                    <span class="prize-label">300,000 BLUNANA</span>
+                </li>
+                <li class="prize-item">
+                    <img src="https://ipfs.io/ipfs/QmTKRAZEcTfDeVDt8hebrCv27DctYghtdfXRMc9FRA6NU3" alt="" class="prize-thumb">
+                    <span class="prize-label">150,000 BLUNANA</span>
+                </li>
+                <li class="prize-item">
+                    <img src="https://ipfs.io/ipfs/QmTKRAZEcTfDeVDt8hebrCv27DctYghtdfXRMc9FRA6NU3" alt="" class="prize-thumb">
+                    <span class="prize-label">50,000 BLUNANA</span>
+                </li>
+                <li class="prize-item">
+                    <img src="https://img-cdn.magiceden.dev/rs:fill:400:0:0/plain/https%3A%2F%2Fcreator-hub-prod.s3.us-east-2.amazonaws.com%2Ffrens_factory_pfp_1736409521055.gif" alt="" class="prize-thumb">
+                    <span class="prize-label">5,000,000 FRENS</span>
+                </li>
+                <li class="prize-item">
+                    <img src="https://img-cdn.magiceden.dev/rs:fill:400:0:0/plain/https%3A%2F%2Fcreator-hub-prod.s3.us-east-2.amazonaws.com%2Ffrens_factory_pfp_1736409521055.gif" alt="" class="prize-thumb">
+                    <span class="prize-label">3,000,000 FRENS</span>
+                </li>
+                <li class="prize-item">
+                    <img src="https://img-cdn.magiceden.dev/rs:fill:400:0:0/plain/https%3A%2F%2Fcreator-hub-prod.s3.us-east-2.amazonaws.com%2Ffrens_factory_pfp_1736409521055.gif" alt="" class="prize-thumb">
+                    <span class="prize-label">1,000,000 FRENS</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Result modal (mock for demo) -->
+    <div id="result-modal" class="chest-modal" aria-hidden="true">
+        <div class="chest-modal-backdrop"></div>
+        <div class="chest-modal-content">
+            <button id="close-result-modal" class="chest-modal-close" aria-label="Close">&times;</button>
+            <div id="result-body">
+                <div id="result-empty" class="result-panel" style="display: none;">
+                    <div class="result-icon result-icon-empty">🎁</div>
+                    <h3>No prize this time</h3>
+                    <p>This open was in the 20% no-prize pool. Try again!</p>
+                </div>
+                <div id="result-nft" class="result-panel" style="display: none;">
+                    <div class="result-icon result-icon-nft">🖼️</div>
+                    <h3>You won an NFT!</h3>
+                    <p class="result-detail">Random NFT from the shared treasury. (Demo: not sent on-chain yet.)</p>
+                </div>
+                <div id="result-coins" class="result-panel" style="display: none;">
+                    <div class="result-icon result-icon-coins">🪙</div>
+                    <h3>You won tokens!</h3>
+                    <p class="result-detail">Coins from the treasury. (Demo: amount shown is simulated.)</p>
+                    <p id="result-coins-amount" class="result-amount"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="chests.js"></script>
+</body>
+</html>
