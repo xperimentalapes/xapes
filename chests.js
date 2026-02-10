@@ -2,7 +2,7 @@
 // Bronze chest price (fixed) — for display only
 const PRICE_XMA_AMOUNT = 700000;
 
-// Prizes: 20% loss, 20% NFT, 60% token. Of token wins: 50% small, 30% medium, 20% large.
+// Prizes: 35% loss, 10% NFT, 55% token. Of token wins: 50% small, 30% medium, 20% large.
 const NFT_PRIZES = ['Mnk3ys NFT', 'Frens Factory NFT', 'MOSC NFT'];
 const NFT_MINTS = {
     'Mnk3ys NFT': ['C6mHMTfJXCRzzvC5btbK6jxy5bkigdrh7pr8rPaV67J8', 'FEQjPe3SWi6ZX9KcDp8wqxvZj15jwzZXbiECfaJtF13Q', 'Enag8xxDDuw3cz3R1uP4oZgb46Z5uDtb9p9PRvWsyufo'],
@@ -197,13 +197,13 @@ function setupBronzeChest() {
     });
 }
 
-/** 20% loss, 20% NFT (random from list), 60% token (random type; 50% small, 30% medium, 20% large). */
+/** 35% loss, 10% NFT (random from list), 55% token (random type; 50% small, 30% medium, 20% large). */
 function rollOutcome() {
     const r = Math.random();
-    if (r < 0.2) {
+    if (r < 0.35) {
         return { type: 'loss' };
     }
-    if (r < 0.4) {
+    if (r < 0.45) {
         const collection = NFT_PRIZES[Math.floor(Math.random() * NFT_PRIZES.length)];
         const mints = NFT_MINTS[collection];
         const mint = mints[Math.floor(Math.random() * mints.length)];
