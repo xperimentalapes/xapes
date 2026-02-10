@@ -39,6 +39,14 @@ const resultPrizeImg = document.getElementById('result-prize-img');
 const resultPrizeName = document.getElementById('result-prize-name');
 const resultCollectBtn = document.getElementById('result-collect-btn');
 
+var fireworksCanvas = null;
+var fireworksCtx = null;
+var fireworksWrap = null;
+var fireworksParticles = [];
+var fireworksAnimationId = null;
+var fireworksBurstsScheduled = 0;
+var FIREWORKS_COLORS = ['#fbbf24', '#f59e0b', '#a78bfa', '#8b5cf6', '#f472b6', '#f0abfc', '#fff'];
+
 document.addEventListener('DOMContentLoaded', () => {
     setupWallet();
     setupBronzeChest();
@@ -225,6 +233,7 @@ function showResult(outcome) {
     resultWin.style.display = 'block';
     if (!resultPrizeImg || !resultPrizeName) {
         resultModal.setAttribute('aria-hidden', 'false');
+        setTimeout(startFireworks, 80);
         return;
     }
 
@@ -233,6 +242,7 @@ function showResult(outcome) {
         resultPrizeImg.alt = outcome.prize;
         resultPrizeName.textContent = outcome.prize;
         resultModal.setAttribute('aria-hidden', 'false');
+        setTimeout(startFireworks, 80);
         return;
     }
 
@@ -242,6 +252,7 @@ function showResult(outcome) {
     resultPrizeImg.alt = collectionLabel;
     resultPrizeName.textContent = collectionLabel;
     resultModal.setAttribute('aria-hidden', 'false');
+    setTimeout(startFireworks, 80);
     var mint = outcome.mint;
     if (!mint) {
         return;
@@ -295,11 +306,118 @@ function fetchNftMetadata(mintAddress) {
         .catch(function () { return { name: null, image: null }; });
 }
 
+function createFireworksBurst(cx, cy, colorList) {
+    var colors = colorList || FIREWORKS_COLORS;
+    var count = 50 + Math.floor(Math.random() * 30);
+    for (var i = 0; i < count; i++) {
+        var angle = (Math.PI * 2 * i) / count + Math.random() * 0.5;
+        var speed = 2 + Math.random() * 5;
+        var vx = Math.cos(angle) * speed;
+        var vy = Math.sin(angle) * speed - 2;
+        fireworksParticles.push({
+            x: cx,
+            y: cy,
+            vx: vx,
+            vy: vy,
+            life: 1,
+            decay: 0.012 + Math.random() * 0.01,
+            color: colors[Math.floor(Math.random() * colors.length)],
+            radius: 1.2 + Math.random() * 1.2
+        });
+    }
+}
+
+function runFireworksTick() {
+    if (!fireworksCtx || !fireworksCanvas) return;
+    var w = fireworksCanvas.width;
+    var h = fireworksCanvas.height;
+    fireworksCtx.fillStyle = 'rgba(0,0,0,0.12)';
+    fireworksCtx.fillRect(0, 0, w, h);
+    var i = fireworksParticles.length;
+    while (i--) {
+        var p = fireworksParticles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.08;
+        p.vx *= 0.98;
+        p.vy *= 0.98;
+        p.life -= p.decay;
+        if (p.life <= 0) {
+            fireworksParticles.splice(i, 1);
+            continue;
+        }
+        var alpha = p.life;
+        fireworksCtx.beginPath();
+        fireworksCtx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        if (p.color.startsWith('#')) {
+            var hex = p.color.slice(1);
+            var r = parseInt(hex.slice(0, 2), 16);
+            var g = parseInt(hex.slice(2, 4), 16);
+            var b = parseInt(hex.slice(4, 6), 16);
+            fireworksCtx.fillStyle = 'rgba(' + r + ',' + g + ',' + b + ',' + alpha.toFixed(2) + ')';
+        } else {
+            fireworksCtx.fillStyle = p.color;
+        }
+        fireworksCtx.fill();
+    }
+    if (fireworksParticles.length > 0 || fireworksBurstsScheduled > 0) {
+        fireworksAnimationId = requestAnimationFrame(runFireworksTick);
+    } else {
+        fireworksAnimationId = null;
+        if (fireworksWrap) fireworksWrap.setAttribute('aria-hidden', 'true');
+    }
+}
+
+function startFireworks() {
+    fireworksWrap = document.querySelector('.fireworks-canvas-wrap');
+    fireworksCanvas = document.getElementById('result-fireworks-canvas');
+    if (!fireworksWrap || !fireworksCanvas) return;
+    if (fireworksAnimationId) cancelAnimationFrame(fireworksAnimationId);
+    fireworksParticles = [];
+    fireworksWrap.setAttribute('aria-hidden', 'false');
+    var rect = fireworksWrap.getBoundingClientRect();
+    fireworksCanvas.width = rect.width;
+    fireworksCanvas.height = rect.height;
+    fireworksCtx = fireworksCanvas.getContext('2d');
+    if (!fireworksCtx) return;
+    var cx = rect.width * 0.5;
+    var cy = rect.height * 0.35;
+    createFireworksBurst(cx, cy);
+    fireworksBurstsScheduled = 2;
+    setTimeout(function () {
+        if (fireworksBurstsScheduled > 0) {
+            fireworksBurstsScheduled--;
+            createFireworksBurst(rect.width * 0.3, rect.height * 0.4);
+        }
+    }, 400);
+    setTimeout(function () {
+        if (fireworksBurstsScheduled > 0) {
+            fireworksBurstsScheduled--;
+            createFireworksBurst(rect.width * 0.7, rect.height * 0.4);
+        }
+    }, 800);
+    runFireworksTick();
+}
+
+function stopFireworks() {
+    if (fireworksAnimationId) {
+        cancelAnimationFrame(fireworksAnimationId);
+        fireworksAnimationId = null;
+    }
+    fireworksParticles = [];
+    fireworksBurstsScheduled = 0;
+    if (fireworksWrap) fireworksWrap.setAttribute('aria-hidden', 'true');
+    if (fireworksCtx && fireworksCanvas) {
+        fireworksCtx.clearRect(0, 0, fireworksCanvas.width, fireworksCanvas.height);
+    }
+}
+
 function setupResultModal() {
     const closeBtn = document.getElementById('close-result-modal');
     const backdrop = resultModal && resultModal.querySelector('.chest-modal-backdrop');
 
     function close() {
+        stopFireworks();
         if (resultModal) resultModal.setAttribute('aria-hidden', 'true');
     }
 
