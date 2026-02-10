@@ -1,23 +1,43 @@
-// XMA Chests - Demo UI for founder testing. Buy/open and outcomes are mocked.
-// Token prices (USD per token) — update from Dextools or your price feed
-const XMA_PRICE = 0.0000028817201476158986;
-const BLUNANA_PRICE = 0.000018359793263521786;
-const FRENS_PRICE = 9.628874693810868e-7;
-// Bronze chest price (fixed)
+// XMA Chests - Open chest for random prize (no purchase flow).
+// Bronze chest price (fixed) — for display only
 const PRICE_XMA_AMOUNT = 700000;
-const WIN_CHANCE = 0.8;     // 80% win
-const NFT_RATE_OF_WINS = 0.3;  // 30% of wins are NFT
-const COINS_RATE_OF_WINS = 0.5; // 50% of wins are coins
 
+// Prizes: 20% loss, 20% NFT, 60% token. Of token wins: 50% small, 30% medium, 20% large.
+const NFT_PRIZES = ['Mnk3ys NFT', 'Frens Factory NFT', 'MOSC NFT'];
+const NFT_MINTS = {
+    'Mnk3ys NFT': ['C6mHMTfJXCRzzvC5btbK6jxy5bkigdrh7pr8rPaV67J8', 'FEQjPe3SWi6ZX9KcDp8wqxvZj15jwzZXbiECfaJtF13Q', 'Enag8xxDDuw3cz3R1uP4oZgb46Z5uDtb9p9PRvWsyufo'],
+    'Frens Factory NFT': ['2a2PSb1JCE28BetUx1wyczLqgXfjaGd9u5eTdBLrabKj', '5kAaGHvihSXiEKHJVA4oRESFVWpChgWhU5E1VWkoD3jo', '2Xi1dQT3WkvazJABFmb3BhNxVCg6iqZ1JJJEn9QQ7eLs'],
+    'MOSC NFT': ['3NfayXiSEzmGBKDun9irchkac51bYVU3tm6WcgiKtEWi', '6Kf3W72Wp89t77wwvyqan2NJxUhvZ5yBJd5VwENV9qMK', '7Wexrnmq6QcvTPeTspWrcrvCurmuHkJyovxGxPZkTrY7']
+};
+const NFT_FALLBACK_IMAGES = {
+    'Mnk3ys NFT': 'https://img-cdn.magiceden.dev/rs:fill:400:0:0/plain/https%3A%2F%2Fcreator-hub-prod.s3.us-east-2.amazonaws.com%2Fmnk3ys_pfp_1724204870860.png',
+    'Frens Factory NFT': 'https://img-cdn.magiceden.dev/rs:fill:400:0:0/plain/https%3A%2F%2Fcreator-hub-prod.s3.us-east-2.amazonaws.com%2Ffrens_factory_pfp_1736409521055.gif',
+    'MOSC NFT': 'https://arweave.net/n1x7nzl6e8l2o24CA0ntXkX72SO9ne-pYzGlPMMBkSM'
+};
+const TOKEN_PRIZES = {
+    XMA:    { small: '350,000 XMA',    medium: '1,000,000 XMA',    large: '2,000,000 XMA' },
+    BLUNANA: { small: '50,000 BLUNANA',  medium: '150,000 BLUNANA',  large: '300,000 BLUNANA' },
+    FRENS:  { small: '1,000,000 FRENS', medium: '3,000,000 FRENS', large: '5,000,000 FRENS' }
+};
+const TOKEN_IMAGES = {
+    XMA: 'images/logo.png',
+    BLUNANA: 'https://ipfs.io/ipfs/QmTKRAZEcTfDeVDt8hebrCv27DctYghtdfXRMc9FRA6NU3',
+    FRENS: 'https://img-cdn.magiceden.dev/rs:fill:400:0:0/plain/https%3A%2F%2Fcreator-hub-prod.s3.us-east-2.amazonaws.com%2Ffrens_factory_pfp_1736409521055.gif'
+};
+const TOKEN_TYPES = Object.keys(TOKEN_PRIZES);
+const TOKEN_SIZE_WEIGHTS = [0.5, 0.3, 0.2];
+const TOKEN_SIZES = ['small', 'medium', 'large'];
+
+// Optional: set window.HELIUS_API_KEY for live NFT metadata fetch
 let walletConnected = false;
-let bronzeOwned = 0;
 let walletAddress = null;
 
 const resultModal = document.getElementById('result-modal');
-const resultEmpty = document.getElementById('result-empty');
-const resultNft = document.getElementById('result-nft');
-const resultCoins = document.getElementById('result-coins');
-const resultCoinsAmount = document.getElementById('result-coins-amount');
+const resultLose = document.getElementById('result-lose');
+const resultWin = document.getElementById('result-win');
+const resultPrizeImg = document.getElementById('result-prize-img');
+const resultPrizeName = document.getElementById('result-prize-name');
+const resultCollectBtn = document.getElementById('result-collect-btn');
 
 document.addEventListener('DOMContentLoaded', () => {
     setupWallet();
@@ -126,11 +146,8 @@ function setupWallet() {
                     walletAddressEl.textContent = walletAddress.slice(0, 4) + '…' + walletAddress.slice(-4);
                     connectBtn.style.display = 'none';
                     walletInfo.style.display = 'flex';
-                    updateBronzeUI();
                 })
-                .catch(() => {
-                    useDemoWallet();
-                });
+                .catch(() => useDemoWallet());
         } else {
             useDemoWallet();
         }
@@ -141,7 +158,6 @@ function setupWallet() {
         walletAddress = null;
         walletInfo.style.display = 'none';
         connectBtn.style.display = 'block';
-        updateBronzeUI();
     });
 
     function useDemoWallet() {
@@ -150,7 +166,6 @@ function setupWallet() {
         walletAddressEl.textContent = walletAddress;
         connectBtn.style.display = 'none';
         walletInfo.style.display = 'flex';
-        updateBronzeUI();
     }
 
     if (window.solana?.isPhantom) {
@@ -160,104 +175,135 @@ function setupWallet() {
                 walletAddress = null;
                 walletInfo.style.display = 'none';
                 connectBtn.style.display = 'block';
-                updateBronzeUI();
             }
         });
     }
 }
 
 function setupBronzeChest() {
-    const buyBtn = document.getElementById('buy-bronze');
-    const openBtn = document.getElementById('open-bronze');
-    const bronzeOwnedEl = document.getElementById('bronze-owned');
-    const bronzeCountEl = document.getElementById('bronze-count');
-
-    buyBtn.addEventListener('click', () => {
-        if (!walletConnected) return;
-        bronzeOwned += 1;
-        bronzeCountEl.textContent = bronzeOwned;
-        bronzeOwnedEl.style.display = 'block';
-        openBtn.style.display = 'inline-flex';
-        openBtn.disabled = false;
-        buyBtn.textContent = `Buy another chest (~${PRICE_XMA_AMOUNT} XMA)`;
-    });
-
+    const openBtn = document.getElementById('open-chest-btn');
+    if (!openBtn) return;
     openBtn.addEventListener('click', () => {
-        if (bronzeOwned <= 0) return;
-        bronzeOwned -= 1;
-        bronzeCountEl.textContent = bronzeOwned;
-        if (bronzeOwned === 0) {
-            openBtn.style.display = 'none';
-            openBtn.disabled = true;
-            bronzeOwnedEl.style.display = 'none';
-        }
-
         const outcome = rollOutcome();
         showResult(outcome);
     });
 }
 
+/** 20% loss, 20% NFT (random from list), 60% token (random type; 50% small, 30% medium, 20% large). */
 function rollOutcome() {
     const r = Math.random();
-    if (r >= WIN_CHANCE) {
-        return { type: 'empty' };
+    if (r < 0.2) {
+        return { type: 'loss' };
     }
-    const winRoll = Math.random();
-    if (winRoll < NFT_RATE_OF_WINS) {
-        return { type: 'nft' };
+    if (r < 0.4) {
+        const collection = NFT_PRIZES[Math.floor(Math.random() * NFT_PRIZES.length)];
+        const mints = NFT_MINTS[collection];
+        const mint = mints[Math.floor(Math.random() * mints.length)];
+        return { type: 'win', kind: 'nft', collection, mint };
     }
-    const coinValue = (1.2 + Math.random() * 2.3).toFixed(2);
-    return { type: 'coins', amount: coinValue };
+    const tokenType = TOKEN_TYPES[Math.floor(Math.random() * TOKEN_TYPES.length)];
+    const sizeRoll = Math.random();
+    let size = TOKEN_SIZES[0];
+    if (sizeRoll < TOKEN_SIZE_WEIGHTS[0]) size = 'small';
+    else if (sizeRoll < TOKEN_SIZE_WEIGHTS[0] + TOKEN_SIZE_WEIGHTS[1]) size = 'medium';
+    else size = 'large';
+    const prize = TOKEN_PRIZES[tokenType][size];
+    return { type: 'win', kind: 'token', prize, tokenType };
 }
 
 function showResult(outcome) {
-    resultEmpty.style.display = 'none';
-    resultNft.style.display = 'none';
-    resultCoins.style.display = 'none';
+    if (!resultLose || !resultWin) return;
+    resultLose.style.display = 'none';
+    resultWin.style.display = 'none';
 
-    if (outcome.type === 'empty') {
-        resultEmpty.style.display = 'block';
-    } else if (outcome.type === 'nft') {
-        resultNft.style.display = 'block';
-    } else {
-        resultCoins.style.display = 'block';
-        resultCoinsAmount.textContent = `$${outcome.amount} (simulated)`;
+    if (outcome.type === 'loss') {
+        resultLose.style.display = 'block';
+        resultModal.setAttribute('aria-hidden', 'false');
+        return;
     }
 
+    resultWin.style.display = 'block';
+    if (!resultPrizeImg || !resultPrizeName) {
+        resultModal.setAttribute('aria-hidden', 'false');
+        return;
+    }
+
+    if (outcome.kind === 'token') {
+        resultPrizeImg.src = TOKEN_IMAGES[outcome.tokenType] || '';
+        resultPrizeImg.alt = outcome.prize;
+        resultPrizeName.textContent = outcome.prize;
+        resultModal.setAttribute('aria-hidden', 'false');
+        return;
+    }
+
+    var collectionLabel = outcome.collection || outcome.prize || 'NFT';
+    var fallbackImg = NFT_FALLBACK_IMAGES[outcome.collection] || NFT_FALLBACK_IMAGES[collectionLabel] || '';
+    resultPrizeImg.src = fallbackImg;
+    resultPrizeImg.alt = collectionLabel;
+    resultPrizeName.textContent = collectionLabel;
     resultModal.setAttribute('aria-hidden', 'false');
+    var mint = outcome.mint;
+    if (!mint) {
+        return;
+    }
+    fetchNftMetadata(mint).then(function (meta) {
+        if (meta && meta.image) resultPrizeImg.src = meta.image;
+        var name = (meta && meta.name) || collectionLabel;
+        resultPrizeName.textContent = name || 'NFT';
+    }).catch(function () {});
+}
+
+function fetchNftMetadata(mintAddress) {
+    var apiKey = typeof window !== 'undefined' && window.HELIUS_API_KEY;
+    if (!apiKey) return Promise.resolve({ name: null, image: null });
+    var url = 'https://mainnet.helius-rpc.com/?api-key=' + encodeURIComponent(apiKey);
+    return fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            jsonrpc: '2.0',
+            id: '1',
+            method: 'getAsset',
+            params: { id: mintAddress }
+        })
+    })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            var asset = data.result;
+            if (!asset || data.error) return { name: null, image: null };
+            var content = asset.content || {};
+            var links = content.links || {};
+            var metadata = content.metadata || {};
+            var files = content.files || [];
+            var image = (links && links.image) || (files[0] && (files[0].cdn_uri || files[0].uri)) || null;
+            var name = (metadata && metadata.name) || null;
+            var jsonUri = content.json_uri || null;
+            if ((!image || !name) && jsonUri) {
+                var metaUri = jsonUri.replace(/^ipfs:\/\//, 'https://ipfs.io/ipfs/');
+                return fetch(metaUri)
+                    .then(function (res) { return res.json(); })
+                    .then(function (json) {
+                        return {
+                            image: image || (json.image && (json.image.replace(/^ipfs:\/\//, 'https://ipfs.io/ipfs/') || json.image)) || null,
+                            name: name || json.name || null
+                        };
+                    })
+                    .catch(function () { return { image: image, name: name }; });
+            }
+            return { image: image, name: name };
+        })
+        .catch(function () { return { name: null, image: null }; });
 }
 
 function setupResultModal() {
     const closeBtn = document.getElementById('close-result-modal');
-    const backdrop = resultModal.querySelector('.chest-modal-backdrop');
+    const backdrop = resultModal && resultModal.querySelector('.chest-modal-backdrop');
 
     function close() {
-        resultModal.setAttribute('aria-hidden', 'true');
+        if (resultModal) resultModal.setAttribute('aria-hidden', 'true');
     }
 
-    closeBtn.addEventListener('click', close);
-    backdrop.addEventListener('click', close);
-}
-
-function updateBronzeUI() {
-    const buyBtn = document.getElementById('buy-bronze');
-    const openBtn = document.getElementById('open-bronze');
-    const bronzeOwnedEl = document.getElementById('bronze-owned');
-    const bronzeCountEl = document.getElementById('bronze-count');
-
-    if (walletConnected) {
-        buyBtn.disabled = false;
-        buyBtn.textContent = `Buy chest (~${PRICE_XMA_AMOUNT} XMA)`;
-        if (bronzeOwned > 0) {
-            bronzeOwnedEl.style.display = 'block';
-            bronzeCountEl.textContent = bronzeOwned;
-            openBtn.style.display = 'inline-flex';
-            openBtn.disabled = false;
-        }
-    } else {
-        buyBtn.disabled = true;
-        buyBtn.textContent = 'Connect wallet to buy';
-        openBtn.style.display = 'none';
-        bronzeOwnedEl.style.display = 'none';
-    }
+    if (closeBtn) closeBtn.addEventListener('click', close);
+    if (backdrop) backdrop.addEventListener('click', close);
+    if (resultCollectBtn) resultCollectBtn.addEventListener('click', close);
 }

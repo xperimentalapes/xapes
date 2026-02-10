@@ -608,20 +608,22 @@
 .chest-modal-backdrop {
     position: absolute;
     inset: 0;
-    background: rgba(0, 0, 0, 0.75);
+    background: rgba(0, 0, 0, 0.82);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     cursor: pointer;
 }
 
 .chest-modal-content {
     position: relative;
     background: var(--bg-card);
-    border: 1px solid var(--border-color);
-    border-radius: 16px;
+    border: 2px solid var(--border-color);
+    border-radius: 20px;
     padding: 32px;
     max-width: 400px;
     width: 100%;
     text-align: center;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.06) inset;
 }
 
 .chest-modal-close {
@@ -644,40 +646,101 @@
     background: rgba(255, 255, 255, 0.08);
 }
 
-.result-panel h3 {
-    font-size: 22px;
-    margin-bottom: 8px;
+.result-panel {
+    padding: 8px 0;
+}
+
+/* Lose: empty-chest icon with animation */
+.result-lose-icon {
+    margin: 0 auto 16px;
+    width: 80px;
+    height: 80px;
+    color: var(--text-muted);
+    animation: result-lose-wiggle 1.2s ease-in-out infinite;
+}
+
+.result-lose-svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+@keyframes result-lose-wiggle {
+    0%, 100% { transform: rotate(-2deg) scale(1); }
+    25% { transform: rotate(2deg) scale(1.02); }
+    50% { transform: rotate(-2deg) scale(0.98); }
+    75% { transform: rotate(2deg) scale(1.02); }
+}
+
+.result-heading {
+    font-size: 24px;
+    font-weight: 800;
+    margin: 0 0 12px;
+    letter-spacing: 0.02em;
+}
+
+.result-heading-lose {
+    color: var(--text-muted);
+}
+
+.result-heading-win {
+    background: var(--gradient-1);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.result-message {
+    color: var(--text-secondary);
+    font-size: 15px;
+    line-height: 1.5;
+    margin: 0 0 20px;
+}
+
+.result-prize-label {
+    color: var(--primary-light);
+    font-weight: 600;
+}
+
+.result-win-prize-visual {
+    margin: 16px 0 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+.result-prize-img {
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
+    border-radius: 16px;
+    border: 2px solid var(--border-color);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.result-prize-name {
+    font-size: 15px;
+    font-weight: 600;
     color: var(--text-primary);
 }
 
-.result-panel p {
-    color: var(--text-secondary);
-    font-size: 15px;
-    margin-bottom: 8px;
-}
-
-.result-icon {
-    font-size: 64px;
-    margin-bottom: 16px;
-    line-height: 1;
-}
-
-.result-icon-empty {
-    opacity: 0.8;
-}
-
-.result-icon-nft {
-    filter: drop-shadow(0 0 12px rgba(139, 92, 246, 0.4));
-}
-
-.result-icon-coins {
-    filter: drop-shadow(0 0 12px rgba(234, 179, 8, 0.4));
-}
-
-.result-amount {
-    font-size: 20px;
+.btn-collect {
+    background: var(--gradient-1);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 12px 32px;
+    font-size: 16px;
     font-weight: 700;
-    color: var(--primary-light);
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.btn-collect:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
 }
 
 /* Responsive: single card view on small screens */
@@ -814,17 +877,20 @@
         font-size: 13px;
     }
 
-    /* Modals: fit in viewport with scroll */
+    /* Modals: centered on mobile; available-prizes can scroll */
     .chest-modal {
-        padding: 8px;
-        align-items: flex-start;
-        padding-top: 44px;
+        padding: 12px;
+        align-items: center;
     }
 
     .chest-modal-content {
         padding: 16px 20px;
         max-height: calc(100vh - 24px);
         overflow-y: auto;
+    }
+
+    #result-modal .chest-modal-content {
+        margin: auto;
     }
 
     .available-prizes-modal .chest-modal-content h3 {
@@ -851,21 +917,18 @@
         font-size: 20px;
     }
 
-    .result-panel h3 {
-        font-size: 18px;
+    .result-heading {
+        font-size: 20px;
     }
 
-    .result-panel p {
+    .result-message {
         font-size: 13px;
+        margin-bottom: 16px;
     }
 
-    .result-icon {
-        font-size: 48px;
-        margin-bottom: 10px;
-    }
-
-    .result-amount {
-        font-size: 16px;
+    .btn-collect {
+        padding: 10px 24px;
+        font-size: 14px;
     }
 }
 

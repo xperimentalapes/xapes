@@ -68,6 +68,15 @@
                     <a href="https://arweave.net" target="_blank" rel="noopener" class="partner-logo" title="MOSC">
                         <img src="https://arweave.net/n1x7nzl6e8l2o24CA0ntXkX72SO9ne-pYzGlPMMBkSM" alt="MOSC">
                     </a>
+                    <a href="#" target="_blank" rel="noopener" class="partner-logo" title="Partner">
+                        <img src="https://pbs.twimg.com/profile_images/1890573335894859778/aTXmxhIZ_400x400.jpg" alt="Partner">
+                    </a>
+                    <a href="#" target="_blank" rel="noopener" class="partner-logo" title="Partner">
+                        <img src="https://pbs.twimg.com/profile_images/1798408478308089856/zvBb2_NM_400x400.jpg" alt="Partner">
+                    </a>
+                    <a href="#" target="_blank" rel="noopener" class="partner-logo" title="Partner">
+                        <img src="https://pbs.twimg.com/profile_images/1883711285340033024/rduxXmHe_400x400.jpg" alt="Partner">
+                    </a>
                 </div>
             </div>
             </div>
@@ -99,10 +108,8 @@
                         <p class="chest-price"><span id="bronze-price-xma" class="price-amount">--</span> XMA</p>
                         <a href="#" id="available-prizes-link" class="available-prizes-link">Available prizes</a>
                         <div class="chest-actions">
-                            <button id="buy-bronze" class="btn btn-chest" disabled>Connect wallet to buy</button>
-                            <button id="open-bronze" class="btn btn-open" style="display: none;" disabled>Open</button>
+                            <button id="open-chest-btn" class="btn btn-open">Open Chest</button>
                         </div>
-                        <p class="chest-owned" id="bronze-owned" style="display: none;"><span id="bronze-count">0</span> owned</p>
                     </article>
                     <!-- Gold - Coming soon -->
                     <article class="chest-card chest-card-gold chest-card-disabled" data-tier="gold">
@@ -177,32 +184,37 @@
         </div>
     </div>
 
-    <!-- Result modal (mock for demo) -->
+    <!-- Result modal -->
     <div id="result-modal" class="chest-modal" aria-hidden="true">
         <div class="chest-modal-backdrop"></div>
         <div class="chest-modal-content">
             <button id="close-result-modal" class="chest-modal-close" aria-label="Close">&times;</button>
             <div id="result-body">
-                <div id="result-empty" class="result-panel" style="display: none;">
-                    <div class="result-icon result-icon-empty">🎁</div>
-                    <h3>No prize this time</h3>
-                    <p>This open was in the 20% no-prize pool. Try again!</p>
+                <div id="result-lose" class="result-panel" style="display: none;">
+                    <div class="result-lose-icon" aria-hidden="true">
+                        <svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" class="result-lose-svg">
+                            <rect x="12" y="28" width="56" height="40" rx="4" stroke="currentColor" stroke-width="2.5" stroke-dasharray="6 4"/>
+                            <path d="M12 36h56" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            <ellipse cx="40" cy="52" rx="12" ry="6" stroke="currentColor" stroke-width="2" stroke-dasharray="4 3"/>
+                        </svg>
+                    </div>
+                    <h3 class="result-heading result-heading-lose">YOU LOSE</h3>
+                    <p class="result-message">The chest was empty,<br>why not try again?</p>
                 </div>
-                <div id="result-nft" class="result-panel" style="display: none;">
-                    <div class="result-icon result-icon-nft">🖼️</div>
-                    <h3>You won an NFT!</h3>
-                    <p class="result-detail">Random NFT from the shared treasury. (Demo: not sent on-chain yet.)</p>
-                </div>
-                <div id="result-coins" class="result-panel" style="display: none;">
-                    <div class="result-icon result-icon-coins">🪙</div>
-                    <h3>You won tokens!</h3>
-                    <p class="result-detail">Coins from the treasury. (Demo: amount shown is simulated.)</p>
-                    <p id="result-coins-amount" class="result-amount"></p>
+                <div id="result-win" class="result-panel" style="display: none;">
+                    <h3 class="result-heading result-heading-win">CONGRATS</h3>
+                    <div class="result-win-prize-visual">
+                        <img id="result-prize-img" src="" alt="" class="result-prize-img">
+                        <span id="result-prize-name" class="result-prize-name"></span>
+                    </div>
+                    <button id="result-collect-btn" class="btn btn-collect">COLLECT</button>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Helius API key injected at build from env (HELIUS_API_KEY) -->
+    <script>window.HELIUS_API_KEY = '277997e8-09ce-4516-a03e-5b062b51c6ac';</script>
     <script src="chests.js"></script>
 </body>
 </html>
