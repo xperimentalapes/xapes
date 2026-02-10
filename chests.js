@@ -2,29 +2,15 @@
 // Bronze chest price (fixed) — for display only
 const PRICE_XMA_AMOUNT = 700000;
 
-// Prizes: 35% loss, 10% NFT, 55% token. Of token wins: 50% small, 30% medium, 20% large.
-const NFT_PRIZES = ['Mnk3ys NFT', 'Frens Factory NFT', 'MOSC NFT'];
-const NFT_MINTS = {
-    'Mnk3ys NFT': ['C6mHMTfJXCRzzvC5btbK6jxy5bkigdrh7pr8rPaV67J8', 'FEQjPe3SWi6ZX9KcDp8wqxvZj15jwzZXbiECfaJtF13Q', 'Enag8xxDDuw3cz3R1uP4oZgb46Z5uDtb9p9PRvWsyufo'],
-    'Frens Factory NFT': ['2a2PSb1JCE28BetUx1wyczLqgXfjaGd9u5eTdBLrabKj', '5kAaGHvihSXiEKHJVA4oRESFVWpChgWhU5E1VWkoD3jo', '2Xi1dQT3WkvazJABFmb3BhNxVCg6iqZ1JJJEn9QQ7eLs'],
-    'MOSC NFT': ['3NfayXiSEzmGBKDun9irchkac51bYVU3tm6WcgiKtEWi', '6Kf3W72Wp89t77wwvyqan2NJxUhvZ5yBJd5VwENV9qMK', '7Wexrnmq6QcvTPeTspWrcrvCurmuHkJyovxGxPZkTrY7']
-};
-const NFT_FALLBACK_IMAGES = {
-    'Mnk3ys NFT': 'https://img-cdn.magiceden.dev/rs:fill:400:0:0/plain/https%3A%2F%2Fcreator-hub-prod.s3.us-east-2.amazonaws.com%2Fmnk3ys_pfp_1724204870860.png',
-    'Frens Factory NFT': 'https://img-cdn.magiceden.dev/rs:fill:400:0:0/plain/https%3A%2F%2Fcreator-hub-prod.s3.us-east-2.amazonaws.com%2Ffrens_factory_pfp_1736409521055.gif',
-    'MOSC NFT': 'https://arweave.net/n1x7nzl6e8l2o24CA0ntXkX72SO9ne-pYzGlPMMBkSM'
-};
-const TOKEN_PRIZES = {
-    XMA:    { small: '350,000 XMA',    medium: '1,000,000 XMA',    large: '2,000,000 XMA' },
-    BLUNANA: { small: '50,000 BLUNANA',  medium: '150,000 BLUNANA',  large: '300,000 BLUNANA' },
-    FRENS:  { small: '1,000,000 FRENS', medium: '3,000,000 FRENS', large: '5,000,000 FRENS' }
-};
-const TOKEN_IMAGES = {
-    XMA: 'images/logo.png',
-    BLUNANA: 'https://ipfs.io/ipfs/QmTKRAZEcTfDeVDt8hebrCv27DctYghtdfXRMc9FRA6NU3',
-    FRENS: 'https://img-cdn.magiceden.dev/rs:fill:400:0:0/plain/https%3A%2F%2Fcreator-hub-prod.s3.us-east-2.amazonaws.com%2Ffrens_factory_pfp_1736409521055.gif'
-};
-const TOKEN_TYPES = Object.keys(TOKEN_PRIZES);
+// Bronze chest treasury – prizes are read from this wallet
+const BRONZE_TREASURY_WALLET = '9iyfxFga7a9FAkkgpgeP7PSscKEKdShihvso44GiMT4H';
+
+// Prizes: 35% loss, 10% NFT, 55% token. NFT/token lists are filled from treasury (see fetchTreasuryPrizes).
+var treasuryNfts = [];   // { id, name, image }
+var treasuryTokens = []; // { id, symbol, name, amount, decimals, image }
+
+// Fallbacks when treasury has no assets or for display
+const NFT_FALLBACK_IMAGES = {};
 const TOKEN_SIZE_WEIGHTS = [0.5, 0.3, 0.2];
 const TOKEN_SIZES = ['small', 'medium', 'large'];
 
@@ -49,6 +35,7 @@ var FIREWORKS_COLORS = ['#fbbf24', '#f59e0b', '#a78bfa', '#8b5cf6', '#f472b6', '
 
 document.addEventListener('DOMContentLoaded', () => {
     setupWallet();
+    fetchTreasuryPrizes(); // Load available prizes from bronze treasury wallet
     setupBronzeChest();
     setupResultModal();
     setupAvailablePrizesModal();
@@ -59,6 +46,116 @@ document.addEventListener('DOMContentLoaded', () => {
 function renderXmaPrice() {
     const el = document.getElementById('bronze-price-xma');
     if (el) el.textContent = PRICE_XMA_AMOUNT.toLocaleString();
+}
+
+function fetchTreasuryPrizes() {
+    var apiKey = typeof window !== 'undefined' && window.HELIUS_API_KEY;
+    if (!apiKey) {
+        console.warn('HELIUS_API_KEY not set; cannot load treasury prizes');
+        renderAvailablePrizesList([]);
+        return;
+    }
+    var url = 'https://mainnet.helius-rpc.com/?api-key=' + encodeURIComponent(apiKey);
+    treasuryNfts = [];
+    treasuryTokens = [];
+    var page = 1;
+    var limit = 100;
+    function fetchPage() {
+        return fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                jsonrpc: '2.0',
+                id: '1',
+                method: 'getAssetsByOwner',
+                params: { ownerAddress: BRONZE_TREASURY_WALLET, page: page, limit: limit }
+            })
+        }).then(function (r) { return r.json(); }).then(function (data) {
+            if (data.error || !data.result) return;
+            var result = data.result;
+            var items = result.items || [];
+            items.forEach(function (item) {
+                var id = item.id;
+                var iface = item.interface || '';
+                var tokenStandard = (item.token_standard || '').toLowerCase();
+                var content = item.content || {};
+                var files = (content.files || [])[0];
+                var metadata = content.metadata || {};
+                var image = (files && (files.cdn_uri || files.uri)) || null;
+                var name = metadata.name || null;
+                if (iface === 'V1_NFT' || tokenStandard === 'nonfungible' || (item.compression && item.compression.compressed)) {
+                    treasuryNfts.push({ id: id, name: name || 'NFT', image: image });
+                } else {
+                    var tokenInfo = item.token_info || {};
+                    var balance = tokenInfo.balance !== undefined ? Number(tokenInfo.balance) : 0;
+                    var decimals = Math.max(0, Number(tokenInfo.decimals) || 0);
+                    var symbol = tokenInfo.symbol || metadata.symbol || 'TOKEN';
+                    var amountStr = decimals ? (balance / Math.pow(10, decimals)).toLocaleString(undefined, { maximumFractionDigits: 0 }) : String(balance);
+                    treasuryTokens.push({
+                        id: id,
+                        symbol: symbol,
+                        name: name || symbol,
+                        amount: balance,
+                        decimals: decimals,
+                        amountStr: amountStr + ' ' + symbol,
+                        image: image
+                    });
+                }
+            });
+            var total = result.total || 0;
+            if (page * limit < total) {
+                page++;
+                return fetchPage();
+            }
+        });
+    }
+    fetchPage().then(function () {
+        renderAvailablePrizesList();
+    }).catch(function (err) {
+        console.error('Failed to fetch treasury prizes:', err);
+        renderAvailablePrizesList([]);
+    });
+}
+
+function renderAvailablePrizesList() {
+    var list = document.querySelector('.available-prizes-list');
+    if (!list) return;
+    list.innerHTML = '';
+    if (treasuryNfts.length === 0 && treasuryTokens.length === 0) {
+        var li = document.createElement('li');
+        li.className = 'prize-item';
+        li.textContent = 'No prizes in treasury yet. Add NFTs or tokens to the bronze treasury wallet.';
+        list.appendChild(li);
+        return;
+    }
+    treasuryNfts.forEach(function (nft) {
+        var li = document.createElement('li');
+        li.className = 'prize-item';
+        var img = document.createElement('img');
+        img.src = nft.image || 'images/logo.png';
+        img.alt = nft.name;
+        img.className = 'prize-thumb';
+        var span = document.createElement('span');
+        span.className = 'prize-label';
+        span.textContent = nft.name;
+        li.appendChild(img);
+        li.appendChild(span);
+        list.appendChild(li);
+    });
+    treasuryTokens.forEach(function (tok) {
+        var li = document.createElement('li');
+        li.className = 'prize-item';
+        var img = document.createElement('img');
+        img.src = tok.image || 'images/logo.png';
+        img.alt = tok.amountStr;
+        img.className = 'prize-thumb';
+        var span = document.createElement('span');
+        span.className = 'prize-label';
+        span.textContent = tok.amountStr;
+        li.appendChild(img);
+        li.appendChild(span);
+        list.appendChild(li);
+    });
 }
 
 function setupCarousel() {
@@ -197,26 +294,25 @@ function setupBronzeChest() {
     });
 }
 
-/** 35% loss, 10% NFT (random from list), 55% token (random type; 50% small, 30% medium, 20% large). */
+/** 35% loss, 10% NFT (random from treasury), 55% token (random from treasury). */
 function rollOutcome() {
-    const r = Math.random();
+    var r = Math.random();
     if (r < 0.35) {
         return { type: 'loss' };
     }
-    if (r < 0.45) {
-        const collection = NFT_PRIZES[Math.floor(Math.random() * NFT_PRIZES.length)];
-        const mints = NFT_MINTS[collection];
-        const mint = mints[Math.floor(Math.random() * mints.length)];
-        return { type: 'win', kind: 'nft', collection, mint };
+    if (r < 0.45 && treasuryNfts.length > 0) {
+        var nft = treasuryNfts[Math.floor(Math.random() * treasuryNfts.length)];
+        return { type: 'win', kind: 'nft', collection: nft.name, mint: nft.id, nftImage: nft.image };
     }
-    const tokenType = TOKEN_TYPES[Math.floor(Math.random() * TOKEN_TYPES.length)];
-    const sizeRoll = Math.random();
-    let size = TOKEN_SIZES[0];
-    if (sizeRoll < TOKEN_SIZE_WEIGHTS[0]) size = 'small';
-    else if (sizeRoll < TOKEN_SIZE_WEIGHTS[0] + TOKEN_SIZE_WEIGHTS[1]) size = 'medium';
-    else size = 'large';
-    const prize = TOKEN_PRIZES[tokenType][size];
-    return { type: 'win', kind: 'token', prize, tokenType };
+    if (treasuryTokens.length > 0) {
+        var tok = treasuryTokens[Math.floor(Math.random() * treasuryTokens.length)];
+        return { type: 'win', kind: 'token', prize: tok.amountStr, tokenMint: tok.id, tokenImage: tok.image };
+    }
+    if (treasuryNfts.length > 0) {
+        var nft2 = treasuryNfts[Math.floor(Math.random() * treasuryNfts.length)];
+        return { type: 'win', kind: 'nft', collection: nft2.name, mint: nft2.id, nftImage: nft2.image };
+    }
+    return { type: 'loss' };
 }
 
 function showResult(outcome) {
@@ -238,16 +334,16 @@ function showResult(outcome) {
     }
 
     if (outcome.kind === 'token') {
-        resultPrizeImg.src = TOKEN_IMAGES[outcome.tokenType] || '';
+        resultPrizeImg.src = outcome.tokenImage || 'images/logo.png';
         resultPrizeImg.alt = outcome.prize;
-        resultPrizeName.textContent = outcome.prize;
+        resultPrizeName.textContent = outcome.prize || 'Token';
         resultModal.setAttribute('aria-hidden', 'false');
         setTimeout(startFireworks, 80);
         return;
     }
 
     var collectionLabel = outcome.collection || outcome.prize || 'NFT';
-    var fallbackImg = NFT_FALLBACK_IMAGES[outcome.collection] || NFT_FALLBACK_IMAGES[collectionLabel] || '';
+    var fallbackImg = outcome.nftImage || NFT_FALLBACK_IMAGES[outcome.collection] || NFT_FALLBACK_IMAGES[collectionLabel] || 'images/logo.png';
     resultPrizeImg.src = fallbackImg;
     resultPrizeImg.alt = collectionLabel;
     resultPrizeName.textContent = collectionLabel;
