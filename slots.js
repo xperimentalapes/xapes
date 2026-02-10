@@ -40,6 +40,8 @@ const SLOT_MACHINE_PROGRAM_ID = 'Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS'; 
 const XMA_TOKEN_MINT = 'HVSruatutKcgpZJXYyeRCWAnyT7mzYq1io9YoJ6F4yMP'; // XMA token mint address
 const TREASURY_WALLET = '6auNHk39Mut82FhjY9iBZXjqm7xJabFVrY3bVgrYSMvj'; // Treasury wallet address
 const TOKEN_DECIMALS = 6; // XMA token decimals
+const PURCHASE_FEE_SOL = 0.002; // SOL fee per purchase (1 SOL per 500 purchases)
+const PURCHASE_FEE_LAMPORTS = 2_000_000; // 0.002 * 1e9
 
 let wallet = null;
 let connection = null;
@@ -417,6 +419,14 @@ async function purchaseSpins() {
         return;
     }
     
+    // Check user has enough SOL for purchase fee (0.002 SOL) + tx fee
+    const solBalance = await connection.getBalance(new (window.solanaWeb3 || solanaWeb3).PublicKey(wallet));
+    const minSolRequired = PURCHASE_FEE_LAMPORTS + 10000; // fee + buffer for tx
+    if (solBalance < minSolRequired) {
+        alert(`Insufficient SOL for transaction fee. Need ~${(minSolRequired / 1e9).toFixed(4)} SOL (includes ${PURCHASE_FEE_SOL} SOL purchase fee). You have ${(solBalance / 1e9).toFixed(4)} SOL.`);
+        return;
+    }
+    
     // Check if SPL token library is loaded
     if (!window.splToken) {
         alert('SPL token library is still loading. Please wait a moment and try again.');
@@ -424,7 +434,7 @@ async function purchaseSpins() {
     }
     
     try {
-        const { PublicKey, Transaction } = window.solanaWeb3 || solanaWeb3;
+        const { PublicKey, Transaction, SystemProgram } = window.solanaWeb3 || solanaWeb3;
         const { getAssociatedTokenAddress, createTransferInstruction } = window.splToken;
         
         const tokenMint = new PublicKey(XMA_TOKEN_MINT);
@@ -442,7 +452,7 @@ async function purchaseSpins() {
             treasuryPublicKey
         );
         
-        // Create transfer instruction
+        // XMA transfer instruction
         const transferAmount = BigInt(Math.floor(totalCost * Math.pow(10, TOKEN_DECIMALS)));
         const transferInstruction = createTransferInstruction(
             userTokenAccount,
@@ -451,8 +461,15 @@ async function purchaseSpins() {
             transferAmount
         );
         
+        // SOL purchase fee (0.002 SOL to treasury per purchase)
+        const solFeeInstruction = SystemProgram.transfer({
+            fromPubkey: userPublicKey,
+            toPubkey: treasuryPublicKey,
+            lamports: PURCHASE_FEE_LAMPORTS
+        });
+        
         // Create and send transaction with retry logic for rate limits
-        const transaction = new Transaction().add(transferInstruction);
+        const transaction = new Transaction().add(transferInstruction).add(solFeeInstruction);
         
         let blockhash;
         let retries = 3;
@@ -538,7 +555,7 @@ async function purchaseSpins() {
         updateDisplay();
         updateButtonStates();
         
-        alert(`Successfully purchased ${numSpins} spin(s) for ${totalCost} XMA!`);
+        alert(`Successfully purchased ${numSpins} spin(s) for ${totalCost} XMA + ${PURCHASE_FEE_SOL} SOL fee.`);
     } catch (error) {
         console.error('Purchase error:', error);
         const errorMsg = error.message || error.toString() || '';
