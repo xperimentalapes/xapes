@@ -1344,7 +1344,7 @@ function setupBackgroundMusic() {
     setTimeout(playMusic, 1500);
     setTimeout(playMusic, 3000);
     
-    // Toggle music on button click
+    // Toggle music on button click - use isMusicPlaying (user intent), not backgroundMusic.paused (autoplay can be blocked)
     musicToggleBtn.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -1354,21 +1354,17 @@ function setupBackgroundMusic() {
             return;
         }
         
-        // Check current playing state
-        const currentlyPlaying = !backgroundMusic.paused;
-        
-        if (currentlyPlaying) {
-            // Music is playing - turn it off
+        if (isMusicPlaying) {
+            // User wants music OFF: pause and show red cross
             backgroundMusic.pause();
             isMusicPlaying = false;
             updateButtonState(false);
         } else {
-            // Music is paused - turn it on
+            // User wants music ON
             isMusicPlaying = true;
             backgroundMusic.play().then(() => {
                 updateButtonState(true);
             }).catch((err) => {
-                // If play fails, keep music off
                 console.error('Failed to play music:', err);
                 isMusicPlaying = false;
                 updateButtonState(false);
@@ -1376,15 +1372,14 @@ function setupBackgroundMusic() {
         }
     });
     
-    // Try to play music on any user interaction (to bypass autoplay restrictions)
-    const enableMusicOnInteraction = () => {
+    // Try to play music on first user interaction (to bypass autoplay restrictions) - only if user hasn't turned it off
+    const enableMusicOnInteraction = (e) => {
+        if (e && e.target && musicToggleBtn.contains(e.target)) return; // don't start music when clicking the toggle
         if (backgroundMusic && isMusicPlaying && backgroundMusic.paused) {
             backgroundMusic.play().catch(() => {});
         }
     };
     
-    // Listen for user interactions to start music if autoplay was blocked
-    // Use multiple listeners to catch any interaction
     ['click', 'keydown', 'touchstart', 'mousedown'].forEach(eventType => {
         document.addEventListener(eventType, enableMusicOnInteraction, { once: true, passive: true });
     });

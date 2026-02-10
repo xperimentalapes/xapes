@@ -1160,6 +1160,24 @@
     z-index: 1;
 }
 
+/* When music is OFF: little red cross in corner of button */
+.music-toggle-btn:not(.active) {
+    position: relative;
+}
+
+.music-toggle-btn:not(.active)::after {
+    content: '';
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 10px;
+    height: 10px;
+    background: linear-gradient(135deg, transparent 42%, #ef4444 42%, #ef4444 58%, transparent 58%),
+                linear-gradient(-135deg, transparent 42%, #ef4444 42%, #ef4444 58%, transparent 58%);
+    z-index: 2;
+    pointer-events: none;
+}
+
 .music-toggle-btn:not(.active) #music-icon-off {
     position: relative;
 }
