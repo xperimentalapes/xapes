@@ -1344,33 +1344,43 @@ function setupBackgroundMusic() {
     setTimeout(playMusic, 1500);
     setTimeout(playMusic, 3000);
     
-    // Toggle music on button click - use isMusicPlaying (user intent), not backgroundMusic.paused (autoplay can be blocked)
-    musicToggleBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        if (!backgroundMusic) {
-            console.error('Background music not initialized');
-            return;
+    function handleMusicToggle(e) {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
         }
-        
+        // Always update UI and isMusicPlaying; pause/play only if we have an audio element
         if (isMusicPlaying) {
-            // User wants music OFF: pause and show red cross
-            backgroundMusic.pause();
             isMusicPlaying = false;
             updateButtonState(false);
+            if (backgroundMusic) backgroundMusic.pause();
         } else {
-            // User wants music ON
             isMusicPlaying = true;
-            backgroundMusic.play().then(() => {
-                updateButtonState(true);
-            }).catch((err) => {
-                console.error('Failed to play music:', err);
-                isMusicPlaying = false;
-                updateButtonState(false);
-            });
+            updateButtonState(true);
+            if (backgroundMusic) {
+                backgroundMusic.play().then(() => {}).catch((err) => {
+                    console.error('Failed to play music:', err);
+                    isMusicPlaying = false;
+                    updateButtonState(false);
+                });
+            }
         }
-    });
+    }
+    
+    // Use document capture so we always receive the click even if something blocks the button
+    document.addEventListener('click', (e) => {
+        if (e.target && musicToggleBtn.contains(e.target)) {
+            e.preventDefault();
+            e.stopPropagation();
+            handleMusicToggle(e);
+        }
+    }, true);
+    document.addEventListener('touchstart', (e) => {
+        if (e.target && musicToggleBtn.contains(e.target)) {
+            e.preventDefault();
+            handleMusicToggle(e);
+        }
+    }, { capture: true, passive: false });
     
     // Try to play music on first user interaction (to bypass autoplay restrictions) - only if user hasn't turned it off
     const enableMusicOnInteraction = (e) => {

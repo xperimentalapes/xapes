@@ -1144,6 +1144,8 @@
     width: 40px;
     height: 40px;
     position: relative;
+    pointer-events: auto;
+    z-index: 10;
 }
 
 .music-toggle-btn:hover {
