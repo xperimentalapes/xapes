@@ -54,6 +54,29 @@ let isAutoSpinning = false;
 let backgroundMusic = null;
 let isMusicPlaying = true; // Default to on
 
+// Global so HTML onclick can call it – no addEventListener timing issues
+window.toggleSlotsMusic = function () {
+    isMusicPlaying = !isMusicPlaying;
+    var btn = document.getElementById('music-toggle');
+    var iconOn = document.getElementById('music-icon-on');
+    var iconOff = document.getElementById('music-icon-off');
+    if (btn) {
+        if (isMusicPlaying) {
+            btn.classList.add('active');
+            if (iconOn) iconOn.style.display = 'block';
+            if (iconOff) iconOff.style.display = 'none';
+        } else {
+            btn.classList.remove('active');
+            if (iconOn) iconOn.style.display = 'none';
+            if (iconOff) iconOff.style.display = 'block';
+        }
+    }
+    if (backgroundMusic) {
+        if (isMusicPlaying) backgroundMusic.play().catch(function () {});
+        else backgroundMusic.pause();
+    }
+};
+
 // Fixed reel order (created once, same for all reels)
 let FIXED_REEL_ORDER = null;
 
@@ -1344,47 +1367,11 @@ function setupBackgroundMusic() {
     setTimeout(playMusic, 1500);
     setTimeout(playMusic, 3000);
     
-    function handleMusicToggle(e) {
-        if (e) {
-            e.preventDefault();
-            e.stopPropagation();
-        }
-        // Always update UI and isMusicPlaying; pause/play only if we have an audio element
-        if (isMusicPlaying) {
-            isMusicPlaying = false;
-            updateButtonState(false);
-            if (backgroundMusic) backgroundMusic.pause();
-        } else {
-            isMusicPlaying = true;
-            updateButtonState(true);
-            if (backgroundMusic) {
-                backgroundMusic.play().then(() => {}).catch((err) => {
-                    console.error('Failed to play music:', err);
-                    isMusicPlaying = false;
-                    updateButtonState(false);
-                });
-            }
-        }
-    }
-    
-    // Use document capture so we always receive the click even if something blocks the button
-    document.addEventListener('click', (e) => {
-        if (e.target && musicToggleBtn.contains(e.target)) {
-            e.preventDefault();
-            e.stopPropagation();
-            handleMusicToggle(e);
-        }
-    }, true);
-    document.addEventListener('touchstart', (e) => {
-        if (e.target && musicToggleBtn.contains(e.target)) {
-            e.preventDefault();
-            handleMusicToggle(e);
-        }
-    }, { capture: true, passive: false });
-    
+    // Toggle is handled by inline onclick (window.toggleSlotsMusic) so it always fires
     // Try to play music on first user interaction (to bypass autoplay restrictions) - only if user hasn't turned it off
     const enableMusicOnInteraction = (e) => {
-        if (e && e.target && musicToggleBtn.contains(e.target)) return; // don't start music when clicking the toggle
+        var mt = document.getElementById('music-toggle');
+        if (e && e.target && mt && mt.contains(e.target)) return; // don't start music when clicking the toggle
         if (backgroundMusic && isMusicPlaying && backgroundMusic.paused) {
             backgroundMusic.play().catch(() => {});
         }
