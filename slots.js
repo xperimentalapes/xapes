@@ -33,7 +33,9 @@ function getPayoutAmount(symbolIndex, costPerSpin) {
     return PAYOUT_MULTIPLIERS[symbolIndex] * costPerSpin;
 }
 
-const SPIN_COST = 100; // Fixed cost per spin in XMA
+const SPIN_COST = 100; // Default cost per spin in XMA
+const MAX_COST_PER_SPIN = 1500; // Cap cost per spin to protect bank
+const MAX_SPINS_PER_PURCHASE = 500; // Max spins per purchase
 const SLOT_MACHINE_PROGRAM_ID = 'Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS'; // Update with actual program ID
 const XMA_TOKEN_MINT = 'HVSruatutKcgpZJXYyeRCWAnyT7mzYq1io9YoJ6F4yMP'; // XMA token mint address
 const TREASURY_WALLET = '6auNHk39Mut82FhjY9iBZXjqm7xJabFVrY3bVgrYSMvj'; // Treasury wallet address
@@ -390,13 +392,23 @@ async function purchaseSpins() {
         return;
     }
     
-    const costPerSpin = parseFloat(document.getElementById('cost-per-spin').value);
-    const numSpins = parseInt(document.getElementById('number-of-spins').value);
+    let costPerSpin = parseFloat(document.getElementById('cost-per-spin').value);
+    let numSpins = parseInt(document.getElementById('number-of-spins').value);
     
     if (!costPerSpin || costPerSpin <= 0 || !numSpins || numSpins <= 0) {
         alert('Please enter valid cost per spin and number of spins');
         return;
     }
+    if (costPerSpin > MAX_COST_PER_SPIN) {
+        alert(`Cost per spin is capped at ${MAX_COST_PER_SPIN.toLocaleString()} XMA`);
+        return;
+    }
+    if (numSpins > MAX_SPINS_PER_PURCHASE) {
+        alert(`Maximum ${MAX_SPINS_PER_PURCHASE} spins per purchase`);
+        return;
+    }
+    costPerSpin = Math.min(costPerSpin, MAX_COST_PER_SPIN);
+    numSpins = Math.min(numSpins, MAX_SPINS_PER_PURCHASE);
     
     const totalCost = costPerSpin * numSpins;
     
@@ -668,7 +680,7 @@ async function performSpin() {
     
     // Calculate win after all reels stop
     setTimeout(async () => {
-        const costPerSpin = parseFloat(document.getElementById('cost-per-spin').value) || SPIN_COST;
+        const costPerSpin = Math.min(parseFloat(document.getElementById('cost-per-spin').value) || SPIN_COST, MAX_COST_PER_SPIN);
         const winAmount = calculateWin(results, costPerSpin);
         isSpinning = false;
         
@@ -763,7 +775,7 @@ function calculateWin(results, bet) {
     if (results[0] === results[1] && results[1] === results[2]) {
         // All symbols match - use payout table
         const symbolIndex = results[0];
-        const costPerSpin = parseFloat(document.getElementById('cost-per-spin').value) || SPIN_COST;
+        const costPerSpin = Math.min(parseFloat(document.getElementById('cost-per-spin').value) || SPIN_COST, MAX_COST_PER_SPIN);
         win = getPayoutAmount(symbolIndex, costPerSpin);
         
         if (win > 0) {
@@ -1578,12 +1590,12 @@ async function loadPlayerData() {
         spinsRemaining = data.spinsRemaining || 0;
         console.log('Restored spins remaining:', spinsRemaining);
         
-        // Restore cost per spin for remaining spins
-        if (data.costPerSpin && spinsRemaining > 0) {
+        // Restore cost per spin for remaining spins (capped)
+        if (data.costPerSpin != null && spinsRemaining > 0) {
             const costPerSpinInput = document.getElementById('cost-per-spin');
             if (costPerSpinInput) {
-                costPerSpinInput.value = data.costPerSpin;
-                console.log('Restored cost per spin:', data.costPerSpin);
+                costPerSpinInput.value = Math.min(Number(data.costPerSpin), MAX_COST_PER_SPIN);
+                console.log('Restored cost per spin:', costPerSpinInput.value);
             }
         }
         
