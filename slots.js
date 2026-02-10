@@ -67,8 +67,8 @@ window.toggleSlotsMusic = function () {
             if (iconOff) iconOff.style.display = 'none';
         } else {
             btn.classList.remove('active');
-            if (iconOn) iconOn.style.display = 'none';
-            if (iconOff) iconOff.style.display = 'block';
+            if (iconOn) iconOn.style.display = 'block';
+            if (iconOff) iconOff.style.display = 'none';
         }
     }
     if (backgroundMusic) {
@@ -1330,13 +1330,13 @@ function setupBackgroundMusic() {
     
     if (!musicToggleBtn) return;
     
-    // Set initial state (music on by default)
+    // Set initial state (music on by default). When off we keep showing same icon + corner X only.
     musicToggleBtn.classList.add('active');
     isMusicPlaying = true;
     musicIconOn.style.display = 'block';
     musicIconOff.style.display = 'none';
     
-    // Function to update button visual state
+    // Function to update button visual state (off = same icon, corner X only via CSS)
     const updateButtonState = (playing) => {
         if (playing) {
             musicToggleBtn.classList.add('active');
@@ -1344,8 +1344,8 @@ function setupBackgroundMusic() {
             musicIconOff.style.display = 'none';
         } else {
             musicToggleBtn.classList.remove('active');
-            musicIconOn.style.display = 'none';
-            musicIconOff.style.display = 'block';
+            musicIconOn.style.display = 'block';
+            musicIconOff.style.display = 'none';
         }
     };
     
