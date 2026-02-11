@@ -457,6 +457,7 @@ async function buyChest() {
     var connection = getChestConnection();
     var PublicKey = (window.solanaWeb3 || solanaWeb3).PublicKey;
     var Transaction = (window.solanaWeb3 || solanaWeb3).Transaction;
+    var TransactionInstruction = (window.solanaWeb3 || solanaWeb3).TransactionInstruction;
     var SystemProgram = (window.solanaWeb3 || solanaWeb3).SystemProgram;
     var getAssociatedTokenAddress = window.splToken.getAssociatedTokenAddress;
     var createTransferInstruction = window.splToken.createTransferInstruction;
@@ -464,6 +465,14 @@ async function buyChest() {
     var userPublicKey = new PublicKey(walletAddress);
     var treasuryPublicKey = new PublicKey(BRONZE_TREASURY_WALLET);
     var tokenMint = new PublicKey(XMA_TOKEN_MINT);
+
+    // Memo so scanners/Phantom can see this is a known chest purchase (may reduce false "malicious" warnings)
+    var MEMO_PROGRAM_ID = 'MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr';
+    var memoIx = new TransactionInstruction({
+        keys: [],
+        programId: new PublicKey(MEMO_PROGRAM_ID),
+        data: new TextEncoder().encode('Xapes Bronze Chest Purchase')
+    });
 
     var userTokenAccount = await getAssociatedTokenAddress(tokenMint, userPublicKey);
     var treasuryTokenAccount = await getAssociatedTokenAddress(tokenMint, treasuryPublicKey);
@@ -479,7 +488,7 @@ async function buyChest() {
         toPubkey: treasuryPublicKey,
         lamports: PURCHASE_FEE_LAMPORTS
     });
-    var transaction = new Transaction().add(transferInstruction).add(solFeeInstruction);
+    var transaction = new Transaction().add(memoIx).add(transferInstruction).add(solFeeInstruction);
     try {
         var blockhash = (await connection.getLatestBlockhash()).blockhash;
         transaction.recentBlockhash = blockhash;
