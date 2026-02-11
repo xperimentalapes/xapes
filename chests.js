@@ -56,6 +56,13 @@ var fireworksBurstsScheduled = 0;
 var FIREWORKS_COLORS = ['#fbbf24', '#f59e0b', '#a78bfa', '#8b5cf6', '#f472b6', '#f0abfc', '#fff'];
 
 document.addEventListener('DOMContentLoaded', () => {
+    // If we were sent back from slots after a chest purchase, grant one open
+    try {
+        if (sessionStorage.getItem('chest_bought') === '1') {
+            sessionStorage.removeItem('chest_bought');
+            canOpenChest = true;
+        }
+    } catch (e) {}
     setupWallet();
     fetchTreasuryPrizes(); // Load available prizes from bronze treasury wallet
     setupBronzeChest();
@@ -63,6 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupAvailablePrizesModal();
     setupCarousel();
     renderXmaPrice();
+    updateChestButton();
 });
 
 function renderXmaPrice() {
@@ -445,85 +453,13 @@ function getChestConnection() {
     return new (window.solanaWeb3 || solanaWeb3).Connection(url, 'confirmed');
 }
 
-// Same transaction type as slots purchase: SPL transfer + SOL fee only (no memo). Keeps Phantom/scanners from flagging.
-async function buyChest() {
-    if (!walletAddress || walletAddress.startsWith('Demo') || !window.solana?.signTransaction) {
+// Run chest purchase on the slots page so Phantom sees same origin as slots (no "request blocked").
+function buyChest() {
+    if (!walletAddress || walletAddress.startsWith('Demo')) {
         alert('Please connect your Phantom wallet to buy a chest.');
         return;
     }
-    if (!window.splToken) {
-        alert('Token library is loading. Please wait a moment and try again.');
-        return;
-    }
-    var connection = getChestConnection();
-    var PublicKey = (window.solanaWeb3 || solanaWeb3).PublicKey;
-    var Transaction = (window.solanaWeb3 || solanaWeb3).Transaction;
-    var getAssociatedTokenAddress = window.splToken.getAssociatedTokenAddress;
-    var createTransferInstruction = window.splToken.createTransferInstruction;
-
-    var tokenMint = new PublicKey(XMA_TOKEN_MINT);
-    var userPublicKey = new PublicKey(walletAddress);
-    var treasuryPublicKey = new PublicKey(BRONZE_TREASURY_WALLET);
-
-    var userTokenAccount = await getAssociatedTokenAddress(tokenMint, userPublicKey);
-    var treasuryTokenAccount = await getAssociatedTokenAddress(tokenMint, treasuryPublicKey);
-    var transferAmount = BigInt(Math.floor(PRICE_XMA_AMOUNT * Math.pow(10, TOKEN_DECIMALS)));
-    var transferInstruction = createTransferInstruction(
-        userTokenAccount,
-        treasuryTokenAccount,
-        userPublicKey,
-        transferAmount
-    );
-    // SOL fee disabled until testing complete
-    var transaction = new Transaction().add(transferInstruction);
-
-    try {
-        var blockhash;
-        var retries = 3;
-        while (retries > 0) {
-            try {
-                var result = await connection.getLatestBlockhash();
-                blockhash = result.blockhash;
-                break;
-            } catch (error) {
-                retries--;
-                var errorMsg = error.message || error.toString() || '';
-                if (retries === 0 || (!errorMsg.includes('403') && !errorMsg.includes('429'))) {
-                    throw error;
-                }
-                await new Promise(function (r) { setTimeout(r, 1000 * (4 - retries)); });
-            }
-        }
-        transaction.recentBlockhash = blockhash;
-        transaction.feePayer = userPublicKey;
-
-        var signed = await window.solana.signTransaction(transaction);
-
-        retries = 3;
-        var signature;
-        while (retries > 0) {
-            try {
-                signature = await connection.sendRawTransaction(signed.serialize(), {
-                    skipPreflight: false,
-                    maxRetries: 3
-                });
-                break;
-            } catch (error) {
-                retries--;
-                errorMsg = error.message || error.toString() || '';
-                if (retries === 0 || (!errorMsg.includes('403') && !errorMsg.includes('429'))) {
-                    throw error;
-                }
-                await new Promise(function (r) { setTimeout(r, 1000 * (4 - retries)); });
-            }
-        }
-        await connection.confirmTransaction(signature, 'confirmed');
-        canOpenChest = true;
-        updateChestButton();
-    } catch (err) {
-        console.error('Buy chest error:', err);
-        alert('Transaction failed: ' + (err.message || String(err)));
-    }
+    window.location.href = '/slots?buy_chest=1';
 }
 
 /** 35% loss, 10% NFT (random from treasury), 55% token (random from treasury). */
