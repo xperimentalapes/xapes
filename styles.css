@@ -236,6 +236,31 @@ body {
     font-size: 22px;
 }
 
+/* Generic home/exit button used on game pages */
+.exit-home-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    padding: 8px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.exit-home-btn:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px);
+}
+
+.exit-home-btn svg {
+    width: 100%;
+    height: 100%;
+}
+
 .btn {
     display: inline-flex;
     align-items: center;
@@ -307,17 +332,17 @@ body {
 }
 
 .casino-title {
-    font-size: clamp(32px, 5vw, 40px);
+    font-size: clamp(40px, 6vw, 54px);
     font-weight: 800;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    margin-bottom: 8px;
+    margin-bottom: 16px;
 }
 
 .casino-subtitle {
-    font-size: 16px;
+    font-size: 18px;
     color: var(--text-secondary);
-    margin-bottom: 40px;
+    margin-bottom: 48px;
 }
 
 .casino-grid {
@@ -331,10 +356,12 @@ body {
 .casino-game-btn {
     justify-content: flex-start;
     text-align: left;
+    padding: 24px 56px;
+    font-size: 20px;
 }
 
 .casino-game-icon {
-    font-size: 26px;
+    font-size: 32px;
 }
 
 .casino-game-text {
@@ -345,12 +372,12 @@ body {
 }
 
 .casino-game-name {
-    font-size: 18px;
+    font-size: 20px;
     font-weight: 700;
 }
 
 .casino-game-desc {
-    font-size: 13px;
+    font-size: 15px;
     color: var(--text-secondary);
 }
 
