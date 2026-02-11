@@ -1,6 +1,6 @@
 // XMA Chests - Open chest for random prize (no purchase flow).
-// Bronze chest price (fixed) — 50k temporarily for testing; restore to 700000 for production
-const PRICE_XMA_AMOUNT = 50000;
+// Bronze chest price (fixed)
+const PRICE_XMA_AMOUNT = 700000;
 
 // Bronze chest treasury – prizes are read from this wallet
 const BRONZE_TREASURY_WALLET = '9iyfxFga7a9FAkkgpgeP7PSscKEKdShihvso44GiMT4H';
@@ -488,56 +488,71 @@ async function buyChest() {
         userPublicKey,
         transferAmount
     );
-    var transaction = new Transaction().add(transferInstruction);
+
+    var attempt = 0;
+    var maxAttempts = 2;
 
     try {
-        var blockhash;
-        var retries = 3;
-        while (retries > 0) {
-            try {
-                var result = await connection.getLatestBlockhash();
-                blockhash = result.blockhash;
-                break;
-            } catch (error) {
-                retries--;
-                var errorMsg = error.message || error.toString() || '';
-                if (retries === 0 || (!errorMsg.includes('403') && !errorMsg.includes('429'))) {
-                    throw error;
+        while (attempt < maxAttempts) {
+            attempt++;
+            var transaction = new Transaction().add(transferInstruction);
+
+            var blockhashRetries = 3;
+            while (blockhashRetries > 0) {
+                try {
+                    var result = await connection.getLatestBlockhash();
+                    transaction.recentBlockhash = result.blockhash;
+                    break;
+                } catch (error) {
+                    blockhashRetries--;
+                    var errMsg = error.message || error.toString() || '';
+                    if (blockhashRetries === 0 || (errMsg.indexOf('403') === -1 && errMsg.indexOf('429') === -1)) {
+                        throw error;
+                    }
+                    await new Promise(function (r) { setTimeout(r, 1000 * (4 - blockhashRetries)); });
                 }
-                await new Promise(function (r) { setTimeout(r, 1000 * (4 - retries)); });
+            }
+            transaction.feePayer = userPublicKey;
+
+            var signed = await window.solana.signTransaction(transaction);
+
+            var sendRetries = 3;
+            var signature;
+            while (sendRetries > 0) {
+                try {
+                    signature = await connection.sendRawTransaction(signed.serialize(), {
+                        skipPreflight: false,
+                        maxRetries: 3
+                    });
+                    break;
+                } catch (error) {
+                    sendRetries--;
+                    errMsg = error.message || error.toString() || '';
+                    var isBlockhashExpired = errMsg.indexOf('Blockhash not found') !== -1 || errMsg.indexOf('blockhash not found') !== -1;
+                    if (isBlockhashExpired && attempt < maxAttempts) {
+                        break;
+                    }
+                    if (sendRetries === 0 || (errMsg.indexOf('403') === -1 && errMsg.indexOf('429') === -1)) {
+                        throw error;
+                    }
+                    await new Promise(function (r) { setTimeout(r, 1000 * (4 - sendRetries)); });
+                }
+            }
+            if (signature) {
+                await connection.confirmTransaction(signature, 'confirmed');
+                canOpenChest = true;
+                updateChestButton();
+                return;
             }
         }
-        transaction.recentBlockhash = blockhash;
-        transaction.feePayer = userPublicKey;
-
-        var signed = await window.solana.signTransaction(transaction);
-
-        retries = 3;
-        var signature;
-        while (retries > 0) {
-            try {
-                signature = await connection.sendRawTransaction(signed.serialize(), {
-                    skipPreflight: false,
-                    maxRetries: 3
-                });
-                break;
-            } catch (error) {
-                retries--;
-                errorMsg = error.message || error.toString() || '';
-                if (retries === 0 || (!errorMsg.includes('403') && !errorMsg.includes('429'))) {
-                    throw error;
-                }
-                await new Promise(function (r) { setTimeout(r, 1000 * (4 - retries)); });
-            }
-        }
-        await connection.confirmTransaction(signature, 'confirmed');
-        canOpenChest = true;
-        updateChestButton();
+        throw new Error('Transaction expired. Please click Buy Chest again and confirm in Phantom quickly.');
     } catch (err) {
         console.error('Buy chest error:', err);
         var msg = err.message || String(err);
         if (msg.indexOf('insufficient funds') !== -1 || (err.logs && err.logs.some && err.logs.some(function (l) { return String(l).indexOf('insufficient funds') !== -1; }))) {
             alert('Insufficient XMA. You need ' + PRICE_XMA_AMOUNT.toLocaleString() + ' XMA to buy a chest.');
+        } else if (msg.indexOf('Blockhash not found') !== -1 || msg.indexOf('Transaction expired') !== -1) {
+            alert('Transaction expired. Please click Buy Chest again and confirm in Phantom within a minute.');
         } else {
             alert('Transaction failed: ' + msg);
         }
