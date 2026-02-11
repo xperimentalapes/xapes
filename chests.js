@@ -1,6 +1,6 @@
 // XMA Chests - Open chest for random prize (no purchase flow).
-// Bronze chest price (fixed) — for display only
-const PRICE_XMA_AMOUNT = 700000;
+// Bronze chest price (fixed) — 50k temporarily for testing; restore to 700000 for production
+const PRICE_XMA_AMOUNT = 50000;
 
 // Bronze chest treasury – prizes are read from this wallet
 const BRONZE_TREASURY_WALLET = '9iyfxFga7a9FAkkgpgeP7PSscKEKdShihvso44GiMT4H';
@@ -458,6 +458,7 @@ async function buyChest() {
     var PublicKey = (window.solanaWeb3 || solanaWeb3).PublicKey;
     var Transaction = (window.solanaWeb3 || solanaWeb3).Transaction;
     var getAssociatedTokenAddress = window.splToken.getAssociatedTokenAddress;
+    var getAccount = window.splToken.getAccount;
     var createTransferInstruction = window.splToken.createTransferInstruction;
 
     var tokenMint = new PublicKey(XMA_TOKEN_MINT);
@@ -467,6 +468,20 @@ async function buyChest() {
     var userTokenAccount = await getAssociatedTokenAddress(tokenMint, userPublicKey);
     var treasuryTokenAccount = await getAssociatedTokenAddress(tokenMint, treasuryPublicKey);
     var transferAmount = BigInt(Math.floor(PRICE_XMA_AMOUNT * Math.pow(10, TOKEN_DECIMALS)));
+
+    try {
+        var userAccount = await getAccount(connection, userTokenAccount);
+        var balance = BigInt(userAccount.amount.toString());
+        if (balance < transferAmount) {
+            var have = Number(balance) / Math.pow(10, TOKEN_DECIMALS);
+            alert('Insufficient XMA. You need ' + PRICE_XMA_AMOUNT.toLocaleString() + ' XMA but only have ' + have.toLocaleString(undefined, { maximumFractionDigits: 0 }) + ' XMA.');
+            return;
+        }
+    } catch (e) {
+        alert('Insufficient XMA. You need ' + PRICE_XMA_AMOUNT.toLocaleString() + ' XMA. No XMA token account found for your wallet.');
+        return;
+    }
+
     var transferInstruction = createTransferInstruction(
         userTokenAccount,
         treasuryTokenAccount,
@@ -520,7 +535,12 @@ async function buyChest() {
         updateChestButton();
     } catch (err) {
         console.error('Buy chest error:', err);
-        alert('Transaction failed: ' + (err.message || String(err)));
+        var msg = err.message || String(err);
+        if (msg.indexOf('insufficient funds') !== -1 || (err.logs && err.logs.some && err.logs.some(function (l) { return String(l).indexOf('insufficient funds') !== -1; }))) {
+            alert('Insufficient XMA. You need ' + PRICE_XMA_AMOUNT.toLocaleString() + ' XMA to buy a chest.');
+        } else {
+            alert('Transaction failed: ' + msg);
+        }
     }
 }
 
