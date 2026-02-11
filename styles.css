@@ -331,19 +331,24 @@ body {
     position: relative;
     padding: 80px 0 80px;
     overflow: hidden;
+    background-image: url('/images/casino-bg.jpeg');
+    background-size: cover;
+    background-position: center;
 }
 
 .casino-hero::before {
     content: '';
     position: absolute;
     inset: 0;
-    background: var(--gradient-hero);
-    opacity: 0.55;
+    background: rgba(10, 10, 15, 0.72);
     z-index: -1;
 }
 
 .casino-hero-inner {
     text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 .casino-title {
@@ -352,6 +357,24 @@ body {
     letter-spacing: 0.08em;
     text-transform: uppercase;
     margin-bottom: 20px;
+    display: inline-flex;
+    align-items: center;
+    gap: 18px;
+}
+
+.casino-title-icon-wrap {
+    display: inline-flex;
+    align-items: center;
+}
+
+.casino-title-icon {
+    height: 1em;
+    width: auto;
+    filter: drop-shadow(0 4px 12px rgba(0,0,0,0.6));
+}
+
+.casino-title-text {
+    display: inline-block;
 }
 
 .casino-subtitle {
@@ -373,10 +396,13 @@ body {
     text-align: left;
     padding: 28px 64px;
     font-size: 22px;
+    gap: 22px;
 }
 
 .casino-game-icon {
-    font-size: 40px;
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
 }
 
 .casino-game-text {
