@@ -30,6 +30,15 @@ const TOKEN_SIZES = ['small', 'medium', 'large'];
 // Optional: set window.HELIUS_API_KEY for live NFT metadata fetch
 let walletConnected = false;
 let walletAddress = null;
+// After successful Buy Chest tx, user can open once; reset on disconnect
+let canOpenChest = false;
+// Current result modal outcome (win with nft/token) for Collect
+let currentOutcome = null;
+// XMA for buy flow (same as slots)
+const XMA_TOKEN_MINT = 'HVSruatutKcgpZJXYyeRCWAnyT7mzYq1io9YoJ6F4yMP';
+const TOKEN_DECIMALS = 6;
+const PURCHASE_FEE_SOL = 0.002;
+const PURCHASE_FEE_LAMPORTS = 2_000_000;
 
 const resultModal = document.getElementById('result-modal');
 const resultLose = document.getElementById('result-lose');
@@ -363,6 +372,7 @@ function setupWallet() {
                     walletAddressEl.textContent = walletAddress.slice(0, 4) + '…' + walletAddress.slice(-4);
                     connectBtn.style.display = 'none';
                     walletInfo.style.display = 'flex';
+                    updateChestButton();
                 })
                 .catch(() => useDemoWallet());
         } else {
@@ -373,8 +383,10 @@ function setupWallet() {
     disconnectBtn.addEventListener('click', () => {
         walletConnected = false;
         walletAddress = null;
+        canOpenChest = false;
         walletInfo.style.display = 'none';
         connectBtn.style.display = 'block';
+        updateChestButton();
     });
 
     function useDemoWallet() {
@@ -383,6 +395,7 @@ function setupWallet() {
         walletAddressEl.textContent = walletAddress;
         connectBtn.style.display = 'none';
         walletInfo.style.display = 'flex';
+        updateChestButton();
     }
 
     if (window.solana?.isPhantom) {
@@ -390,20 +403,96 @@ function setupWallet() {
             if (!window.solana.isConnected()) {
                 walletConnected = false;
                 walletAddress = null;
+                canOpenChest = false;
                 walletInfo.style.display = 'none';
                 connectBtn.style.display = 'block';
+                updateChestButton();
             }
         });
     }
 }
 
+function updateChestButton() {
+    const openBtn = document.getElementById('open-chest-btn');
+    if (!openBtn) return;
+    var isRealWallet = walletConnected && walletAddress && !walletAddress.startsWith('Demo');
+    if (canOpenChest) {
+        openBtn.textContent = 'Open Chest';
+        openBtn.disabled = !isRealWallet;
+    } else {
+        openBtn.textContent = 'Buy Chest';
+        openBtn.disabled = !isRealWallet;
+    }
+}
+
 function setupBronzeChest() {
+    updateChestButton();
     const openBtn = document.getElementById('open-chest-btn');
     if (!openBtn) return;
     openBtn.addEventListener('click', () => {
-        const outcome = rollOutcome();
-        showResult(outcome);
+        if (canOpenChest) {
+            const outcome = rollOutcome();
+            showResult(outcome);
+        } else {
+            buyChest();
+        }
     });
+}
+
+function getChestConnection() {
+    var apiKey = typeof window !== 'undefined' && window.HELIUS_API_KEY;
+    var url = apiKey ? 'https://mainnet.helius-rpc.com/?api-key=' + encodeURIComponent(apiKey) : 'https://api.mainnet-beta.solana.com';
+    return new (window.solanaWeb3 || solanaWeb3).Connection(url, 'confirmed');
+}
+
+async function buyChest() {
+    if (!walletAddress || walletAddress.startsWith('Demo') || !window.solana?.signTransaction) {
+        alert('Please connect your Phantom wallet to buy a chest.');
+        return;
+    }
+    if (!window.splToken) {
+        alert('Token library is loading. Please wait a moment and try again.');
+        return;
+    }
+    var connection = getChestConnection();
+    var PublicKey = (window.solanaWeb3 || solanaWeb3).PublicKey;
+    var Transaction = (window.solanaWeb3 || solanaWeb3).Transaction;
+    var SystemProgram = (window.solanaWeb3 || solanaWeb3).SystemProgram;
+    var getAssociatedTokenAddress = window.splToken.getAssociatedTokenAddress;
+    var createTransferInstruction = window.splToken.createTransferInstruction;
+
+    var userPublicKey = new PublicKey(walletAddress);
+    var treasuryPublicKey = new PublicKey(BRONZE_TREASURY_WALLET);
+    var tokenMint = new PublicKey(XMA_TOKEN_MINT);
+
+    var userTokenAccount = await getAssociatedTokenAddress(tokenMint, userPublicKey);
+    var treasuryTokenAccount = await getAssociatedTokenAddress(tokenMint, treasuryPublicKey);
+    var transferAmount = BigInt(Math.floor(PRICE_XMA_AMOUNT * Math.pow(10, TOKEN_DECIMALS)));
+    var transferInstruction = createTransferInstruction(
+        userTokenAccount,
+        treasuryTokenAccount,
+        userPublicKey,
+        transferAmount
+    );
+    var solFeeInstruction = SystemProgram.transfer({
+        fromPubkey: userPublicKey,
+        toPubkey: treasuryPublicKey,
+        lamports: PURCHASE_FEE_LAMPORTS
+    });
+    var transaction = new Transaction().add(transferInstruction).add(solFeeInstruction);
+    try {
+        var blockhash = (await connection.getLatestBlockhash()).blockhash;
+        transaction.recentBlockhash = blockhash;
+        transaction.feePayer = userPublicKey;
+        var signed = await window.solana.signTransaction(transaction);
+        var signature = await connection.sendRawTransaction(signed.serialize(), { skipPreflight: false, maxRetries: 3 });
+        await connection.confirmTransaction(signature, 'confirmed');
+        canOpenChest = true;
+        updateChestButton();
+    } catch (err) {
+        console.error('Buy chest error:', err);
+        alert('Transaction failed: ' + (err.message || String(err)));
+    }
 }
 
 /** 35% loss, 10% NFT (random from treasury), 55% token (random from treasury). */
@@ -418,7 +507,9 @@ function rollOutcome() {
     }
     if (availableTokenPrizes.length > 0) {
         var prize = availableTokenPrizes[Math.floor(Math.random() * availableTokenPrizes.length)];
-        return { type: 'win', kind: 'token', prize: prize.tierStr, tokenMint: prize.tokenId, tokenImage: prize.image };
+        var tokenInfo = treasuryTokens.find(function (t) { return t.id === prize.tokenId; });
+        var decimals = (tokenInfo && tokenInfo.decimals != null) ? tokenInfo.decimals : 6;
+        return { type: 'win', kind: 'token', prize: prize.tierStr, tokenMint: prize.tokenId, tokenImage: prize.image, amount: prize.tierAmount, decimals: decimals };
     }
     if (treasuryNfts.length > 0) {
         var nft2 = treasuryNfts[Math.floor(Math.random() * treasuryNfts.length)];
@@ -428,6 +519,7 @@ function rollOutcome() {
 }
 
 function showResult(outcome) {
+    currentOutcome = outcome;
     if (!resultLose || !resultWin) return;
     resultLose.style.display = 'none';
     resultWin.style.display = 'none';
@@ -626,10 +718,69 @@ function setupResultModal() {
 
     function close() {
         stopFireworks();
+        if (currentOutcome && currentOutcome.type === 'loss') {
+            canOpenChest = false;
+            currentOutcome = null;
+            updateChestButton();
+        }
         if (resultModal) resultModal.setAttribute('aria-hidden', 'true');
     }
 
     if (closeBtn) closeBtn.addEventListener('click', close);
     if (backdrop) backdrop.addEventListener('click', close);
-    if (resultCollectBtn) resultCollectBtn.addEventListener('click', close);
+    if (resultCollectBtn) {
+        resultCollectBtn.addEventListener('click', () => {
+            if (currentOutcome && currentOutcome.type === 'win') {
+                collectChestPrize();
+            } else {
+                close();
+            }
+        });
+    }
+}
+
+async function collectChestPrize() {
+    if (!currentOutcome || currentOutcome.type !== 'win' || !walletAddress || walletAddress.startsWith('Demo')) {
+        return;
+    }
+    var body = { userWallet: walletAddress };
+    if (currentOutcome.kind === 'nft') {
+        body.prizeType = 'nft';
+        body.mint = currentOutcome.mint;
+    } else {
+        body.prizeType = 'token';
+        body.tokenMint = currentOutcome.tokenMint;
+        body.amount = currentOutcome.amount;
+        body.decimals = currentOutcome.decimals != null ? currentOutcome.decimals : 6;
+    }
+    resultCollectBtn.disabled = true;
+    try {
+        var res = await fetch('/api/collect-chest', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+        var data = await res.json().catch(function () { return {}; });
+        if (!res.ok) {
+            throw new Error(data.error || data.message || 'Collect failed');
+        }
+        var txBase64 = data.transaction;
+        if (!txBase64) throw new Error('No transaction returned');
+        var Transaction = (window.solanaWeb3 || solanaWeb3).Transaction;
+        var raw = Uint8Array.from(atob(txBase64), function (c) { return c.charCodeAt(0); });
+        var tx = Transaction.from(raw);
+        var connection = getChestConnection();
+        var sig = await connection.sendRawTransaction(tx.serialize(), { skipPreflight: false, maxRetries: 3 });
+        await connection.confirmTransaction(sig, 'confirmed');
+        canOpenChest = false;
+        currentOutcome = null;
+        updateChestButton();
+        stopFireworks();
+        if (resultModal) resultModal.setAttribute('aria-hidden', 'true');
+    } catch (err) {
+        console.error('Collect chest error:', err);
+        alert('Collect failed: ' + (err.message || String(err)));
+    } finally {
+        resultCollectBtn.disabled = false;
+    }
 }
