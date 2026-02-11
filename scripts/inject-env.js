@@ -33,6 +33,7 @@ const filesToCopy = [
   'chests.html',
   'chests.css',
   'chests.js',
+  'casino.html',
 ];
 
 if (!fs.existsSync(publicDir)) {

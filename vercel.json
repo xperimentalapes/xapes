@@ -1,1 +1,1 @@
-{"cleanUrls":true,"rewrites":[{"source":"/slots","destination":"/slots.html"},{"source":"/chests","destination":"/chests.html"}],"buildCommand":"npm run build","outputDirectory":"public","framework":null}
+{"cleanUrls":true,"rewrites":[{"source":"/slots","destination":"/slots.html"},{"source":"/chests","destination":"/chests.html"},{"source":"/roulette","destination":"/roulette.html"},{"source":"/casino","destination":"/casino.html"}],"buildCommand":"npm run build","outputDirectory":"public","framework":null}

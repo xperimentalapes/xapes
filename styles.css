@@ -232,6 +232,10 @@ body {
     animation: fadeInUp 0.8s ease-out 0.6s both;
 }
 
+.hero-cta-icon {
+    font-size: 22px;
+}
+
 .btn {
     display: inline-flex;
     align-items: center;
@@ -284,6 +288,81 @@ body {
 
 .btn:hover svg {
     transform: translateX(4px);
+}
+
+/* Casino page */
+
+.casino-page {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+.casino-main {
+    padding-top: 96px;
+    padding-bottom: 80px;
+}
+
+.casino-hero-inner {
+    text-align: center;
+}
+
+.casino-title {
+    font-size: clamp(32px, 5vw, 40px);
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+}
+
+.casino-subtitle {
+    font-size: 16px;
+    color: var(--text-secondary);
+    margin-bottom: 40px;
+}
+
+.casino-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+    max-width: 640px;
+    margin: 0 auto;
+}
+
+.casino-game-btn {
+    justify-content: flex-start;
+    text-align: left;
+}
+
+.casino-game-icon {
+    font-size: 26px;
+}
+
+.casino-game-text {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+}
+
+.casino-game-name {
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.casino-game-desc {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.casino-game-btn-disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+@media (max-width: 600px) {
+    .casino-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 .hero-stats {
