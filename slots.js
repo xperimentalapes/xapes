@@ -39,8 +39,6 @@ const MAX_SPINS_PER_PURCHASE = 500; // Max spins per purchase
 const SLOT_MACHINE_PROGRAM_ID = 'Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS'; // Update with actual program ID
 const XMA_TOKEN_MINT = 'HVSruatutKcgpZJXYyeRCWAnyT7mzYq1io9YoJ6F4yMP'; // XMA token mint address
 const TREASURY_WALLET = '6auNHk39Mut82FhjY9iBZXjqm7xJabFVrY3bVgrYSMvj'; // Treasury wallet address
-const BRONZE_TREASURY_WALLET = '9iyfxFga7a9FAkkgpgeP7PSscKEKdShihvso44GiMT4H'; // Chest prizes treasury
-const CHEST_PRICE_XMA = 700000; // Bronze chest price (no SOL fee during testing)
 const TOKEN_DECIMALS = 6; // XMA token decimals
 const PURCHASE_FEE_SOL = 0.002; // SOL fee per purchase (1 SOL per 500 purchases)
 const PURCHASE_FEE_LAMPORTS = 2_000_000; // 0.002 * 1e9
@@ -254,7 +252,6 @@ async function setupWalletConnection() {
                     await updateBalance();
                     await loadPlayerData(); // Load saved player data from database
                     updateButtonStates();
-                    await purchaseChestFromSlots(); // if redirected from chests to buy, run tx and send back
                 }
             }
         } catch (err) {
@@ -307,7 +304,6 @@ async function setupWalletConnection() {
                 await updateBalance();
                 await loadPlayerData(); // Load saved player data from database
                 updateButtonStates();
-                await purchaseChestFromSlots(); // if redirected from chests to buy, run tx and send back
             } catch (err) {
                 console.error('Wallet connection error:', err);
                 // Don't show alert for user rejection
@@ -338,69 +334,6 @@ async function setupWalletConnection() {
         connectBtn.onclick = () => {
             window.open('https://phantom.app/', '_blank');
         };
-    }
-}
-
-// Chest purchase run from slots page so Phantom sees same origin as slots (avoids "request blocked" on /chests).
-async function purchaseChestFromSlots() {
-    if (!wallet || !connection || !window.splToken) return;
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('buy_chest') !== '1') return;
-    try {
-        const { PublicKey, Transaction } = window.solanaWeb3 || solanaWeb3;
-        const { getAssociatedTokenAddress, createTransferInstruction } = window.splToken;
-        const tokenMint = new PublicKey(XMA_TOKEN_MINT);
-        const userPublicKey = new PublicKey(wallet);
-        const treasuryPublicKey = new PublicKey(BRONZE_TREASURY_WALLET);
-        const userTokenAccount = await getAssociatedTokenAddress(tokenMint, userPublicKey);
-        const treasuryTokenAccount = await getAssociatedTokenAddress(tokenMint, treasuryPublicKey);
-        const transferAmount = BigInt(Math.floor(CHEST_PRICE_XMA * Math.pow(10, TOKEN_DECIMALS)));
-        const transferInstruction = createTransferInstruction(
-            userTokenAccount,
-            treasuryTokenAccount,
-            userPublicKey,
-            transferAmount
-        );
-        const transaction = new Transaction().add(transferInstruction);
-        let blockhash;
-        let retries = 3;
-        while (retries > 0) {
-            try {
-                const result = await connection.getLatestBlockhash();
-                blockhash = result.blockhash;
-                break;
-            } catch (error) {
-                retries--;
-                const errorMsg = error.message || error.toString() || '';
-                if (retries === 0 || (!errorMsg.includes('403') && !errorMsg.includes('429'))) throw error;
-                await new Promise(r => setTimeout(r, 1000 * (4 - retries)));
-            }
-        }
-        transaction.recentBlockhash = blockhash;
-        transaction.feePayer = userPublicKey;
-        const signed = await window.solana.signTransaction(transaction);
-        retries = 3;
-        let signature;
-        while (retries > 0) {
-            try {
-                signature = await connection.sendRawTransaction(signed.serialize(), { skipPreflight: false, maxRetries: 3 });
-                break;
-            } catch (error) {
-                retries--;
-                const errorMsg = error.message || error.toString() || '';
-                if (retries === 0 || (!errorMsg.includes('403') && !errorMsg.includes('429'))) throw error;
-                await new Promise(r => setTimeout(r, 1000 * (4 - retries)));
-            }
-        }
-        await connection.confirmTransaction(signature, 'confirmed');
-        sessionStorage.setItem('chest_bought', '1');
-        window.location.href = '/chests';
-    } catch (err) {
-        console.error('Chest purchase error:', err);
-        if (err.message && !err.message.includes('User rejected') && !err.message.includes('not been authorized')) {
-            alert('Chest purchase failed: ' + (err.message || String(err)));
-        }
-        window.history.replaceState({}, '', '/slots');
     }
 }
 
