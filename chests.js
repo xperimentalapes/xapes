@@ -10,11 +10,16 @@ var treasuryNfts = [];         // { id, name, image }
 var treasuryTokens = [];       // { id, symbol, balanceHuman, decimals, image } – raw balances from treasury
 var availableTokenPrizes = []; // { tokenId, symbol, tierAmount, tierStr, image } – only tiers treasury can cover
 
-// For each token symbol: 3 prize amounts (small, medium, large). When adding a new token, add an entry here.
+// For each token symbol: 3 prize amounts (small, medium, large). When adding a new token, add tiers + image URL here.
 const TOKEN_PRIZE_TIERS = {
     BLUNANA: [50000, 150000, 250000],
     XMA: [350000, 1000000, 2000000],
     FRENS: [1000000, 3000000, 5000000]
+};
+const TOKEN_IMAGES = {
+    BLUNANA: 'https://ipfs.io/ipfs/QmTKRAZEcTfDeVDt8hebrCv27DctYghtdfXRMc9FRA6NU3',
+    XMA: 'images/logo.png',
+    FRENS: 'https://img-cdn.magiceden.dev/rs:fill:400:0:0/plain/https%3A%2F%2Fcreator-hub-prod.s3.us-east-2.amazonaws.com%2Ffrens_factory_pfp_1736409521055.gif'
 };
 
 // Fallbacks when treasury has no assets or for display
@@ -193,7 +198,7 @@ function buildAvailableTokenPrizes() {
                     symbol: tok.symbol,
                     tierAmount: tierAmount,
                     tierStr: tierAmount.toLocaleString(undefined, { maximumFractionDigits: 0 }) + ' ' + tok.symbol,
-                    image: tok.image
+                    image: TOKEN_IMAGES[symbolKey] || tok.image
                 });
             }
         });
@@ -254,7 +259,7 @@ function renderAvailablePrizesList() {
         li.className = 'prize-item';
         var img = document.createElement('img');
         img.src = prize.image || 'images/logo.png';
-        img.alt = prize.tierStr;
+        img.alt = prize.symbol || 'Token';
         img.className = 'prize-thumb';
         var span = document.createElement('span');
         span.className = 'prize-label';
