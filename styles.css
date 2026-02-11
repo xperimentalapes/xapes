@@ -334,6 +334,7 @@ body {
     background-image: url('/images/casino-bg.jpeg');
     background-size: cover;
     background-position: center;
+    min-height: calc(100vh - 80px);
 }
 
 .casino-hero::before {
@@ -359,7 +360,8 @@ body {
     margin-bottom: 20px;
     display: inline-flex;
     align-items: center;
-    gap: 18px;
+    gap: 26px;
+    font-family: 'Cinzel Decorative', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 .casino-title-icon-wrap {
@@ -395,13 +397,13 @@ body {
     justify-content: flex-start;
     text-align: left;
     padding: 28px 64px;
-    font-size: 22px;
-    gap: 22px;
+    font-size: 24px;
+    gap: 26px;
 }
 
 .casino-game-icon {
-    width: 48px;
-    height: 48px;
+    width: 60px;
+    height: 60px;
     object-fit: contain;
 }
 
@@ -413,12 +415,12 @@ body {
 }
 
 .casino-game-name {
-    font-size: 22px;
+    font-size: 24px;
     font-weight: 700;
 }
 
 .casino-game-desc {
-    font-size: 16px;
+    font-size: 18px;
     color: var(--text-secondary);
 }
 
