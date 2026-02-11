@@ -438,6 +438,9 @@ body {
     .casino-title {
         font-size: 28px;
     }
+    .casino-title-icon {
+        height: 1.5em;
+    }
     .casino-grid {
         grid-template-columns: 1fr;
     }
