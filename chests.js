@@ -119,6 +119,8 @@ function fetchTreasuryPrizes() {
         });
     }
     fetchPage().then(function () {
+        return fetchTokenAccountsAndBuildTokens(url);
+    }).then(function () {
         buildAvailableTokenPrizes();
         renderAvailablePrizesList();
         fillNftNamesFromApi();
@@ -126,6 +128,55 @@ function fetchTreasuryPrizes() {
         console.error('Failed to fetch treasury prizes:', err);
         renderAvailablePrizesList([]);
     });
+}
+
+function fetchTokenAccountsAndBuildTokens(url) {
+    return fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            jsonrpc: '2.0',
+            id: '1',
+            method: 'getTokenAccounts',
+            params: { owner: BRONZE_TREASURY_WALLET }
+        })
+    }).then(function (r) { return r.json(); }).then(function (data) {
+        if (data.error) return;
+        var result = data.result || data;
+        var accounts = result.token_accounts || [];
+        if (accounts.length === 0) return;
+        var mints = [];
+        var amountByMint = {};
+        accounts.forEach(function (acc) {
+            var mint = acc.mint;
+            var amount = Number(acc.amount) || 0;
+            if (amount <= 0) return;
+            amountByMint[mint] = (amountByMint[mint] || 0) + amount;
+            if (mints.indexOf(mint) === -1) mints.push(mint);
+        });
+        return Promise.all(mints.map(function (mint) {
+            return fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ jsonrpc: '2.0', id: '1', method: 'getAsset', params: { id: mint } })
+            }).then(function (r) { return r.json(); }).then(function (res) {
+                var asset = res.result;
+                if (!asset) return null;
+                var rawAmount = amountByMint[mint] || 0;
+                var content = asset.content || {};
+                var tokenInfo = asset.token_info || content.metadata || {};
+                var decimals = Math.max(0, Number(tokenInfo.decimals) || Number((content.metadata && content.metadata.decimals)) || 0);
+                if (decimals === 0 && rawAmount > 1) decimals = 6;
+                var symbol = (tokenInfo.symbol || (content.metadata && content.metadata.symbol) || 'TOKEN').replace(/^\$/, '');
+                var files = (content.files || [])[0];
+                var image = files && (files.cdn_uri || files.uri) || null;
+                var balanceHuman = decimals ? rawAmount / Math.pow(10, decimals) : rawAmount;
+                return { id: mint, symbol: symbol, balanceHuman: balanceHuman, decimals: decimals, image: image };
+            }).catch(function () { return null; });
+        })).then(function (results) {
+            treasuryTokens = (results || []).filter(Boolean);
+        });
+    }).catch(function () {});
 }
 
 function buildAvailableTokenPrizes() {
