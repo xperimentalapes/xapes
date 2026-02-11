@@ -13,7 +13,7 @@ var availableTokenPrizes = []; // { tokenId, symbol, tierAmount, tierStr, image 
 // For each token symbol: 3 prize amounts (small, medium, large). When adding a new token, add tiers + image URL here.
 const TOKEN_PRIZE_TIERS = {
     BLUNANA: [50000, 150000, 250000],
-    XMA: [350000, 1000000, 2000000],
+    XMA: [350000, 1050000, 1750000], // 350k, x3, x5
     FRENS: [1000000, 3000000, 5000000]
 };
 const TOKEN_IMAGES = {
