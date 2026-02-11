@@ -8,9 +8,14 @@ const {
     getAccount,
     createAssociatedTokenAccountInstruction
 } = require('@solana/spl-token');
+const { createClient } = require('@supabase/supabase-js');
 
 const BRONZE_TREASURY_WALLET = '9iyfxFga7a9FAkkgpgeP7PSscKEKdShihvso44GiMT4H';
 const RPC_URL = process.env.HELIUS_RPC_URL || 'https://mainnet.helius-rpc.com/?api-key=' + (process.env.HELIUS_API_KEY || '');
+
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
+const supabase = supabaseUrl && supabaseServiceKey ? createClient(supabaseUrl, supabaseServiceKey) : null;
 
 module.exports = async function handler(req, res) {
     const origin = req.headers.origin;
@@ -22,9 +27,33 @@ module.exports = async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
     try {
-        const { userWallet, prizeType, mint, tokenMint, amount, decimals } = req.body;
+        const { userWallet, prizeType, mint, tokenMint, amount, decimals, reservationId } = req.body;
         if (!userWallet) return res.status(400).json({ error: 'userWallet required' });
         if (prizeType !== 'nft' && prizeType !== 'token') return res.status(400).json({ error: 'prizeType must be nft or token' });
+        if (supabase && !reservationId) return res.status(400).json({ error: 'reservationId required for collect' });
+
+        let reservation = null;
+        if (supabase) {
+            const { data, error } = await supabase
+                .from('chest_reservations')
+                .select('*')
+                .eq('id', reservationId)
+                .single();
+            if (error || !data) {
+                return res.status(400).json({ error: 'Reservation not found' });
+            }
+            const nowIso = new Date().toISOString();
+            if (data.user_wallet !== userWallet) {
+                return res.status(400).json({ error: 'Reservation does not belong to this wallet' });
+            }
+            if (data.expires_at <= nowIso) {
+                return res.status(400).json({ error: 'Reservation expired' });
+            }
+            if (data.prize_type !== prizeType) {
+                return res.status(400).json({ error: 'Reservation prize type mismatch' });
+            }
+            reservation = data;
+        }
 
         let mintPubkey;
         let transferAmountRaw;
@@ -32,12 +61,24 @@ module.exports = async function handler(req, res) {
             if (!mint) return res.status(400).json({ error: 'mint required for nft' });
             mintPubkey = new PublicKey(mint);
             transferAmountRaw = 1;
+            if (reservation && reservation.mint !== mint) {
+                return res.status(400).json({ error: 'Reservation mint mismatch' });
+            }
         } else {
             if (!tokenMint || amount == null || decimals == null) return res.status(400).json({ error: 'tokenMint, amount, decimals required for token' });
             mintPubkey = new PublicKey(tokenMint);
             const dec = Math.max(0, Number(decimals));
             transferAmountRaw = Math.floor(Number(amount) * Math.pow(10, dec));
             if (!isFinite(transferAmountRaw) || transferAmountRaw <= 0) return res.status(400).json({ error: 'Invalid token amount' });
+            if (reservation) {
+                if (reservation.token_mint !== tokenMint) {
+                    return res.status(400).json({ error: 'Reservation token mint mismatch' });
+                }
+                const reservedRaw = BigInt(reservation.amount.toString());
+                if (reservedRaw !== BigInt(transferAmountRaw)) {
+                    return res.status(400).json({ error: 'Reservation amount mismatch' });
+                }
+            }
         }
 
         try { new PublicKey(userWallet); } catch (e) { return res.status(400).json({ error: 'Invalid user wallet' }); }
@@ -116,6 +157,13 @@ module.exports = async function handler(req, res) {
         transaction.recentBlockhash = blockhash;
         transaction.feePayer = treasuryPublicKey;
         transaction.sign(keypair);
+
+        if (supabase && reservation) {
+            await supabase
+                .from('chest_reservations')
+                .delete()
+                .eq('id', reservation.id);
+        }
 
         const serialized = transaction.serialize({ requireAllSignatures: false, verifySignatures: false });
         return res.status(200).json({ transaction: serialized.toString('base64') });

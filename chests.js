@@ -37,6 +37,7 @@ let walletAddress = null;
 let canOpenChest = false;
 // Current result modal outcome (win with nft/token) for Collect
 let currentOutcome = null;
+let currentReservationId = null;
 // XMA for buy flow (same as slots)
 const XMA_TOKEN_MINT = 'HVSruatutKcgpZJXYyeRCWAnyT7mzYq1io9YoJ6F4yMP';
 const TOKEN_DECIMALS = 6;
@@ -70,6 +71,22 @@ document.addEventListener('DOMContentLoaded', () => {
     setupCarousel();
     renderXmaPrice();
 });
+
+async function loadChestOpensFromServer() {
+    if (!walletAddress || walletAddress.startsWith('Demo')) {
+        canOpenChest = false;
+        return;
+    }
+    try {
+        const res = await fetch('/api/chest-opens?wallet=' + encodeURIComponent(walletAddress));
+        if (!res.ok) return;
+        const data = await res.json().catch(function () { return {}; });
+        const opens = typeof data.opens === 'number' ? data.opens : 0;
+        canOpenChest = opens > 0;
+    } catch (e) {
+        console.warn('Failed to load chest opens:', e);
+    }
+}
 
 function renderXmaPrice() {
     const el = document.getElementById('bronze-price-xma');
@@ -372,12 +389,13 @@ function setupWallet() {
     connectBtn.addEventListener('click', () => {
         if (window.solana?.isPhantom) {
             window.solana.connect()
-                .then(({ publicKey }) => {
+                .then(async ({ publicKey }) => {
                     walletAddress = publicKey.toBase58();
                     walletConnected = true;
                     walletAddressEl.textContent = walletAddress.slice(0, 4) + '…' + walletAddress.slice(-4);
                     connectBtn.style.display = 'none';
                     walletInfo.style.display = 'flex';
+                    await loadChestOpensFromServer();
                     updateChestButton();
                 })
                 .catch(() => useDemoWallet());
@@ -438,14 +456,74 @@ function setupBronzeChest() {
     updateChestButton();
     const openBtn = document.getElementById('open-chest-btn');
     if (!openBtn) return;
-    openBtn.addEventListener('click', () => {
+    openBtn.addEventListener('click', async () => {
         if (TEST_CHEST_MODE || canOpenChest) {
-            const outcome = rollOutcome();
-            showResult(outcome);
+            await handleOpenChest();
         } else {
-            buyChest();
+            await buyChest();
         }
     });
+}
+
+async function handleOpenChest() {
+    if (TEST_CHEST_MODE) {
+        const outcomeTest = rollOutcome();
+        showResult(outcomeTest);
+        return;
+    }
+    if (!walletAddress || walletAddress.startsWith('Demo')) {
+        alert('Please connect your Phantom wallet to open a chest.');
+        return;
+    }
+    try {
+        const res = await fetch('/api/consume-chest-open', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userWallet: walletAddress })
+        });
+        const data = await res.json().catch(function () { return {}; });
+        if (!res.ok || !data.ok) {
+            canOpenChest = false;
+            updateChestButton();
+            alert(data.error || 'No unopened chest found. Please buy a chest first.');
+            return;
+        }
+        canOpenChest = false;
+        updateChestButton();
+        currentReservationId = null;
+        var outcome = rollOutcome();
+        if (outcome.type === 'win') {
+            try {
+                var reserveBody = { userWallet: walletAddress, prizeType: outcome.kind === 'nft' ? 'nft' : 'token' };
+                if (outcome.kind === 'nft') {
+                    reserveBody.mint = outcome.mint;
+                } else {
+                    reserveBody.tokenMint = outcome.tokenMint;
+                    reserveBody.amount = outcome.amount;
+                    reserveBody.decimals = outcome.decimals != null ? outcome.decimals : 6;
+                }
+                var reserveRes = await fetch('/api/reserve-chest-prize', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(reserveBody)
+                });
+                var reserveData = await reserveRes.json().catch(function () { return {}; });
+                if (!reserveRes.ok || !reserveData.reserved) {
+                    console.warn('Reserve failed:', reserveData);
+                    outcome = { type: 'loss' };
+                } else {
+                    currentReservationId = reserveData.reservationId || null;
+                }
+            } catch (e) {
+                console.warn('Reserve chest prize error:', e);
+                outcome = { type: 'loss' };
+            }
+        }
+        showResult(outcome);
+    } catch (err) {
+        console.error('handleOpenChest error:', err);
+        alert('Failed to open chest: ' + (err.message || String(err)));
+    }
 }
 
 function getChestConnection() {
@@ -549,8 +627,23 @@ async function buyChest() {
             }
             if (signature) {
                 await connection.confirmTransaction(signature, 'confirmed');
-                canOpenChest = true;
-                updateChestButton();
+                try {
+                    var recRes = await fetch('/api/record-chest-purchase', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ userWallet: walletAddress, txSignature: signature })
+                    });
+                    var recData = await recRes.json().catch(function () { return {}; });
+                    if (!recRes.ok || !recData.ok) {
+                        console.warn('record-chest-purchase error:', recData);
+                        alert(recData.error || 'Purchase recorded on chain but server could not register chest. Please contact support.');
+                    } else {
+                        canOpenChest = (recData.opens || 0) > 0;
+                        updateChestButton();
+                    }
+                } catch (e) {
+                    console.warn('Failed to record chest purchase:', e);
+                }
                 return;
             }
         }
@@ -854,6 +947,9 @@ async function collectChestPrize() {
         body.tokenMint = currentOutcome.tokenMint;
         body.amount = currentOutcome.amount;
         body.decimals = currentOutcome.decimals != null ? currentOutcome.decimals : 6;
+    }
+    if (currentReservationId) {
+        body.reservationId = currentReservationId;
     }
     resultCollectBtn.disabled = true;
     try {
