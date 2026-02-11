@@ -2,6 +2,9 @@
 // Bronze chest price (fixed)
 const PRICE_XMA_AMOUNT = 700000;
 
+// Test mode: show "Open Chest" without paying; Collect disabled (no prizes sent). Set false for production.
+const TEST_CHEST_MODE = true;
+
 // Bronze chest treasury – prizes are read from this wallet
 const BRONZE_TREASURY_WALLET = '9iyfxFga7a9FAkkgpgeP7PSscKEKdShihvso44GiMT4H';
 
@@ -46,6 +49,9 @@ const resultWin = document.getElementById('result-win');
 const resultPrizeImg = document.getElementById('result-prize-img');
 const resultPrizeName = document.getElementById('result-prize-name');
 const resultCollectBtn = document.getElementById('result-collect-btn');
+const resultChestVideo = document.getElementById('result-chest-video');
+const resultVideoWrap = resultModal && resultModal.querySelector('.result-video-wrap');
+const resultBodyOverlay = document.getElementById('result-body');
 
 var fireworksCanvas = null;
 var fireworksCtx = null;
@@ -416,7 +422,10 @@ function updateChestButton() {
     const openBtn = document.getElementById('open-chest-btn');
     if (!openBtn) return;
     var isRealWallet = walletConnected && walletAddress && !walletAddress.startsWith('Demo');
-    if (canOpenChest) {
+    if (TEST_CHEST_MODE) {
+        openBtn.textContent = 'Open Chest';
+        openBtn.disabled = !isRealWallet;
+    } else if (canOpenChest) {
         openBtn.textContent = 'Open Chest';
         openBtn.disabled = !isRealWallet;
     } else {
@@ -430,7 +439,7 @@ function setupBronzeChest() {
     const openBtn = document.getElementById('open-chest-btn');
     if (!openBtn) return;
     openBtn.addEventListener('click', () => {
-        if (canOpenChest) {
+        if (TEST_CHEST_MODE || canOpenChest) {
             const outcome = rollOutcome();
             showResult(outcome);
         } else {
@@ -584,48 +593,70 @@ function rollOutcome() {
 
 function showResult(outcome) {
     currentOutcome = outcome;
-    if (!resultLose || !resultWin) return;
+    if (!resultLose || !resultWin || !resultModal) return;
+
     resultLose.style.display = 'none';
     resultWin.style.display = 'none';
+    if (resultBodyOverlay) resultBodyOverlay.setAttribute('aria-hidden', 'true');
+    if (resultVideoWrap) resultVideoWrap.classList.remove('result-video-faded');
 
     if (outcome.type === 'loss') {
         resultLose.style.display = 'block';
+    } else {
+        resultWin.style.display = 'block';
+        if (resultCollectBtn) resultCollectBtn.disabled = TEST_CHEST_MODE;
+        if (resultPrizeImg && resultPrizeName) {
+            if (outcome.kind === 'token') {
+                resultPrizeImg.src = outcome.tokenImage || 'images/logo.png';
+                resultPrizeImg.alt = outcome.prize;
+                resultPrizeName.textContent = outcome.prize || 'Token';
+            } else {
+                var collectionLabel = outcome.collection || outcome.prize || 'NFT';
+                var fallbackImg = outcome.nftImage || NFT_FALLBACK_IMAGES[outcome.collection] || NFT_FALLBACK_IMAGES[collectionLabel] || 'images/logo.png';
+                resultPrizeImg.src = fallbackImg;
+                resultPrizeImg.alt = collectionLabel;
+                resultPrizeName.textContent = collectionLabel;
+                var mint = outcome.mint;
+                if (mint) {
+                    fetchNftMetadata(mint).then(function (meta) {
+                        if (meta && meta.image) resultPrizeImg.src = meta.image;
+                        var name = (meta && meta.name) || collectionLabel;
+                        resultPrizeName.textContent = name || 'NFT';
+                    }).catch(function () {});
+                }
+            }
+        }
+    }
+
+    if (!resultChestVideo || !resultVideoWrap) {
+        if (resultBodyOverlay) resultBodyOverlay.setAttribute('aria-hidden', 'false');
+        if (resultVideoWrap) resultVideoWrap.classList.add('result-video-faded');
         resultModal.setAttribute('aria-hidden', 'false');
+        if (outcome.type === 'win') setTimeout(startFireworks, 80);
         return;
     }
 
-    resultWin.style.display = 'block';
-    if (!resultPrizeImg || !resultPrizeName) {
-        resultModal.setAttribute('aria-hidden', 'false');
-        setTimeout(startFireworks, 80);
-        return;
-    }
-
-    if (outcome.kind === 'token') {
-        resultPrizeImg.src = outcome.tokenImage || 'images/logo.png';
-        resultPrizeImg.alt = outcome.prize;
-        resultPrizeName.textContent = outcome.prize || 'Token';
-        resultModal.setAttribute('aria-hidden', 'false');
-        setTimeout(startFireworks, 80);
-        return;
-    }
-
-    var collectionLabel = outcome.collection || outcome.prize || 'NFT';
-    var fallbackImg = outcome.nftImage || NFT_FALLBACK_IMAGES[outcome.collection] || NFT_FALLBACK_IMAGES[collectionLabel] || 'images/logo.png';
-    resultPrizeImg.src = fallbackImg;
-    resultPrizeImg.alt = collectionLabel;
-    resultPrizeName.textContent = collectionLabel;
+    resultChestVideo.currentTime = 0;
     resultModal.setAttribute('aria-hidden', 'false');
-    setTimeout(startFireworks, 80);
-    var mint = outcome.mint;
-    if (!mint) {
-        return;
+
+    var videoDone = false;
+    function onVideoDone() {
+        if (videoDone) return;
+        videoDone = true;
+        resultChestVideo.removeEventListener('ended', onVideoDone);
+        resultChestVideo.removeEventListener('error', onVideoDone);
+        if (resultVideoWrap) resultVideoWrap.classList.add('result-video-faded');
+        if (resultBodyOverlay) resultBodyOverlay.setAttribute('aria-hidden', 'false');
+        if (outcome.type === 'win') setTimeout(startFireworks, 80);
     }
-    fetchNftMetadata(mint).then(function (meta) {
-        if (meta && meta.image) resultPrizeImg.src = meta.image;
-        var name = (meta && meta.name) || collectionLabel;
-        resultPrizeName.textContent = name || 'NFT';
-    }).catch(function () {});
+
+    resultChestVideo.addEventListener('ended', onVideoDone);
+    resultChestVideo.addEventListener('error', onVideoDone);
+    var playPromise = resultChestVideo.play();
+    if (playPromise && playPromise.catch) {
+        playPromise.catch(function () { onVideoDone(); });
+    }
+    setTimeout(function () { if (resultBodyOverlay && resultBodyOverlay.getAttribute('aria-hidden') === 'true') onVideoDone(); }, 8000);
 }
 
 function fetchNftMetadata(mintAddress) {
@@ -782,7 +813,13 @@ function setupResultModal() {
 
     function close() {
         stopFireworks();
-        if (currentOutcome && currentOutcome.type === 'loss') {
+        if (resultChestVideo) {
+            resultChestVideo.pause();
+            resultChestVideo.currentTime = 0;
+        }
+        if (resultVideoWrap) resultVideoWrap.classList.remove('result-video-faded');
+        if (resultBodyOverlay) resultBodyOverlay.setAttribute('aria-hidden', 'true');
+        if (currentOutcome && currentOutcome.type === 'loss' && !TEST_CHEST_MODE) {
             canOpenChest = false;
             currentOutcome = null;
             updateChestButton();
@@ -795,6 +832,7 @@ function setupResultModal() {
     if (resultCollectBtn) {
         resultCollectBtn.addEventListener('click', () => {
             if (currentOutcome && currentOutcome.type === 'win') {
+                if (TEST_CHEST_MODE) { close(); return; }
                 collectChestPrize();
             } else {
                 close();
@@ -804,7 +842,7 @@ function setupResultModal() {
 }
 
 async function collectChestPrize() {
-    if (!currentOutcome || currentOutcome.type !== 'win' || !walletAddress || walletAddress.startsWith('Demo')) {
+    if (TEST_CHEST_MODE || !currentOutcome || currentOutcome.type !== 'win' || !walletAddress || walletAddress.startsWith('Demo')) {
         return;
     }
     var body = { userWallet: walletAddress };

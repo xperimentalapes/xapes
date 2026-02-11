@@ -137,15 +137,18 @@
         </div>
     </div>
 
-    <!-- Result modal -->
+    <!-- Result modal: square, video fills then fades; win/lose overlaid -->
     <div id="result-modal" class="chest-modal" aria-hidden="true">
         <div class="chest-modal-backdrop"></div>
         <div class="fireworks-canvas-wrap" aria-hidden="true">
             <canvas id="result-fireworks-canvas"></canvas>
         </div>
-        <div class="chest-modal-content">
+        <div class="chest-modal-content result-modal-square">
             <button id="close-result-modal" class="chest-modal-close" aria-label="Close">&times;</button>
-            <div id="result-body">
+            <div class="result-video-wrap">
+                <video id="result-chest-video" src="images/chest-open.mov" muted playsinline preload="auto" aria-hidden="true"></video>
+            </div>
+            <div id="result-body" class="result-overlay" aria-hidden="true">
                 <div id="result-lose" class="result-panel" style="display: none;">
                     <div class="result-lose-icon" aria-hidden="true">
                         <svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" class="result-lose-svg">
