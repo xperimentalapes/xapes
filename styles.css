@@ -407,6 +407,11 @@ body {
     object-fit: contain;
 }
 
+.casino-game-icon-xl {
+    width: 120px;
+    height: 120px;
+}
+
 .casino-game-text {
     display: flex;
     flex-direction: column;
