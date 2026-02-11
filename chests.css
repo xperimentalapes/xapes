@@ -440,6 +440,12 @@
     box-shadow: 0 6px 20px rgba(205, 127, 50, 0.4);
 }
 
+.chest-actions .btn-open:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
 .btn-disabled {
     background: var(--bg-darker);
     color: var(--text-muted);
