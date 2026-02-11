@@ -323,18 +323,18 @@ body {
 }
 
 .casino-main {
-    padding-top: 80px;
+    padding-top: 0;
     padding-bottom: 0;
 }
 
 .casino-hero {
     position: relative;
-    padding: 40px 0 40px;
+    padding: 80px 0 40px;
     overflow: hidden;
     background-image: url('/images/casino-bg.jpeg');
     background-size: cover;
     background-position: center;
-    min-height: calc(100vh - 80px);
+    min-height: 100vh;
 }
 
 .casino-hero::before {
@@ -435,6 +435,9 @@ body {
 }
 
 @media (max-width: 600px) {
+    .casino-title {
+        font-size: 28px;
+    }
     .casino-grid {
         grid-template-columns: 1fr;
     }
