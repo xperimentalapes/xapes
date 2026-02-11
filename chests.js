@@ -3,7 +3,7 @@
 const PRICE_XMA_AMOUNT = 700000;
 
 // Test mode: show "Open Chest" without paying; Collect disabled (no prizes sent). Set false for production.
-const TEST_CHEST_MODE = true;
+const TEST_CHEST_MODE = false;
 
 // Bronze chest treasury – prizes are read from this wallet
 const BRONZE_TREASURY_WALLET = '9iyfxFga7a9FAkkgpgeP7PSscKEKdShihvso44GiMT4H';
