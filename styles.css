@@ -887,12 +887,17 @@ section:not(.hero) {
 
     .hero-cta {
         flex-direction: column;
-        align-items: stretch;
+        align-items: center;
     }
 
     .hero-cta .btn {
-        width: 100%;
+        width: auto;
+        max-width: 85%;
         justify-content: center;
+    }
+
+    .hero-cta-icon {
+        font-size: 32px;
     }
 
     .utilities-grid {
