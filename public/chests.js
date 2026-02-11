@@ -5,9 +5,17 @@ const PRICE_XMA_AMOUNT = 700000;
 // Bronze chest treasury – prizes are read from this wallet
 const BRONZE_TREASURY_WALLET = '9iyfxFga7a9FAkkgpgeP7PSscKEKdShihvso44GiMT4H';
 
-// Prizes: 35% loss, 10% NFT, 55% token. NFT/token lists are filled from treasury (see fetchTreasuryPrizes).
-var treasuryNfts = [];   // { id, name, image }
-var treasuryTokens = []; // { id, symbol, name, amount, decimals, image }
+// Prizes: 35% loss, 10% NFT, 55% token. NFT list from treasury; token prizes are tiered (see TOKEN_PRIZE_TIERS).
+var treasuryNfts = [];         // { id, name, image }
+var treasuryTokens = [];       // { id, symbol, balanceHuman, decimals, image } – raw balances from treasury
+var availableTokenPrizes = []; // { tokenId, symbol, tierAmount, tierStr, image } – only tiers treasury can cover
+
+// For each token symbol: 3 prize amounts (small, medium, large). When adding a new token, add an entry here.
+const TOKEN_PRIZE_TIERS = {
+    BLUNANA: [50000, 150000, 250000],
+    XMA: [350000, 1000000, 2000000],
+    FRENS: [1000000, 3000000, 5000000]
+};
 
 // Fallbacks when treasury has no assets or for display
 const NFT_FALLBACK_IMAGES = {};
@@ -92,15 +100,13 @@ function fetchTreasuryPrizes() {
                 if (isNft) {
                     treasuryNfts.push({ id: id, name: name || 'NFT', image: image });
                 } else {
-                    var symbol = tokenInfo.symbol || metadata.symbol || 'TOKEN';
-                    var amountStr = decimals ? (balance / Math.pow(10, decimals)).toLocaleString(undefined, { maximumFractionDigits: 0 }) : String(balance);
+                    var symbol = (tokenInfo.symbol || metadata.symbol || 'TOKEN').replace(/^\$/, '');
+                    var balanceHuman = decimals ? balance / Math.pow(10, decimals) : balance;
                     treasuryTokens.push({
                         id: id,
                         symbol: symbol,
-                        name: name || symbol,
-                        amount: balance,
+                        balanceHuman: balanceHuman,
                         decimals: decimals,
-                        amountStr: amountStr + ' ' + symbol,
                         image: image
                     });
                 }
@@ -113,11 +119,33 @@ function fetchTreasuryPrizes() {
         });
     }
     fetchPage().then(function () {
+        buildAvailableTokenPrizes();
         renderAvailablePrizesList();
         fillNftNamesFromApi();
     }).catch(function (err) {
         console.error('Failed to fetch treasury prizes:', err);
         renderAvailablePrizesList([]);
+    });
+}
+
+function buildAvailableTokenPrizes() {
+    availableTokenPrizes = [];
+    treasuryTokens.forEach(function (tok) {
+        var symbolKey = (tok.symbol || '').toUpperCase();
+        var tiers = TOKEN_PRIZE_TIERS[symbolKey];
+        if (!tiers || !Array.isArray(tiers)) return;
+        var balanceHuman = tok.balanceHuman || 0;
+        tiers.forEach(function (tierAmount) {
+            if (balanceHuman >= tierAmount) {
+                availableTokenPrizes.push({
+                    tokenId: tok.id,
+                    symbol: tok.symbol,
+                    tierAmount: tierAmount,
+                    tierStr: tierAmount.toLocaleString(undefined, { maximumFractionDigits: 0 }) + ' ' + tok.symbol,
+                    image: tok.image
+                });
+            }
+        });
     });
 }
 
@@ -149,7 +177,7 @@ function renderAvailablePrizesList() {
     var list = document.querySelector('.available-prizes-list');
     if (!list) return;
     list.innerHTML = '';
-    if (treasuryNfts.length === 0 && treasuryTokens.length === 0) {
+    if (treasuryNfts.length === 0 && availableTokenPrizes.length === 0) {
         var li = document.createElement('li');
         li.className = 'prize-item';
         li.textContent = 'No prizes in treasury yet. Add NFTs or tokens to the bronze treasury wallet.';
@@ -170,16 +198,16 @@ function renderAvailablePrizesList() {
         li.appendChild(span);
         list.appendChild(li);
     });
-    treasuryTokens.forEach(function (tok) {
+    availableTokenPrizes.forEach(function (prize) {
         var li = document.createElement('li');
         li.className = 'prize-item';
         var img = document.createElement('img');
-        img.src = tok.image || 'images/logo.png';
-        img.alt = tok.amountStr;
+        img.src = prize.image || 'images/logo.png';
+        img.alt = prize.tierStr;
         img.className = 'prize-thumb';
         var span = document.createElement('span');
         span.className = 'prize-label';
-        span.textContent = tok.amountStr;
+        span.textContent = prize.tierStr;
         li.appendChild(img);
         li.appendChild(span);
         list.appendChild(li);
@@ -332,9 +360,9 @@ function rollOutcome() {
         var nft = treasuryNfts[Math.floor(Math.random() * treasuryNfts.length)];
         return { type: 'win', kind: 'nft', collection: nft.name, mint: nft.id, nftImage: nft.image };
     }
-    if (treasuryTokens.length > 0) {
-        var tok = treasuryTokens[Math.floor(Math.random() * treasuryTokens.length)];
-        return { type: 'win', kind: 'token', prize: tok.amountStr, tokenMint: tok.id, tokenImage: tok.image };
+    if (availableTokenPrizes.length > 0) {
+        var prize = availableTokenPrizes[Math.floor(Math.random() * availableTokenPrizes.length)];
+        return { type: 'win', kind: 'token', prize: prize.tierStr, tokenMint: prize.tokenId, tokenImage: prize.image };
     }
     if (treasuryNfts.length > 0) {
         var nft2 = treasuryNfts[Math.floor(Math.random() * treasuryNfts.length)];
