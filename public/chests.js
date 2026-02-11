@@ -76,19 +76,22 @@ function fetchTreasuryPrizes() {
             var items = result.items || [];
             items.forEach(function (item) {
                 var id = item.id;
-                var iface = item.interface || '';
+                var iface = (item.interface || '').toLowerCase();
                 var tokenStandard = (item.token_standard || '').toLowerCase();
                 var content = item.content || {};
                 var files = (content.files || [])[0];
                 var metadata = content.metadata || {};
                 var image = (files && (files.cdn_uri || files.uri)) || null;
                 var name = metadata.name || null;
-                if (iface === 'V1_NFT' || tokenStandard === 'nonfungible' || (item.compression && item.compression.compressed)) {
+                var tokenInfo = item.token_info || {};
+                var balance = tokenInfo.balance !== undefined ? Number(tokenInfo.balance) : 0;
+                var decimals = Math.max(0, Number(tokenInfo.decimals) || 0);
+                var isNft = (iface === 'v1_nft' || tokenStandard === 'nonfungible' || tokenStandard === 'programmablenonfungible' ||
+                    (item.compression && item.compression.compressed) ||
+                    (decimals === 0 && (balance === 1 || balance === 0) && (image || metadata.name)));
+                if (isNft) {
                     treasuryNfts.push({ id: id, name: name || 'NFT', image: image });
                 } else {
-                    var tokenInfo = item.token_info || {};
-                    var balance = tokenInfo.balance !== undefined ? Number(tokenInfo.balance) : 0;
-                    var decimals = Math.max(0, Number(tokenInfo.decimals) || 0);
                     var symbol = tokenInfo.symbol || metadata.symbol || 'TOKEN';
                     var amountStr = decimals ? (balance / Math.pow(10, decimals)).toLocaleString(undefined, { maximumFractionDigits: 0 }) : String(balance);
                     treasuryTokens.push({
@@ -111,9 +114,34 @@ function fetchTreasuryPrizes() {
     }
     fetchPage().then(function () {
         renderAvailablePrizesList();
+        fillNftNamesFromApi();
     }).catch(function (err) {
         console.error('Failed to fetch treasury prizes:', err);
         renderAvailablePrizesList([]);
+    });
+}
+
+function fillNftNamesFromApi() {
+    var apiKey = typeof window !== 'undefined' && window.HELIUS_API_KEY;
+    if (!apiKey || treasuryNfts.length === 0) return;
+    var url = 'https://mainnet.helius-rpc.com/?api-key=' + encodeURIComponent(apiKey);
+    treasuryNfts.forEach(function (nft, index) {
+        if (nft.name && nft.name !== 'NFT') return;
+        fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ jsonrpc: '2.0', id: '1', method: 'getAsset', params: { id: nft.id } })
+        }).then(function (r) { return r.json(); }).then(function (data) {
+            var asset = data.result;
+            if (!asset || data.error) return;
+            var content = asset.content || {};
+            var metadata = content.metadata || {};
+            var name = metadata.name || null;
+            if (name) {
+                nft.name = name;
+                renderAvailablePrizesList();
+            }
+        }).catch(function () {});
     });
 }
 
