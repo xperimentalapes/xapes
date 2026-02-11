@@ -323,13 +323,13 @@ body {
 }
 
 .casino-main {
-    padding-top: 96px;
-    padding-bottom: 80px;
+    padding-top: 80px;
+    padding-bottom: 0;
 }
 
 .casino-hero {
     position: relative;
-    padding: 80px 0 80px;
+    padding: 40px 0 40px;
     overflow: hidden;
     background-image: url('/images/casino-bg.jpeg');
     background-size: cover;
