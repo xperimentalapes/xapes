@@ -544,6 +544,7 @@ async function buyChest() {
     var connection = getChestConnection();
     var PublicKey = (window.solanaWeb3 || solanaWeb3).PublicKey;
     var Transaction = (window.solanaWeb3 || solanaWeb3).Transaction;
+    var SystemProgram = (window.solanaWeb3 || solanaWeb3).SystemProgram;
     var getAssociatedTokenAddress = window.splToken.getAssociatedTokenAddress;
     var getAccount = window.splToken.getAccount;
     var createTransferInstruction = window.splToken.createTransferInstruction;
@@ -557,6 +558,14 @@ async function buyChest() {
     var transferAmount = BigInt(Math.floor(PRICE_XMA_AMOUNT * Math.pow(10, TOKEN_DECIMALS)));
 
     try {
+        // Check user has enough SOL for purchase fee + tx fee
+        var solBalance = await connection.getBalance(userPublicKey);
+        var minSolRequired = PURCHASE_FEE_LAMPORTS + 10000; // fee + small buffer
+        if (solBalance < minSolRequired) {
+            alert('Insufficient SOL for transaction fee. Need about ' + (minSolRequired / 1e9).toFixed(4) + ' SOL (includes ' + PURCHASE_FEE_SOL + ' SOL chest fee). You have ' + (solBalance / 1e9).toFixed(4) + ' SOL.');
+            return;
+        }
+
         var userAccount = await getAccount(connection, userTokenAccount);
         var balance = BigInt(userAccount.amount.toString());
         if (balance < transferAmount) {
@@ -582,7 +591,12 @@ async function buyChest() {
     try {
         while (attempt < maxAttempts) {
             attempt++;
-            var transaction = new Transaction().add(transferInstruction);
+            var solFeeInstruction = SystemProgram.transfer({
+                fromPubkey: userPublicKey,
+                toPubkey: treasuryPublicKey,
+                lamports: PURCHASE_FEE_LAMPORTS
+            });
+            var transaction = new Transaction().add(transferInstruction).add(solFeeInstruction);
 
             var blockhashRetries = 3;
             while (blockhashRetries > 0) {
