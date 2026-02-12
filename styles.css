@@ -435,6 +435,9 @@ body {
 }
 
 @media (max-width: 600px) {
+    .casino-hero {
+        background-position: left top;
+    }
     .casino-title {
         font-size: 28px;
     }
