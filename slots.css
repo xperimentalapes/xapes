@@ -109,7 +109,7 @@
     display: flex;
     flex-direction: column;
     gap: 2px;
-    background: var(--bg-card);
+    background: rgba(20, 20, 28, 0.75);
     border: 1px solid var(--border-color);
     border-radius: 6px;
     padding: 3px 6px;

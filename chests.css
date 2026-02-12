@@ -2,7 +2,9 @@
 .chests-page {
     height: 100vh;
     min-height: 100vh;
-    background: var(--bg-dark);
+    background-image: linear-gradient(rgba(10, 10, 15, 0.72), rgba(10, 10, 15, 0.72)), url('/images/casino-bg2.jpg');
+    background-size: cover;
+    background-position: center top;
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -20,6 +22,9 @@
     padding: 0;
     padding-top: 70px; /* clear fixed navbar */
     overflow: hidden;
+    background-image: linear-gradient(rgba(10, 10, 15, 0.72), rgba(10, 10, 15, 0.72)), url('/images/casino-bg2.jpg');
+    background-size: cover;
+    background-position: center top;
 }
 
 /* Hero: whole block (image + text + logos) centered on page, scaled to fill space */
@@ -110,6 +115,11 @@
 
 /* Mobile only: hero – row1 image+title centered + same vertical center, row2 subtitle, row3 partner text, row4 logos */
 @media (max-width: 600px) {
+    .chests-page,
+    .chests-main {
+        background-position: left top;
+    }
+
     .chests-hero {
         padding: 12px 24px 10px;
     }
@@ -1060,5 +1070,12 @@
     .chest-img {
         max-width: 120px;
         max-height: 96px;
+    }
+}
+
+@media (max-width: 600px) {
+    .chests-page,
+    .chests-main {
+        background-position: left top;
     }
 }
