@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "rewrites": [
+    { "source": "/favicon.ico", "destination": "/api/favicon" }
+  ],
+  "redirects": [
+    { "source": "/Mnk3ys", "destination": "/", "permanent": false },
+    { "source": "/Mnk3ys/", "destination": "/", "permanent": false }
+  ]
+}

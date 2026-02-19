@@ -2,7 +2,9 @@
 .chests-page {
     height: 100vh;
     min-height: 100vh;
-    background: var(--bg-dark);
+    background-image: linear-gradient(rgba(10, 10, 15, 0.72), rgba(10, 10, 15, 0.72)), url('/images/casino-bg2.jpg');
+    background-size: cover;
+    background-position: center top;
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -20,6 +22,9 @@
     padding: 0;
     padding-top: 70px; /* clear fixed navbar */
     overflow: hidden;
+    background-image: linear-gradient(rgba(10, 10, 15, 0.72), rgba(10, 10, 15, 0.72)), url('/images/casino-bg2.jpg');
+    background-size: cover;
+    background-position: center top;
 }
 
 /* Hero: whole block (image + text + logos) centered on page, scaled to fill space */
@@ -110,6 +115,11 @@
 
 /* Mobile only: hero – row1 image+title centered + same vertical center, row2 subtitle, row3 partner text, row4 logos */
 @media (max-width: 600px) {
+    .chests-page,
+    .chests-main {
+        background-position: left top;
+    }
+
     .chests-hero {
         padding: 12px 24px 10px;
     }
@@ -650,6 +660,60 @@
     box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.06) inset;
 }
 
+/* Result modal: square, video fills then fades; win/lose overlaid */
+.result-modal-square {
+    max-width: min(90vmin, 420px);
+    width: min(90vmin, 420px);
+    aspect-ratio: 1;
+    padding: 0;
+    overflow: hidden;
+}
+
+.result-video-wrap {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background: #000;
+    transition: opacity 0.6s ease;
+}
+
+.result-video-wrap.result-video-faded {
+    opacity: 0.15;
+}
+
+.result-video-wrap video {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.result-modal-square .result-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s ease;
+}
+
+.result-modal-square .result-overlay[aria-hidden="false"] {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.result-modal-square .result-overlay .result-panel {
+    max-width: 100%;
+}
+
+.result-modal-square .chest-modal-close {
+    z-index: 3;
+}
+
 .chest-modal-close {
     position: absolute;
     top: 12px;
@@ -762,9 +826,14 @@
     transition: transform 0.2s, box-shadow 0.2s;
 }
 
-.btn-collect:hover {
+.btn-collect:hover:not(:disabled) {
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+}
+
+.btn-collect:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
 }
 
 /* Responsive: single card view on small screens */
@@ -1001,5 +1070,12 @@
     .chest-img {
         max-width: 120px;
         max-height: 96px;
+    }
+}
+
+@media (max-width: 600px) {
+    .chests-page,
+    .chests-main {
+        background-position: left top;
     }
 }

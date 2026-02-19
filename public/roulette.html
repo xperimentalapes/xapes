@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="XMA Roulette - Buy chips with XMA and play roulette">
+    <title>XMA Roulette | Xperimental Mutant Apes</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="roulette.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
+    <script type="module">
+        import('https://esm.sh/@solana/spl-token@0.3.9').then(splToken => {
+            window.splToken = splToken;
+            window.dispatchEvent(new Event('splTokenLoaded'));
+        }).catch(() => {});
+    </script>
+</head>
+<body class="roulette-page">
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-content">
+                <div class="logo" style="display: flex; align-items: center; gap: 16px;">
+                    <a href="/">
+                        <img src="/images/logo.png" alt="Xperimental Mutant Apes" class="logo-img">
+                    </a>
+                    <a href="/" class="exit-home-btn" title="Exit to Homepage">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M9 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H9M16 17L21 12M21 12L16 7M21 12H9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </a>
+                </div>
+                <div class="nav-links">
+                    <a href="/slots" class="nav-link">Slots</a>
+                    <a href="/chests" class="nav-link">Chests</a>
+                    <a href="/roulette" class="nav-link nav-link-active">Roulette</a>
+                    <div id="wallet-button-container" class="wallet-button-container">
+                        <button id="connect-wallet" class="wallet-connect-btn">Connect Wallet</button>
+                        <div id="wallet-info" class="wallet-info" style="display: none;">
+                            <span id="wallet-address"></span>
+                            <button id="disconnect-wallet" class="wallet-disconnect-btn">Disconnect</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="roulette-container">
+        <!-- Stats bar -->
+        <div class="roulette-stats-bar">
+            <div class="roulette-stat">
+                <span class="roulette-stat-label">Chips</span>
+                <span id="roulette-chips" class="roulette-stat-value">0</span>
+            </div>
+            <div class="roulette-stat">
+                <span class="roulette-stat-label">Total staked</span>
+                <span id="roulette-staked" class="roulette-stat-value">0</span>
+            </div>
+            <div class="roulette-stat">
+                <span class="roulette-stat-label">Last result</span>
+                <span id="roulette-last-result" class="roulette-stat-value roulette-last-number">—</span>
+            </div>
+        </div>
+
+        <!-- Main game: wheel + table -->
+        <div class="roulette-game-area">
+            <!-- Roulette wheel -->
+            <div class="roulette-wheel-wrap">
+                <div class="roulette-wheel-outer">
+                    <div id="roulette-wheel" class="roulette-wheel">
+                        <!-- 37 segments filled by JS in European order -->
+                    </div>
+                    <div class="roulette-wheel-pointer"></div>
+                </div>
+            </div>
+
+            <!-- Betting table: American-style layout (left outside | center 0+grid+00+2:1 | right dozens) -->
+            <div class="roulette-table-wrap">
+                <div class="roulette-table">
+                    <div class="roulette-table-body">
+                        <!-- Left: outside bets (6 cells, each ~2 rows height) -->
+                        <div class="roulette-outside-left">
+                            <div class="roulette-outside-bet roulette-bet-light" data-bet="1-18">1–18</div>
+                            <div class="roulette-outside-bet roulette-bet-light" data-bet="even">Even</div>
+                            <div class="roulette-outside-bet roulette-red" data-bet="red">Red</div>
+                            <div class="roulette-outside-bet roulette-black" data-bet="black">Black</div>
+                            <div class="roulette-outside-bet roulette-bet-light" data-bet="odd">Odd</div>
+                            <div class="roulette-outside-bet roulette-bet-light" data-bet="19-36">19–36</div>
+                        </div>
+                        <!-- Center: 0 row, 12×3 grid, 2 to 1 row -->
+                        <div class="roulette-table-center">
+                            <div class="roulette-center-top">
+                                <div class="roulette-zero-cell" data-num="0">0</div>
+                                <div class="roulette-zero-cell roulette-double-zero" data-num="00">00</div>
+                            </div>
+                            <div class="roulette-table-grid">
+                                <div class="roulette-num roulette-red" data-num="1">1</div>
+                                <div class="roulette-num roulette-black" data-num="2">2</div>
+                                <div class="roulette-num roulette-red" data-num="3">3</div>
+                                <div class="roulette-num roulette-black" data-num="4">4</div>
+                                <div class="roulette-num roulette-red" data-num="5">5</div>
+                                <div class="roulette-num roulette-black" data-num="6">6</div>
+                                <div class="roulette-num roulette-red" data-num="7">7</div>
+                                <div class="roulette-num roulette-black" data-num="8">8</div>
+                                <div class="roulette-num roulette-red" data-num="9">9</div>
+                                <div class="roulette-num roulette-black" data-num="10">10</div>
+                                <div class="roulette-num roulette-black" data-num="11">11</div>
+                                <div class="roulette-num roulette-red" data-num="12">12</div>
+                                <div class="roulette-num roulette-black" data-num="13">13</div>
+                                <div class="roulette-num roulette-red" data-num="14">14</div>
+                                <div class="roulette-num roulette-black" data-num="15">15</div>
+                                <div class="roulette-num roulette-red" data-num="16">16</div>
+                                <div class="roulette-num roulette-black" data-num="17">17</div>
+                                <div class="roulette-num roulette-red" data-num="18">18</div>
+                                <div class="roulette-num roulette-red" data-num="19">19</div>
+                                <div class="roulette-num roulette-black" data-num="20">20</div>
+                                <div class="roulette-num roulette-red" data-num="21">21</div>
+                                <div class="roulette-num roulette-black" data-num="22">22</div>
+                                <div class="roulette-num roulette-red" data-num="23">23</div>
+                                <div class="roulette-num roulette-black" data-num="24">24</div>
+                                <div class="roulette-num roulette-red" data-num="25">25</div>
+                                <div class="roulette-num roulette-black" data-num="26">26</div>
+                                <div class="roulette-num roulette-red" data-num="27">27</div>
+                                <div class="roulette-num roulette-black" data-num="28">28</div>
+                                <div class="roulette-num roulette-black" data-num="29">29</div>
+                                <div class="roulette-num roulette-red" data-num="30">30</div>
+                                <div class="roulette-num roulette-black" data-num="31">31</div>
+                                <div class="roulette-num roulette-red" data-num="32">32</div>
+                                <div class="roulette-num roulette-black" data-num="33">33</div>
+                                <div class="roulette-num roulette-red" data-num="34">34</div>
+                                <div class="roulette-num roulette-red" data-num="35">35</div>
+                                <div class="roulette-num roulette-black" data-num="36">36</div>
+                            </div>
+                            <div class="roulette-center-bottom">
+                                <div class="roulette-outside-bet roulette-bet-light" data-bet="col1">2 to 1</div>
+                                <div class="roulette-outside-bet roulette-bet-light" data-bet="col2">2 to 1</div>
+                                <div class="roulette-outside-bet roulette-bet-light" data-bet="col3">2 to 1</div>
+                            </div>
+                        </div>
+                        <!-- Right: dozens (3 cells, each ~4 rows height) -->
+                        <div class="roulette-dozens-right">
+                            <div class="roulette-outside-bet roulette-bet-light" data-bet="1-12">1st 12</div>
+                            <div class="roulette-outside-bet roulette-bet-light" data-bet="13-24">2nd 12</div>
+                            <div class="roulette-outside-bet roulette-bet-light" data-bet="25-36">3rd 12</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="roulette-controls">
+            <div class="roulette-control-group">
+                <label for="roulette-buy-amount">Buy chips (XMA)</label>
+                <input type="number" id="roulette-buy-amount" min="0.1" step="0.1" value="10" placeholder="Amount">
+            </div>
+            <button id="roulette-buy-chips" class="btn btn-roulette-buy" disabled>BUY CHIPS</button>
+            <div class="roulette-control-group roulette-bet-amount-wrap">
+                <label for="roulette-bet-amount">Chip amount per bet</label>
+                <input type="number" id="roulette-bet-amount" min="1" step="1" value="1" placeholder="Chips">
+            </div>
+            <button id="roulette-spin" class="btn btn-roulette-spin">SPIN</button>
+            <button id="roulette-collect" class="btn btn-roulette-collect" disabled>COLLECT</button>
+        </div>
+    </div>
+
+    <script src="roulette.js"></script>
+</body>
+</html>

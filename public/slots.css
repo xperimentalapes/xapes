@@ -67,7 +67,9 @@
     padding: 0;
     padding-top: 80px; /* Header height */
     overflow: hidden;
-    background: var(--bg-dark);
+    background-image: linear-gradient(rgba(10, 10, 15, 0.72), rgba(10, 10, 15, 0.72)), url('/images/casino-bg2.jpg');
+    background-size: cover;
+    background-position: center top;
     min-height: 0;
     box-sizing: border-box;
     margin: 0;
@@ -75,6 +77,12 @@
     max-height: 100vh;
     width: 100%;
     max-width: 100vw;
+}
+
+@media (max-width: 600px) {
+    .slots-container {
+        background-position: left top;
+    }
 }
 
 .slot-machine-wrapper {
@@ -101,7 +109,7 @@
     display: flex;
     flex-direction: column;
     gap: 2px;
-    background: var(--bg-card);
+    background: rgba(20, 20, 28, 0.75);
     border: 1px solid var(--border-color);
     border-radius: 6px;
     padding: 3px 6px;

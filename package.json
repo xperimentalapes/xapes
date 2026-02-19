@@ -3,12 +3,19 @@
   "version": "1.0.0",
   "description": "Xperimental Mutant Apes website",
   "scripts": {
-    "build": "node scripts/inject-env.js"
+    "build": "node scripts/inject-env.js",
+    "start": "cd site-template && node server.js"
   },
   "dependencies": {
     "@solana/web3.js": "^1.87.6",
     "@solana/spl-token": "^0.3.9",
     "@supabase/supabase-js": "^2.39.0",
-    "bs58": "^5.0.0"
+    "bs58": "^5.0.0",
+    "axios": "^1.6.0",
+    "cookie-parser": "^1.4.6",
+    "cookie-session": "^2.1.1",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "express-session": "^1.17.3"
   }
 }

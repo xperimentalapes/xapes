@@ -1330,7 +1330,7 @@ function setupBackgroundMusic() {
     
     if (!musicToggleBtn) return;
     
-    // Set initial state (music on by default)
+    // Set initial state (music on by default). When off we keep showing same icon + corner X only.
     musicToggleBtn.classList.add('active');
     isMusicPlaying = true;
     musicIconOn.style.display = 'block';
