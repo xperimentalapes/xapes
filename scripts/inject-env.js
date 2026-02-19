@@ -46,7 +46,15 @@ function copyDir(src, dest) {
   else fs.copyFileSync(src, dest);
 });
 
-// 2) Game pages and assets from root (keep /casino, /slots, /chests, /roulette working)
+// 2) Shared CSS for casino + game pages (navbar, layout, buttons – they all use styles.css)
+const sharedRootFiles = ['styles.css'];
+sharedRootFiles.forEach((file) => {
+  const src = path.join(root, file);
+  const dest = path.join(publicDir, file);
+  if (fs.existsSync(src)) fs.copyFileSync(src, dest);
+});
+
+// 3) Game pages and assets from root (keep /casino, /slots, /chests, /roulette working)
 const gameFiles = [
   'slots.html', 'slots.css', 'slots.js',
   'chests.html', 'chests.css', 'chests.js',
@@ -64,7 +72,7 @@ gameFiles.forEach((file) => {
   fs.writeFileSync(dest, data);
 });
 
-// 3) Images for games (logo, banner, symbols, etc.)
+// 4) Images for games (logo, banner, symbols, etc.)
 const imagesSrc = path.join(root, 'images');
 if (fs.existsSync(imagesSrc)) {
   copyDir(imagesSrc, path.join(publicDir, 'images'));
