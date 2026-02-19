@@ -16,13 +16,20 @@ const app = require('../site-template/server');
 const DASHBOARD_API = /^\/api\/(discord|verify|collections|holders|prices|blunana-ohlc)(\/|$|\?)/;
 
 module.exports = (req, res) => {
-  let raw = (req.url || req.path || '').split('?')[0];
-  if (raw.startsWith('http')) {
-    try {
-      raw = new URL(raw).pathname;
-    } catch (_) {}
+  // Vercel catch-all: path segments can be in req.query.path (e.g. ['discord','user','123'])
+  const pathSegments = req.query && (Array.isArray(req.query.path) ? req.query.path : req.query.path ? [req.query.path] : null);
+  let raw;
+  if (pathSegments && pathSegments.length > 0) {
+    raw = '/api/' + pathSegments.join('/').replace(/^\/+/, '');
+  } else {
+    raw = (req.url || req.path || '').split('?')[0];
+    if (raw.startsWith('http')) {
+      try {
+        raw = new URL(raw).pathname;
+      } catch (_) {}
+    }
+    if (!raw.startsWith('/')) raw = '/' + raw;
   }
-  if (!raw.startsWith('/')) raw = '/' + raw;
 
   const q = (req.url || '').includes('?') ? '?' + (req.url || '').split('?').slice(1).join('?') : '';
   if (DASHBOARD_API.test(raw)) {
