@@ -18,9 +18,12 @@ if (fs.existsSync(envPath)) {
   fs.readFileSync(envPath, 'utf8').split('\n').forEach((line) => {
     const m = line.match(/^HELIUS_API_KEY=(.*)$/);
     if (m) process.env.HELIUS_API_KEY = m[1].trim().replace(/^["']|["']$/g, '');
+    const m2 = line.match(/^BASE_URL=(.*)$/);
+    if (m2) process.env.BASE_URL = m2[1].trim().replace(/^["']|["']$/g, '');
   });
 }
 const key = (process.env.HELIUS_API_KEY || '').trim().replace(/^["']|["']$/g, '');
+const siteUrl = (process.env.SITE_URL || process.env.BASE_URL || 'https://xapes.vercel.app').replace(/\/$/, '');
 
 if (!fs.existsSync(publicDir)) {
   fs.mkdirSync(publicDir, { recursive: true });
@@ -43,8 +46,17 @@ function copyDir(src, dest) {
   const dest = path.join(publicDir, name);
   if (!fs.existsSync(src)) return;
   if (fs.statSync(src).isDirectory()) copyDir(src, dest);
-  else fs.copyFileSync(src, dest);
+  else if (name === 'index.html') {
+    let html = fs.readFileSync(src, 'utf8');
+    html = html.replace(/__SITE_URL__/g, siteUrl);
+    fs.writeFileSync(dest, html);
+  } else fs.copyFileSync(src, dest);
 });
+// Use repo logo for favicon/embed: overwrite public/assets/logo.png with images/logo.png
+const repoLogo = path.join(root, 'images', 'logo.png');
+if (fs.existsSync(repoLogo)) {
+  fs.copyFileSync(repoLogo, path.join(publicDir, 'assets', 'logo.png'));
+}
 
 // 2) Shared CSS for casino + game pages (navbar, layout, buttons – they all use styles.css)
 const sharedRootFiles = ['styles.css'];
