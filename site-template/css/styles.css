@@ -217,10 +217,16 @@ body {
   display: inline-flex;
   width: 1.35rem;
   height: 1.35rem;
+  color: #d4af37;
 }
 .btn__icon--crown svg {
   width: 100%;
   height: 100%;
+  stroke: #d4af37;
+  color: #d4af37;
+}
+.btn__icon--crown svg path {
+  stroke: #d4af37;
 }
 
 /* Hero: Slotto partner block (bottom right) */
@@ -425,10 +431,12 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  color: inherit;
 }
 .dashboard__icon svg {
   width: 100%;
   height: 100%;
+  color: inherit;
 }
 .dashboard__thumb {
   flex-shrink: 0;
@@ -449,10 +457,10 @@ body {
   height: 100%;
   object-fit: contain;
 }
-/* SVG nav icons (gallery, coins): make visible on dark sidebar */
+/* Logo nav icons (Collectibles, Token): same white as other SVG nav icons */
 .dashboard__icon--logo .dashboard__icon-img[src*=".svg"] {
   filter: brightness(0) invert(1);
-  opacity: 0.9;
+  opacity: 1;
 }
 .dashboard__link:hover {
   color: var(--text);
@@ -589,10 +597,12 @@ body {
   align-items: center;
   justify-content: center;
   font-size: 1rem;
+  color: inherit;
 }
 .dashboard-bottom__icon .dashboard-bottom__svg {
   width: 100%;
   height: 100%;
+  color: inherit;
 }
 .dashboard-bottom__thumb {
   width: 22px;
@@ -615,7 +625,7 @@ body {
 }
 .dashboard-bottom__icon--logo .dashboard-bottom__icon-img[src*=".svg"] {
   filter: brightness(0) invert(1);
-  opacity: 0.9;
+  opacity: 1;
 }
 .dashboard-bottom__label {
   line-height: 1.2;

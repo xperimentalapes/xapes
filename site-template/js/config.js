@@ -40,9 +40,7 @@ window.MNK3YS_CONFIG = {
 
   holdingsLabels: {
     token: '$XMA',
-    mnk3ys: 'Collectibles',
-    zmb3ys: 'Col2',
-    totalNfts: 'Total NFTs',
+    totalNfts: 'NFTs',
     nfts: 'NFTs',
   },
   holdersLead: 'Top holders by token and NFT collections.',

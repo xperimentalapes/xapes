@@ -323,16 +323,12 @@
 
   function showHoldings(data) {
     var blunana = data && data.blunanaFormatted != null ? data.blunanaFormatted : (data && data.blunana != null ? String(data.blunana) : '—');
-    var mnk3ys = data && data.mnk3ysCount != null ? String(data.mnk3ysCount) : '—';
-    var zmb3ys = data && data.zmb3ysCount != null ? String(data.zmb3ysCount) : '—';
     var totalNfts = data && data.totalNfts != null ? String(data.totalNfts) : '—';
     [
       [document.getElementById('holdings-blunana'), document.getElementById('holdings-blunana-mobile')],
-      [document.getElementById('holdings-mnk3ys'), document.getElementById('holdings-mnk3ys-mobile')],
-      [document.getElementById('holdings-zmb3ys'), document.getElementById('holdings-zmb3ys-mobile')],
       [document.getElementById('holdings-total-nfts'), document.getElementById('holdings-total-nfts-mobile')],
     ].forEach(function (pair, i) {
-      var val = [blunana, mnk3ys, zmb3ys, totalNfts][i];
+      var val = [blunana, totalNfts][i];
       if (pair[0]) pair[0].textContent = val;
       if (pair[1]) pair[1].textContent = val;
     });
