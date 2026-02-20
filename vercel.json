@@ -1,1 +1,14 @@
-{"cleanUrls":true,"rewrites":[{"source":"/slots","destination":"/slots.html"},{"source":"/chests","destination":"/chests.html"},{"source":"/roulette","destination":"/roulette.html"},{"source":"/casino","destination":"/casino.html"}],"buildCommand":"npm run build","outputDirectory":"public","framework":null}
+{"cleanUrls":true,"rewrites":[
+  {"source":"/api/discord","destination":"/api/dashboard?__path=discord"},
+  {"source":"/api/discord/:path*","destination":"/api/dashboard?__path=discord/:path*"},
+  {"source":"/api/verify","destination":"/api/dashboard?__path=verify"},
+  {"source":"/api/verify/:path*","destination":"/api/dashboard?__path=verify/:path*"},
+  {"source":"/api/collections","destination":"/api/dashboard?__path=collections"},
+  {"source":"/api/holders","destination":"/api/dashboard?__path=holders"},
+  {"source":"/api/prices","destination":"/api/dashboard?__path=prices"},
+  {"source":"/api/blunana-ohlc","destination":"/api/dashboard?__path=blunana-ohlc"},
+  {"source":"/slots","destination":"/slots.html"},
+  {"source":"/chests","destination":"/chests.html"},
+  {"source":"/roulette","destination":"/roulette.html"},
+  {"source":"/casino","destination":"/casino.html"}
+],"buildCommand":"npm run build","outputDirectory":"public","framework":null}
