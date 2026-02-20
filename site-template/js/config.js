@@ -70,6 +70,11 @@ window.MNK3YS_CONFIG = {
       description: 'Co-founder',
     },
     {
+      discordId: '369215556848582657',
+      xProfileUrl: 'https://x.com/ryzeldan',
+      description: 'Co-founder',
+    },
+    {
       discordId: '931160720261939230',
       xProfileUrl: 'https://x.com/BUXDAO',
       description: 'Lead dev',
