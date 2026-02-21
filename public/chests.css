@@ -295,8 +295,7 @@
        (max-width: 600px) and (max-height: 700px) {
     .chests-page {
         padding-top: 64px;   /* match nav height so title sits directly under header */
-        padding-bottom: 20px;
-        padding-bottom: max(20px, env(safe-area-inset-bottom));
+        padding-bottom: max(24px, env(safe-area-inset-bottom));
     }
     .chests-main {
         padding-top: 0;
@@ -977,10 +976,6 @@
 
 /* Short viewport (e.g. Phantom wallet ~600px high): scale all elements to fit */
 @media (max-height: 650px) {
-    .chests-main {
-        padding-top: 52px;
-    }
-
     .chests-hero {
         padding: 8px 24px 6px;
     }
@@ -1182,5 +1177,22 @@
     .chests-page,
     .chests-main {
         background-position: left top;
+    }
+}
+
+/* Force mobile portrait spacing to win over all other breakpoints: title up, bottom padding */
+@media (max-width: 600px) and (max-height: 700px) {
+    .chests-page {
+        padding-top: 64px !important;
+        padding-bottom: max(24px, env(safe-area-inset-bottom)) !important;
+    }
+    .chests-main {
+        padding-top: 0 !important;
+    }
+    .chests-hero {
+        padding-top: 0 !important;
+        padding-bottom: 4px !important;
+        align-items: flex-start !important;
+        justify-content: flex-start !important;
     }
 }
