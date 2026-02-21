@@ -1,27 +1,42 @@
-/* Chests page - fit viewport, hero image left / text right, no scroll on desktop */
+/* Chests page - same layout as roulette-page so it fits in viewport on mobile */
 .chests-page {
     height: 100vh;
-    min-height: 100vh;
+    height: 100svh;
+    max-height: 100vh;
+    max-height: 100svh;
+    overflow: hidden;
     background-image: linear-gradient(rgba(10, 10, 15, 0.72), rgba(10, 10, 15, 0.72)), url('/images/casino-bg2.jpg');
     background-size: cover;
     background-position: center top;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    padding-top: 72px;
+    padding-bottom: env(safe-area-inset-bottom, 0);
+    box-sizing: border-box;
+}
+
+.chests-page::-webkit-scrollbar {
+    display: none;
 }
 
 .chests-nav {
     flex-shrink: 0;
 }
 
+/* Chests main - same as roulette-container: flex 1, min-height 0, overflow hidden */
 .chests-main {
     flex: 1;
     min-height: 0;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
-    padding: 0;
-    padding-top: 70px; /* clear fixed navbar */
-    overflow: hidden;
+    gap: 4px;
+    padding: 4px 8px 4px;
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+    box-sizing: border-box;
+    position: relative;
     background-image: linear-gradient(rgba(10, 10, 15, 0.72), rgba(10, 10, 15, 0.72)), url('/images/casino-bg2.jpg');
     background-size: cover;
     background-position: center top;
