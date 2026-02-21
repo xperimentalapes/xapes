@@ -59,10 +59,12 @@ module.exports = async function handler(req, res) {
             return res.status(400).json({ error: 'Invalid wallet address format' });
         }
 
-        // Get player data
+        // Get player data (roulette uses chips_balance/cost_per_chip; slots uses spins_remaining/cost_per_spin)
+        const rouletteCols = 'wallet_address, total_spins, total_won, total_wagered, unclaimed_rewards, chips_balance, cost_per_chip, created_at';
+        const slotsCols = 'wallet_address, total_spins, total_won, total_wagered, unclaimed_rewards, spins_remaining, cost_per_spin, created_at';
         const { data: player, error } = await supabase
             .from(playersTable)
-            .select('wallet_address, total_spins, total_won, total_wagered, unclaimed_rewards, spins_remaining, cost_per_spin, created_at')
+            .select(isRoulette ? rouletteCols : slotsCols)
             .eq('wallet_address', walletAddress)
             .single();
 
@@ -73,16 +75,10 @@ module.exports = async function handler(req, res) {
 
         // If player doesn't exist, return empty state
         if (!player) {
-            return res.status(200).json({
-                walletAddress,
-                totalSpins: 0,
-                totalWon: 0,
-                totalWagered: 0,
-                unclaimedRewards: 0,
-                spinsRemaining: 0,
-                costPerSpin: 100, // Default cost per spin
-                createdAt: null
-            });
+            return res.status(200).json(isRoulette
+                ? { walletAddress, totalSpins: 0, totalWon: 0, totalWagered: 0, unclaimedRewards: 0, chipsBalance: 0, costPerChip: 1, createdAt: null }
+                : { walletAddress, totalSpins: 0, totalWon: 0, totalWagered: 0, unclaimedRewards: 0, spinsRemaining: 0, costPerSpin: 100, createdAt: null }
+            );
         }
 
         // Convert from database format (stored as strings for bigint)
@@ -91,16 +87,28 @@ module.exports = async function handler(req, res) {
         const totalWon = Number(player.total_won || 0) / Math.pow(10, TOKEN_DECIMALS);
         const totalWagered = Number(player.total_wagered || 0) / Math.pow(10, TOKEN_DECIMALS);
 
-        return res.status(200).json({
-            walletAddress: player.wallet_address,
-            totalSpins: player.total_spins || 0,
-            totalWon: totalWon,
-            totalWagered: totalWagered,
-            unclaimedRewards: unclaimedRewards,
-            spinsRemaining: player.spins_remaining || 0,
-            costPerSpin: player.cost_per_spin || 100, // Return stored cost per spin or default to 100
-            createdAt: player.created_at
-        });
+        return res.status(200).json(isRoulette
+            ? {
+                walletAddress: player.wallet_address,
+                totalSpins: player.total_spins || 0,
+                totalWon: totalWon,
+                totalWagered: totalWagered,
+                unclaimedRewards: unclaimedRewards,
+                chipsBalance: Number(player.chips_balance || 0),
+                costPerChip: Number(player.cost_per_chip || 1),
+                createdAt: player.created_at
+            }
+            : {
+                walletAddress: player.wallet_address,
+                totalSpins: player.total_spins || 0,
+                totalWon: totalWon,
+                totalWagered: totalWagered,
+                unclaimedRewards: unclaimedRewards,
+                spinsRemaining: player.spins_remaining || 0,
+                costPerSpin: player.cost_per_spin || 100,
+                createdAt: player.created_at
+            }
+        );
 
     } catch (error) {
         console.error('Load player error:', error);

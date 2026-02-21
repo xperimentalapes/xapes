@@ -11,21 +11,19 @@
     var SEGMENTS = 38;
     var SLIDE_MS = 65;
     var CELL_H = 66;
-    var CHIPS_PER_SPIN = 100; // chips awarded per spin
 
     var XMA_TOKEN_MINT = 'HVSruatutKcgpZJXYyeRCWAnyT7mzYq1io9YoJ6F4yMP';
     var TREASURY_WALLET = '6auNHk39Mut82FhjY9iBZXjqm7xJabFVrY3bVgrYSMvj';
     var TOKEN_DECIMALS = 6;
     var PURCHASE_FEE_SOL = 0; // Disabled for testing (was 0.002)
     var PURCHASE_FEE_LAMPORTS = 0;
-    var MAX_COST_PER_SPIN = 1500;
-    var MAX_SPINS_PER_PURCHASE = 500;
+    var MAX_COST_PER_CHIP = 1000;
+    var MAX_CHIPS_PER_PURCHASE = 50000;
 
     var wallet = null;
     var connection = null;
     var xmaBalance = 0;
-    var spinsRemaining = 0;
-    var costPerSpin = 100;
+    var costPerChip = 1;
     var unclaimedRewards = 0;
     var isCollecting = false;
 
@@ -417,12 +415,11 @@
         if (!btn) return;
         btn.addEventListener('click', function () {
             if (btn.disabled) return;
-            if (spinsRemaining <= 0) return;
+            if (chipBalance <= 0) return;
             btn.disabled = true;
             spinInProgress = true;
             userClickedChipYet = false;
             updatePopups();
-            spinsRemaining -= 1;
             updateRouletteButtonStates();
             var result = WHEEL_ORDER[Math.floor(Math.random() * SEGMENTS)];
             spinReel(result, function () {
@@ -435,7 +432,6 @@
                 lastChipTypes = copyBets(chipTypes);
                 showWinMessage(win.profit);
                 clearTable();
-                chipBalance += CHIPS_PER_SPIN;
                 userClickedChipYet = false;
                 selectedChipValue = 0;
                 var chipBtns = document.querySelectorAll('.roulette-chip');
@@ -472,10 +468,10 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 walletAddress: wallet,
-                spinCost: costPerSpin,
+                costPerChip: costPerChip,
                 resultSymbols: resultSymbols,
                 wonAmount: 0,
-                updateSpinsRemaining: spinsRemaining,
+                updateChipsBalance: chipBalance,
                 gameType: 'roulette'
             })
         }).then(function (res) {
@@ -488,10 +484,10 @@
         var spinBtn = document.getElementById('roulette-spin');
         var collectBtn = document.getElementById('roulette-collect');
         if (buyBtn) {
-            buyBtn.disabled = !wallet || isCollecting || spinsRemaining > 0;
+            buyBtn.disabled = !wallet || isCollecting || chipBalance > 0;
         }
         if (spinBtn) {
-            spinBtn.disabled = !wallet || spinsRemaining <= 0 || spinInProgress || isCollecting;
+            spinBtn.disabled = !wallet || chipBalance <= 0 || spinInProgress || isCollecting;
         }
         if (collectBtn) {
             collectBtn.disabled = !wallet || chipBalance <= 0 || isCollecting;
@@ -525,8 +521,7 @@
             if (connectContainer) connectContainer.style.display = 'block';
             if (walletInfo) walletInfo.style.display = 'none';
             xmaBalance = 0;
-            spinsRemaining = 0;
-            costPerSpin = 100;
+            costPerChip = 1;
             unclaimedRewards = 0;
             chipBalance = 0;
             updateChipUI();
@@ -609,11 +604,12 @@
             .then(function (res) { return res.ok ? res.json() : null; })
             .then(function (data) {
                 if (!data) return;
-                spinsRemaining = data.spinsRemaining || 0;
-                costPerSpin = data.costPerSpin || 100;
+                chipBalance = data.chipsBalance || 0;
+                costPerChip = data.costPerChip || 1;
                 unclaimedRewards = data.unclaimedRewards || 0;
-                var costInput = document.getElementById('roulette-cost-per-spin');
-                if (costInput) costInput.value = Math.min(costPerSpin, MAX_COST_PER_SPIN);
+                var costInput = document.getElementById('roulette-cost-per-chip');
+                if (costInput) costInput.value = Math.min(costPerChip, MAX_COST_PER_CHIP);
+                updateChipUI();
                 updateRouletteButtonStates();
             })
             .catch(function (err) { console.error('loadPlayerData:', err); });
@@ -624,16 +620,16 @@
             alert('Please connect your wallet first');
             return;
         }
-        if (spinsRemaining > 0) {
-            alert('Use your remaining spins before buying more chips.');
+        if (chipBalance > 0) {
+            alert('Use or collect your chips before buying more.');
             return;
         }
-        var costEl = document.getElementById('roulette-cost-per-spin');
-        var numEl = document.getElementById('roulette-num-spins');
-        var cost = Math.min(parseFloat(costEl && costEl.value ? costEl.value : 100), MAX_COST_PER_SPIN);
-        var num = Math.min(parseInt(numEl && numEl.value ? numEl.value : 1, 10), MAX_SPINS_PER_PURCHASE);
+        var costEl = document.getElementById('roulette-cost-per-chip');
+        var numEl = document.getElementById('roulette-num-chips');
+        var cost = Math.min(parseFloat(costEl && costEl.value ? costEl.value : 1), MAX_COST_PER_CHIP);
+        var num = Math.min(parseInt(numEl && numEl.value ? numEl.value : 2500, 10), MAX_CHIPS_PER_PURCHASE);
         if (!cost || cost <= 0 || !num || num <= 0) {
-            alert('Please enter valid cost per spin and number of spins');
+            alert('Please enter valid cost per chip and number of chips');
             return;
         }
         var total = cost * num;
@@ -687,15 +683,17 @@
         }).then(function (sig) {
             return connection.confirmTransaction(sig, 'confirmed').then(function () { return sig; });
         }).then(function () {
-            spinsRemaining += num;
-            costPerSpin = cost;
+            chipBalance += num;
+            costPerChip = cost;
+            updateChipUI();
+            updateRouletteButtonStates();
             return fetch('/api/save-game', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     walletAddress: wallet,
-                    spinCost: cost,
-                    spinsPurchased: num,
+                    chipsPurchased: num,
+                    costPerChip: cost,
                     resultSymbols: [],
                     wonAmount: 0,
                     gameType: 'roulette'
@@ -706,7 +704,7 @@
         }).then(function () {
             updateBalance();
             updateRouletteButtonStates();
-            alert('Successfully bought ' + num + ' spin(s) for ' + total + ' XMA' + (PURCHASE_FEE_SOL > 0 ? ' + ' + PURCHASE_FEE_SOL + ' SOL fee' : '') + '.');
+            alert('Successfully bought ' + num + ' chips for ' + total + ' XMA' + (PURCHASE_FEE_SOL > 0 ? ' + ' + PURCHASE_FEE_SOL + ' SOL fee' : '') + '.');
         }).catch(function (err) {
             if (String(err.message || '').match(/reject|authorized|cancelled/i)) return;
             alert('Failed to purchase: ' + (err.message || err));
@@ -726,7 +724,7 @@
             alert('Token library still loading. Please wait and try again.');
             return;
         }
-        var chipValueXMA = chipBalance * (costPerSpin / 100);
+        var chipValueXMA = chipBalance * costPerChip;
         if (chipValueXMA <= 0) {
             alert('No value to collect');
             return;
@@ -745,10 +743,10 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         walletAddress: wallet,
-                        spinCost: costPerSpin,
                         resultSymbols: [],
                         wonAmount: 0,
                         updateUnclaimedRewards: newUnclaimed,
+                        updateChipsBalance: 0,
                         gameType: 'roulette'
                     })
                 });

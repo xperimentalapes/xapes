@@ -14,7 +14,10 @@ Slots and roulette now use separate tables. Slots tables are renamed for clarity
    - Creates `roulette_players` (same structure as slots_players)
    - Creates `roulette_game_history` (uses `result_number TEXT` instead of `result_symbols INTEGER[]`)
 
-3. **migration_chest_rls.sql**
+3. **migration_roulette_chips.sql** (roulette only)
+   - Roulette: chips instead of spins. Adds chips_balance, cost_per_chip. Migrates and drops spins_remaining, cost_per_spin.
+
+4. **migration_chest_rls.sql**
    - Enables Row Level Security on chest tables (`chest_opens_available`, `chest_purchase_txs`, `chest_reservations`)
    - Fixes UNRESTRICTED warnings
 

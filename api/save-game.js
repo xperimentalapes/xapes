@@ -50,6 +50,9 @@ module.exports = async function handler(req, res) {
             updateUnclaimedRewards,
             updateSpinsRemaining,
             spinsPurchased,
+            chipsPurchased,
+            costPerChip,
+            updateChipsBalance,
             gameType = 'slots'
         } = req.body;
 
@@ -76,7 +79,47 @@ module.exports = async function handler(req, res) {
             updated_at: new Date().toISOString()
         };
 
-        // If this is a new player, set created_at
+        // Roulette uses chips; slots uses spins - branch early
+        if (isRoulette) {
+            const { data: existingRoulette } = await supabase
+                .from(playersTable)
+                .select('chips_balance, cost_per_chip, total_spins, total_won, total_wagered, unclaimed_rewards')
+                .eq('wallet_address', walletAddress)
+                .single();
+            const currentChips = Number(existingRoulette?.chips_balance || 0);
+            const storedCostPerChip = Number(existingRoulette?.cost_per_chip || 1);
+            if (chipsPurchased !== undefined && chipsPurchased > 0) {
+                if (currentChips > 0) {
+                    return res.status(400).json({ error: 'Cannot buy more chips while you have chips. Collect or use them first.' });
+                }
+                if (!costPerChip || costPerChip <= 0) {
+                    return res.status(400).json({ error: 'costPerChip must be > 0 when purchasing chips' });
+                }
+                playerUpdate.chips_balance = currentChips + chipsPurchased;
+                playerUpdate.cost_per_chip = costPerChip;
+            } else if (updateChipsBalance !== undefined) {
+                playerUpdate.chips_balance = Math.max(0, Math.floor(updateChipsBalance));
+                if (updateChipsBalance > 0) {
+                    playerUpdate.total_spins = (existingRoulette?.total_spins || 0) + 1;
+                    playerUpdate.total_wagered = (BigInt(existingRoulette?.total_wagered || 0) + BigInt(Math.floor(storedCostPerChip * 1e6))).toString();
+                    playerUpdate.total_won = (BigInt(existingRoulette?.total_won || 0) + BigInt(Math.floor(wonAmount * 1e6))).toString();
+                }
+            }
+            if (updateUnclaimedRewards !== undefined) {
+                playerUpdate.unclaimed_rewards = BigInt(Math.floor(updateUnclaimedRewards * 1e6)).toString();
+            } else if (existingRoulette) {
+                playerUpdate.unclaimed_rewards = existingRoulette.unclaimed_rewards || '0';
+            } else {
+                playerUpdate.unclaimed_rewards = '0';
+            }
+            if (!existingRoulette && chipsPurchased > 0) {
+                playerUpdate.created_at = new Date().toISOString();
+                playerUpdate.total_spins = 0;
+                playerUpdate.total_wagered = '0';
+                playerUpdate.total_won = '0';
+            }
+        } else {
+        // Slots logic
         const { data: existingPlayer } = await supabase
             .from(playersTable)
             .select('wallet_address')
@@ -207,15 +250,12 @@ module.exports = async function handler(req, res) {
                 }
             }
         }
+        }
 
         // Upsert player
         console.log('Attempting to upsert player:', {
             wallet_address: playerUpdate.wallet_address,
-            total_spins: playerUpdate.total_spins,
-            total_wagered: playerUpdate.total_wagered,
-            total_won: playerUpdate.total_won,
-            unclaimed_rewards: playerUpdate.unclaimed_rewards,
-            spins_remaining: playerUpdate.spins_remaining
+            ...playerUpdate
         });
         
         const { data: playerData, error: playerError } = await supabase
@@ -233,7 +273,7 @@ module.exports = async function handler(req, res) {
         const historyData = isRoulette
             ? {
                 wallet_address: walletAddress,
-                spin_cost: BigInt(Math.floor((spinCost || 100) * 1e6)).toString(),
+                spin_cost: BigInt(Math.floor((costPerChip || 1) * 1e6)).toString(),
                 result_number: Array.isArray(resultSymbols) && resultSymbols.length > 0 ? String(resultSymbols[0]) : '0',
                 won_amount: BigInt(Math.floor(wonAmount * 1e6)).toString(),
                 timestamp: new Date().toISOString()
