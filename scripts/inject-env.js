@@ -67,9 +67,10 @@ sharedRootFiles.forEach((file) => {
 });
 
 // 3) Game pages and assets from root (keep /casino, /slots, /chests, /roulette working)
+// Skip slots.css and chests.css so public/ versions (viewport fix for mobile) are not overwritten
 const gameFiles = [
-  'slots.html', 'slots.css', 'slots.js',
-  'chests.html', 'chests.css', 'chests.js',
+  'slots.html', 'slots.js',
+  'chests.html', 'chests.js',
   'casino.html',
   'roulette.html',
 ];
