@@ -1,5 +1,4 @@
-/* Slots Page Specific Styles - Use svh so content fits when mobile browser bar visible */
-
+/* Slots Page - Match roulette: fit in viewport when mobile browser bar visible */
 .slots-page {
     overflow: hidden;
     height: 100vh;
@@ -11,6 +10,8 @@
     width: 100%;
     max-width: 100vw;
     box-sizing: border-box;
+    padding-top: 72px; /* clear fixed navbar */
+    padding-bottom: env(safe-area-inset-bottom, 0);
 }
 
 .slots-page .navbar {
@@ -62,26 +63,33 @@
     color: var(--text-secondary);
 }
 
-/* Slots Container - 3 equal sections */
+/* Slots Container - takes remaining space below nav (no fixed height so it fits in 100svh) */
 .slots-container {
     flex: 1;
+    min-height: 0;
     display: flex;
     flex-direction: column;
     padding: 0;
-    padding-top: 80px; /* Header height */
     overflow: hidden;
     background-image: linear-gradient(rgba(10, 10, 15, 0.72), rgba(10, 10, 15, 0.72)), url('/images/casino-bg2.jpg');
     background-size: cover;
     background-position: center top;
-    min-height: 0;
     box-sizing: border-box;
     margin: 0;
-    height: 100vh;
-    height: 100svh;
-    max-height: 100vh;
-    max-height: 100svh;
     width: 100%;
     max-width: 100vw;
+}
+
+/* Mobile/tablet: allow grid rows to shrink so page fits in 100svh */
+@media (max-height: 900px) {
+    .slot-machine-wrapper {
+        min-height: 0;
+    }
+    .slot-machine-wrapper .game-stats-bar,
+    .slot-machine-wrapper .slot-machine-main,
+    .slot-machine-wrapper .controls-panel {
+        min-height: 0;
+    }
 }
 
 @media (max-width: 600px) {
@@ -1261,18 +1269,17 @@
 @media (min-width: 1025px) {
     .slots-page {
         height: 100vh;
+        height: 100svh;
         overflow: hidden;
     }
     
     .slots-container {
         padding: 0 !important;
         padding-top: 80px !important;
-        height: 100vh !important;
-        min-height: 100vh !important;
-        max-height: 100vh !important;
+        flex: 1 !important;
+        min-height: 0 !important;
         display: flex !important;
         flex-direction: column !important;
-        flex: 1 !important;
         box-sizing: border-box !important;
     }
     

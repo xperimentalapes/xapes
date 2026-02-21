@@ -1,4 +1,4 @@
-/* Chests page - fit viewport, use svh so content fits when mobile browser bar visible */
+/* Chests page - match roulette: fit in viewport when mobile browser bar visible */
 .chests-page {
     height: 100vh;
     height: 100svh;
@@ -11,6 +11,7 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    padding-top: 72px; /* clear fixed navbar */
     padding-bottom: env(safe-area-inset-bottom, 0);
     box-sizing: border-box;
 }
@@ -25,7 +26,6 @@
     display: flex;
     flex-direction: column;
     padding: 0;
-    padding-top: 70px; /* clear fixed navbar */
     overflow: hidden;
     background-image: linear-gradient(rgba(10, 10, 15, 0.72), rgba(10, 10, 15, 0.72)), url('/images/casino-bg2.jpg');
     background-size: cover;
