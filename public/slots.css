@@ -2302,23 +2302,25 @@
     }
 }
 
-/* OVERRIDE 1024/768/480px for mobile: no gaps, full width, reels get height. Applies whenever width<=600. */
+/* OVERRIDE 1024/768/480px for mobile: no gaps, full width. body selector so we win. */
 @media (max-width: 600px) {
-    .slots-page {
+    body.slots-page {
         padding-left: 0 !important;
         padding-right: 0 !important;
+        margin: 0 !important;
         width: 100% !important;
-        max-width: 100% !important;
+        overflow-x: hidden !important;
         box-sizing: border-box !important;
     }
-    .slots-container {
+    body.slots-page .slots-container {
         padding: 0 !important;
         margin: 0 !important;
         width: 100% !important;
         max-width: none !important;
+        min-width: 100% !important;
         box-sizing: border-box !important;
     }
-    .slot-machine-wrapper {
+    body.slots-page .slot-machine-wrapper {
         display: grid !important;
         grid-template-rows: 1fr 1fr auto !important;
         flex-direction: row !important;
@@ -2328,16 +2330,16 @@
         height: 100% !important;
         min-height: 0 !important;
     }
-    .slot-machine-wrapper .game-stats-bar {
+    body.slots-page .slot-machine-wrapper .game-stats-bar {
         align-self: start !important;
     }
-    .slot-machine-wrapper .slot-machine-main {
+    body.slots-page .slot-machine-wrapper .slot-machine-main {
         height: 100% !important;
         min-height: 0 !important;
         max-height: 100% !important;
         flex: 1 1 0 !important;
     }
-    .slot-machine-wrapper .controls-panel {
+    body.slots-page .slot-machine-wrapper .controls-panel {
         align-self: end !important;
         overflow: visible !important;
         padding: 4px 6px 0 !important;
