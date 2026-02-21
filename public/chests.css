@@ -73,7 +73,7 @@
     color: var(--primary-color);
 }
 
-/* Chests main - same as roulette-container: flex 1, min-height 0, overflow hidden (no bg - page has it) */
+/* Chests main - flex 1, min-height 0, overflow hidden so content must fit in one viewheight */
 .chests-main {
     flex: 1;
     min-height: 0;
@@ -249,6 +249,43 @@
         width: 44px;
         height: 44px;
         border-radius: 10px;
+    }
+}
+
+/* Short viewport: hero shrinks so page fits in one viewheight (no scroll) */
+@media (max-height: 800px) {
+    .chests-hero {
+        flex-shrink: 1;
+        min-height: 0;
+        padding: 6px 16px 4px;
+    }
+    .chests-hero-inner {
+        gap: 8px;
+    }
+    .chests-hero-img-wrap {
+        width: min(120px, 18vw);
+    }
+    .chests-hero-title {
+        font-size: clamp(18px, 4vw, 24px);
+        margin-bottom: 2px;
+    }
+    .chests-hero-subtitle {
+        font-size: clamp(12px, 1.8vw, 14px);
+        margin-bottom: 2px;
+    }
+    .chests-hero-partner-text {
+        font-size: 11px;
+        margin-bottom: 6px;
+    }
+    .chests-partner-logos {
+        gap: 8px;
+    }
+    .partner-logo {
+        width: 32px;
+        height: 32px;
+    }
+    .chests-carousel-section {
+        padding: 4px 12px 8px;
     }
 }
 

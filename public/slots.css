@@ -85,7 +85,7 @@
     background-position: center top;
 }
 
-/* Mobile/tablet: allow grid rows to shrink so page fits; keep controls tappable */
+/* Mobile/tablet: allow grid rows to shrink so page fits in one viewheight (no scroll) */
 @media (max-height: 900px) {
     .slot-machine-wrapper {
         min-height: 0;
@@ -97,6 +97,23 @@
     }
     .slot-machine-wrapper .controls-panel {
         min-height: 44px;
+    }
+}
+
+/* Short viewport: reduce padding/gaps so slots fit in one viewheight */
+@media (max-height: 700px) {
+    .slot-machine-wrapper {
+        gap: 0;
+    }
+    .slot-machine-wrapper .game-stats-bar {
+        padding: 4px 8px;
+    }
+    .slot-machine-wrapper .slot-machine-main {
+        padding: 4px 8px;
+    }
+    .slot-machine-wrapper .controls-panel {
+        padding: 6px 8px;
+        min-height: 40px;
     }
 }
 
