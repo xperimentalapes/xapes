@@ -1,3 +1,53 @@
+/* Wallet header - same as slots, ensure Connect Wallet looks correct in navbar */
+.roulette-page .wallet-button-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.roulette-page .wallet-connect-btn {
+    padding: 8px 20px;
+    background: var(--gradient-1);
+    border: none;
+    border-radius: 8px;
+    color: white !important;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+.roulette-page .wallet-connect-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+.roulette-page .wallet-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 16px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+}
+.roulette-page .wallet-info span {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-family: monospace;
+}
+.roulette-page .wallet-disconnect-btn {
+    padding: 4px 12px;
+    background: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-secondary);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+.roulette-page .wallet-disconnect-btn:hover {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
 /* Roulette Page - Use small viewport so content fits when browser bar visible */
 .roulette-page {
     height: 100vh;
