@@ -127,14 +127,10 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('orientationchange', checkOrientation);
 });
 
-// Orientation Check
+// Orientation prompt disabled – wallet browsers don't support rotate; game works in portrait
 function checkOrientation() {
     const prompt = document.getElementById('orientation-prompt');
-    if (window.innerWidth < 768 && window.innerHeight > window.innerWidth) {
-        prompt.classList.add('show');
-    } else {
-        prompt.classList.remove('show');
-    }
+    if (prompt) prompt.classList.remove('show');
 }
 
 // Initialize Reels

@@ -40,7 +40,7 @@
 }
 
 .orientation-prompt.show {
-    display: flex;
+    display: none !important; /* never show – wallet browsers can't rotate */
 }
 
 .orientation-content {
