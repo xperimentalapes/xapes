@@ -1,0 +1,46 @@
+/* Load after slots.css - mobile only: no gap below buttons, full width. Failure count: 2. */
+@media (max-width: 768px) {
+    body.slots-page {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+        width: 100% !important;
+        overflow-x: hidden !important;
+        box-sizing: border-box !important;
+    }
+    body.slots-page .slots-container {
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+        max-width: none !important;
+        min-width: 100% !important;
+        box-sizing: border-box !important;
+    }
+    body.slots-page .slot-machine-wrapper {
+        display: grid !important;
+        grid-template-rows: 1fr 1fr auto !important;
+        flex-direction: row !important;
+        gap: 2px !important;
+        width: 100% !important;
+        max-width: none !important;
+        height: 100% !important;
+        min-height: 0 !important;
+    }
+    body.slots-page .slot-machine-wrapper .game-stats-bar {
+        align-self: start !important;
+    }
+    body.slots-page .slot-machine-wrapper .slot-machine-main {
+        height: 100% !important;
+        min-height: 0 !important;
+        max-height: 100% !important;
+        flex: 1 1 0 !important;
+    }
+    body.slots-page .slot-machine-wrapper .controls-panel {
+        align-self: end !important;
+        overflow: visible !important;
+        padding: 4px 6px 0 !important;
+        padding-bottom: 0 !important;
+        flex: none !important;
+        min-height: 0 !important;
+        height: auto !important;
+    }
+}
