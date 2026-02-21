@@ -77,7 +77,10 @@ module.exports = async function handler(req, res) {
 
     try {
         // amount is mutable because we may override it with the DB value (source of truth)
-        let { userWallet, amount } = req.body;
+        let { userWallet, amount, gameType = 'slots' } = req.body;
+
+        const isRoulette = gameType === 'roulette';
+        const playersTable = isRoulette ? 'roulette_players' : 'slots_players';
 
         // Validate inputs
         if (!userWallet || !amount || amount <= 0) {
@@ -113,7 +116,7 @@ module.exports = async function handler(req, res) {
             try {
                 // First, get current unclaimed rewards from database
                 const { data: playerData, error: fetchError } = await supabase
-                    .from('players')
+                    .from(playersTable)
                     .select('unclaimed_rewards')
                     .eq('wallet_address', userWallet)
                     .single();

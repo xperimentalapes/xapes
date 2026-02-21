@@ -42,7 +42,10 @@ module.exports = async function handler(req, res) {
     }
 
     try {
-        const { walletAddress } = req.query;
+        const { walletAddress, gameType = 'slots' } = req.query;
+
+        const isRoulette = gameType === 'roulette';
+        const playersTable = isRoulette ? 'roulette_players' : 'slots_players';
 
         if (!walletAddress) {
             return res.status(400).json({ error: 'walletAddress query parameter is required' });
@@ -58,7 +61,7 @@ module.exports = async function handler(req, res) {
 
         // Get player data
         const { data: player, error } = await supabase
-            .from('players')
+            .from(playersTable)
             .select('wallet_address, total_spins, total_won, total_wagered, unclaimed_rewards, spins_remaining, cost_per_spin, created_at')
             .eq('wallet_address', walletAddress)
             .single();

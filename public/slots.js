@@ -557,7 +557,8 @@ async function purchaseSpins() {
                     spinCost: costPerSpin,
                     resultSymbols: [],
                     wonAmount: 0,
-                    spinsPurchased: numSpins
+                    spinsPurchased: numSpins,
+                    gameType: 'slots'
                 })
             });
             
@@ -737,7 +738,8 @@ async function performSpin() {
                         spinCost: costPerSpin,
                         resultSymbols: results,
                         wonAmount: winAmount,
-                        updateSpinsRemaining: spinsRemaining
+                        updateSpinsRemaining: spinsRemaining,
+                        gameType: 'slots'
                     })
                 });
                 
@@ -881,7 +883,8 @@ async function withdrawWinnings() {
             },
             body: JSON.stringify({
                 userWallet: wallet,
-                amount: amount
+                amount: amount,
+                gameType: 'slots'
             })
         });
 
@@ -1177,7 +1180,8 @@ async function withdrawWinnings() {
                     body: JSON.stringify({
                         userWallet: wallet,
                         signature: signature,
-                        amount: actualAmount || amount
+                        amount: actualAmount || amount,
+                        gameType: 'slots'
                     })
                 });
 
@@ -1576,7 +1580,7 @@ async function loadPlayerData() {
     isLoadingPlayerData = true;
     
     try {
-        const response = await fetch(`/api/load-player?walletAddress=${encodeURIComponent(wallet)}`, {
+        const response = await fetch(`/api/load-player?walletAddress=${encodeURIComponent(wallet)}&gameType=slots`, {
             signal: AbortSignal.timeout(10000) // 10 second timeout
         });
         

@@ -49,8 +49,13 @@ module.exports = async function handler(req, res) {
             wonAmount,
             updateUnclaimedRewards,
             updateSpinsRemaining,
-            spinsPurchased
+            spinsPurchased,
+            gameType = 'slots'
         } = req.body;
+
+        const isRoulette = gameType === 'roulette';
+        const playersTable = isRoulette ? 'roulette_players' : 'slots_players';
+        const historyTable = isRoulette ? 'roulette_game_history' : 'slots_game_history';
 
         // Validate inputs
         if (!walletAddress) {
@@ -73,7 +78,7 @@ module.exports = async function handler(req, res) {
 
         // If this is a new player, set created_at
         const { data: existingPlayer } = await supabase
-            .from('players')
+            .from(playersTable)
             .select('wallet_address')
             .eq('wallet_address', walletAddress)
             .single();
@@ -108,7 +113,7 @@ module.exports = async function handler(req, res) {
         } else {
             // Update existing player
             const { data: currentPlayer } = await supabase
-                .from('players')
+                .from(playersTable)
                 .select('total_spins, total_won, total_wagered, unclaimed_rewards, spins_remaining, cost_per_spin')
                 .eq('wallet_address', walletAddress)
                 .single();
@@ -214,7 +219,7 @@ module.exports = async function handler(req, res) {
         });
         
         const { data: playerData, error: playerError } = await supabase
-            .from('players')
+            .from(playersTable)
             .upsert(playerUpdate, { onConflict: 'wallet_address' });
 
         if (playerError) {
@@ -224,19 +229,27 @@ module.exports = async function handler(req, res) {
 
         console.log('Player data saved successfully:', playerData);
 
-        // Save game history entry
-        const historyData = {
-            wallet_address: walletAddress,
-            spin_cost: BigInt(Math.floor(spinCost * 1e6)).toString(),
-            result_symbols: resultSymbols,
-            won_amount: BigInt(Math.floor(wonAmount * 1e6)).toString(),
-            timestamp: new Date().toISOString()
-        };
+        // Save game history entry (slots uses result_symbols, roulette uses result_number)
+        const historyData = isRoulette
+            ? {
+                wallet_address: walletAddress,
+                spin_cost: BigInt(Math.floor((spinCost || 100) * 1e6)).toString(),
+                result_number: Array.isArray(resultSymbols) && resultSymbols.length > 0 ? String(resultSymbols[0]) : '0',
+                won_amount: BigInt(Math.floor(wonAmount * 1e6)).toString(),
+                timestamp: new Date().toISOString()
+            }
+            : {
+                wallet_address: walletAddress,
+                spin_cost: BigInt(Math.floor(spinCost * 1e6)).toString(),
+                result_symbols: resultSymbols || [],
+                won_amount: BigInt(Math.floor(wonAmount * 1e6)).toString(),
+                timestamp: new Date().toISOString()
+            };
         
         console.log('Attempting to insert game history:', historyData);
         
         const { data: historyDataResult, error: historyError } = await supabase
-            .from('game_history')
+            .from(historyTable)
             .insert(historyData);
 
         if (historyError) {

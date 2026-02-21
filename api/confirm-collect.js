@@ -42,7 +42,10 @@ module.exports = async function handler(req, res) {
     }
 
     try {
-        const { userWallet, signature, amount } = req.body;
+        const { userWallet, signature, amount, gameType = 'slots' } = req.body;
+
+        const isRoulette = gameType === 'roulette';
+        const playersTable = isRoulette ? 'roulette_players' : 'slots_players';
 
         // Validate inputs
         if (!userWallet || !signature || !amount || amount <= 0) {
@@ -118,7 +121,7 @@ module.exports = async function handler(req, res) {
         // Transaction is confirmed - now safely clear unclaimed_rewards
         // Get current unclaimed rewards to verify amount matches
         const { data: playerData, error: fetchError } = await supabase
-            .from('players')
+            .from(playersTable)
             .select('unclaimed_rewards')
             .eq('wallet_address', userWallet)
             .single();
@@ -142,7 +145,7 @@ module.exports = async function handler(req, res) {
 
         // Atomically clear unclaimed_rewards to 0
         const { data: updateData, error: updateError } = await supabase
-            .from('players')
+            .from(playersTable)
             .update({ unclaimed_rewards: '0' })
             .eq('wallet_address', userWallet)
             .eq('unclaimed_rewards', playerData.unclaimed_rewards) // Only update if value hasn't changed

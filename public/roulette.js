@@ -1,7 +1,7 @@
 /**
  * XMA Roulette – 3 cells; each cell has 2 slots and slides up to next number. Ease-out timing.
  * Chip placement: select chip (10/50/100), click table to place; same square stacks.
- * Testing: award 100 chips per spin.
+ * Spins persist to DB (same as slots). Buy chips = purchase spins. Collect = cash out chips.
  */
 (function () {
     'use strict';
@@ -11,9 +11,25 @@
     var SEGMENTS = 38;
     var SLIDE_MS = 65;
     var CELL_H = 66;
-    var CHIPS_PER_SPIN_TEST = 100;
+    var CHIPS_PER_SPIN = 100; // chips awarded per spin
 
-    var chipBalance = 100;
+    var XMA_TOKEN_MINT = 'HVSruatutKcgpZJXYyeRCWAnyT7mzYq1io9YoJ6F4yMP';
+    var TREASURY_WALLET = '6auNHk39Mut82FhjY9iBZXjqm7xJabFVrY3bVgrYSMvj';
+    var TOKEN_DECIMALS = 6;
+    var PURCHASE_FEE_SOL = 0.002;
+    var PURCHASE_FEE_LAMPORTS = 2000000;
+    var MAX_COST_PER_SPIN = 1500;
+    var MAX_SPINS_PER_PURCHASE = 500;
+
+    var wallet = null;
+    var connection = null;
+    var xmaBalance = 0;
+    var spinsRemaining = 0;
+    var costPerSpin = 100;
+    var unclaimedRewards = 0;
+    var isCollecting = false;
+
+    var chipBalance = 0;
     var selectedChipValue = 0;
     var bets = {};
     var chipTypes = {};
@@ -401,10 +417,13 @@
         if (!btn) return;
         btn.addEventListener('click', function () {
             if (btn.disabled) return;
+            if (spinsRemaining <= 0) return;
             btn.disabled = true;
             spinInProgress = true;
             userClickedChipYet = false;
             updatePopups();
+            spinsRemaining -= 1;
+            updateRouletteButtonStates();
             var result = WHEEL_ORDER[Math.floor(Math.random() * SEGMENTS)];
             spinReel(result, function () {
                 last10Results.push(result);
@@ -416,7 +435,7 @@
                 lastChipTypes = copyBets(chipTypes);
                 showWinMessage(win.profit);
                 clearTable();
-                chipBalance += CHIPS_PER_SPIN_TEST;
+                chipBalance += CHIPS_PER_SPIN;
                 userClickedChipYet = false;
                 selectedChipValue = 0;
                 var chipBtns = document.querySelectorAll('.roulette-chip');
@@ -426,6 +445,8 @@
                 });
                 updateChipUI();
                 updateReplaceButton();
+                updateRouletteButtonStates();
+                saveSpinToDb(result);
                 btn.disabled = false;
                 spinInProgress = false;
                 updatePopups();
@@ -443,6 +464,344 @@
         if (btn) btn.addEventListener('click', replaceChips);
     }
 
+    function saveSpinToDb(result) {
+        if (!wallet) return;
+        var resultSymbols = [String(result)];
+        fetch('/api/save-game', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                walletAddress: wallet,
+                spinCost: costPerSpin,
+                resultSymbols: resultSymbols,
+                wonAmount: 0,
+                updateSpinsRemaining: spinsRemaining,
+                gameType: 'roulette'
+            })
+        }).then(function (res) {
+            if (!res.ok) return res.json().then(function (d) { console.error('Save spin failed:', d); });
+        }).catch(function (err) { console.error('Save spin error:', err); });
+    }
+
+    function updateRouletteButtonStates() {
+        var buyBtn = document.getElementById('roulette-buy-chips');
+        var spinBtn = document.getElementById('roulette-spin');
+        var collectBtn = document.getElementById('roulette-collect');
+        if (buyBtn) {
+            buyBtn.disabled = !wallet || isCollecting || spinsRemaining > 0;
+        }
+        if (spinBtn) {
+            spinBtn.disabled = !wallet || spinsRemaining <= 0 || spinInProgress || isCollecting;
+        }
+        if (collectBtn) {
+            collectBtn.disabled = !wallet || chipBalance <= 0 || isCollecting;
+        }
+    }
+
+    function setupWalletConnection() {
+        var connectBtn = document.getElementById('connect-wallet');
+        var disconnectBtn = document.getElementById('disconnect-wallet');
+        var walletInfo = document.getElementById('wallet-info');
+        var walletAddress = document.getElementById('wallet-address');
+        var connectContainer = document.getElementById('connect-wallet');
+        var isPhantomInstalled = typeof window.solana !== 'undefined' &&
+            (window.solana.isPhantom || typeof window.solana.connect === 'function');
+        if (!isPhantomInstalled) {
+            if (connectBtn) {
+                connectBtn.textContent = 'Install Phantom';
+                connectBtn.onclick = function () { window.open('https://phantom.app/', '_blank'); };
+            }
+            return;
+        }
+        function showConnected(addr) {
+            wallet = addr;
+            if (walletAddress) walletAddress.textContent = addr.slice(0, 4) + '...' + addr.slice(-4);
+            if (connectContainer) connectContainer.style.display = 'none';
+            if (walletInfo) walletInfo.style.display = 'flex';
+        }
+        function showDisconnected() {
+            wallet = null;
+            connection = null;
+            if (connectContainer) connectContainer.style.display = 'block';
+            if (walletInfo) walletInfo.style.display = 'none';
+            xmaBalance = 0;
+            spinsRemaining = 0;
+            costPerSpin = 100;
+            unclaimedRewards = 0;
+            chipBalance = 0;
+            updateChipUI();
+            updateStakedUI();
+            updateRouletteButtonStates();
+        }
+        try {
+            if (window.solana && window.solana.isConnected) {
+                window.solana.connect({ onlyIfTrusted: true }).then(function (r) {
+                    if (r && r.publicKey) {
+                        showConnected(r.publicKey.toString());
+                        initConnection();
+                        updateBalance().then(function () {
+                            loadPlayerData().then(function () {
+                                updateRouletteButtonStates();
+                            });
+                        });
+                    }
+                }).catch(function () {});
+            }
+        } catch (e) {}
+        if (connectBtn) {
+            connectBtn.addEventListener('click', function () {
+                window.solana.connect({ onlyIfTrusted: false }).then(function (r) {
+                    if (r && r.publicKey) {
+                        showConnected(r.publicKey.toString());
+                        initConnection();
+                        updateBalance().then(function () {
+                            loadPlayerData().then(function () {
+                                updateRouletteButtonStates();
+                            });
+                        });
+                    }
+                }).catch(function (err) {
+                    if (err && !String(err.message || '').match(/reject|authorized/i)) {
+                        alert('Failed to connect wallet: ' + (err.message || err));
+                    }
+                });
+            });
+        }
+        if (disconnectBtn) {
+            disconnectBtn.addEventListener('click', function () {
+                if (window.solana && window.solana.disconnect) {
+                    window.solana.disconnect();
+                }
+                showDisconnected();
+            });
+        }
+
+        function initConnection() {
+            var rpcUrl = 'https://mainnet.helius-rpc.com/?api-key=277997e8-09ce-4516-a03e-5b062b51c6ac';
+            if (typeof window.solanaWeb3 !== 'undefined') {
+                connection = new window.solanaWeb3.Connection(rpcUrl, 'confirmed');
+            } else if (typeof solanaWeb3 !== 'undefined') {
+                connection = new solanaWeb3.Connection(rpcUrl, 'confirmed');
+            }
+        }
+    }
+
+    function updateBalance() {
+        if (!wallet || !connection || !window.splToken) return Promise.resolve();
+        var PublicKey = (window.solanaWeb3 || solanaWeb3).PublicKey;
+        var getAssociatedTokenAddress = window.splToken.getAssociatedTokenAddress;
+        var getAccount = window.splToken.getAccount;
+        var tokenMint = new PublicKey(XMA_TOKEN_MINT);
+        var userPublicKey = new PublicKey(wallet);
+        return getAssociatedTokenAddress(tokenMint, userPublicKey)
+            .then(function (tokenAccount) {
+                return getAccount(connection, tokenAccount);
+            })
+            .then(function (account) {
+                xmaBalance = account ? Number(account.amount) / Math.pow(10, TOKEN_DECIMALS) : 0;
+            })
+            .catch(function () { xmaBalance = 0; });
+    }
+
+    function loadPlayerData() {
+        if (!wallet) return Promise.resolve();
+        return fetch('/api/load-player?walletAddress=' + encodeURIComponent(wallet) + '&gameType=roulette')
+            .then(function (res) { return res.ok ? res.json() : null; })
+            .then(function (data) {
+                if (!data) return;
+                spinsRemaining = data.spinsRemaining || 0;
+                costPerSpin = data.costPerSpin || 100;
+                unclaimedRewards = data.unclaimedRewards || 0;
+                var costInput = document.getElementById('roulette-cost-per-spin');
+                if (costInput) costInput.value = Math.min(costPerSpin, MAX_COST_PER_SPIN);
+                updateRouletteButtonStates();
+            })
+            .catch(function (err) { console.error('loadPlayerData:', err); });
+    }
+
+    function purchaseSpins() {
+        if (!wallet || !connection) {
+            alert('Please connect your wallet first');
+            return;
+        }
+        if (spinsRemaining > 0) {
+            alert('Use your remaining spins before buying more chips.');
+            return;
+        }
+        var costEl = document.getElementById('roulette-cost-per-spin');
+        var numEl = document.getElementById('roulette-num-spins');
+        var cost = Math.min(parseFloat(costEl && costEl.value ? costEl.value : 100), MAX_COST_PER_SPIN);
+        var num = Math.min(parseInt(numEl && numEl.value ? numEl.value : 1, 10), MAX_SPINS_PER_PURCHASE);
+        if (!cost || cost <= 0 || !num || num <= 0) {
+            alert('Please enter valid cost per spin and number of spins');
+            return;
+        }
+        var total = cost * num;
+        if (xmaBalance < total) {
+            alert('Insufficient balance. You need ' + total + ' XMA but only have ' + xmaBalance.toFixed(2) + ' XMA');
+            return;
+        }
+        if (!window.splToken) {
+            alert('Token library still loading. Please wait and try again.');
+            return;
+        }
+        var PublicKey = (window.solanaWeb3 || solanaWeb3).PublicKey;
+        var Transaction = (window.solanaWeb3 || solanaWeb3).Transaction;
+        var SystemProgram = (window.solanaWeb3 || solanaWeb3).SystemProgram;
+        var getAssociatedTokenAddress = window.splToken.getAssociatedTokenAddress;
+        var createTransferInstruction = window.splToken.createTransferInstruction;
+        var tokenMint = new PublicKey(XMA_TOKEN_MINT);
+        var userPublicKey = new PublicKey(wallet);
+        var treasuryPublicKey = new PublicKey(TREASURY_WALLET);
+        connection.getBalance(userPublicKey).then(function (solBal) {
+            var minSol = PURCHASE_FEE_LAMPORTS + 10000;
+            if (solBal < minSol) {
+                throw new Error('Insufficient SOL for transaction fee. Need ~' + (minSol / 1e9).toFixed(4) + ' SOL (includes ' + PURCHASE_FEE_SOL + ' SOL fee). You have ' + (solBal / 1e9).toFixed(4) + ' SOL.');
+            }
+            return Promise.all([
+                getAssociatedTokenAddress(tokenMint, userPublicKey),
+                getAssociatedTokenAddress(tokenMint, treasuryPublicKey)
+            ]);
+        }).then(function (accounts) {
+            userTokenAccount = accounts[0];
+            treasuryTokenAccount = accounts[1];
+            var transferAmount = BigInt(Math.floor(total * Math.pow(10, TOKEN_DECIMALS)));
+            var transferInstruction = createTransferInstruction(
+                userTokenAccount, treasuryTokenAccount, userPublicKey, transferAmount
+            );
+            var solFeeInstruction = SystemProgram.transfer({
+                fromPubkey: userPublicKey,
+                toPubkey: treasuryPublicKey,
+                lamports: PURCHASE_FEE_LAMPORTS
+            });
+            var tx = new Transaction().add(transferInstruction).add(solFeeInstruction);
+            return connection.getLatestBlockhash().then(function (r) {
+                tx.recentBlockhash = r.blockhash;
+                tx.feePayer = userPublicKey;
+                return window.solana.signTransaction(tx);
+            });
+        }).then(function (signed) {
+            return connection.sendRawTransaction(signed.serialize(), { skipPreflight: false, maxRetries: 3 });
+        }).then(function (sig) {
+            return connection.confirmTransaction(sig, 'confirmed').then(function () { return sig; });
+        }).then(function () {
+            spinsRemaining += num;
+            costPerSpin = cost;
+            return fetch('/api/save-game', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    walletAddress: wallet,
+                    spinCost: cost,
+                    spinsPurchased: num,
+                    resultSymbols: [],
+                    wonAmount: 0,
+                    gameType: 'roulette'
+                })
+            });
+        }).then(function (res) {
+            if (!res.ok) return res.json().then(function (d) { throw new Error(d.error || 'Save failed'); });
+        }).then(function () {
+            updateBalance();
+            updateRouletteButtonStates();
+            alert('Successfully bought ' + num + ' spin(s) for ' + total + ' XMA + ' + PURCHASE_FEE_SOL + ' SOL fee.');
+        }).catch(function (err) {
+            if (String(err.message || '').match(/reject|authorized|cancelled/i)) return;
+            alert('Failed to purchase: ' + (err.message || err));
+        });
+    }
+
+    function withdrawWinnings() {
+        if (chipBalance <= 0) {
+            alert('No chips to collect');
+            return;
+        }
+        if (!wallet || !connection) {
+            alert('Please connect your wallet');
+            return;
+        }
+        if (!window.splToken) {
+            alert('Token library still loading. Please wait and try again.');
+            return;
+        }
+        var chipValueXMA = chipBalance * (costPerSpin / 100);
+        if (chipValueXMA <= 0) {
+            alert('No value to collect');
+            return;
+        }
+        isCollecting = true;
+        updateRouletteButtonStates();
+        fetch('/api/load-player?walletAddress=' + encodeURIComponent(wallet) + '&gameType=roulette')
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (player) {
+                var currentUnclaimed = (player && player.unclaimedRewards) ? player.unclaimedRewards : unclaimedRewards;
+                return currentUnclaimed + chipValueXMA;
+            })
+            .then(function (newUnclaimed) {
+                return fetch('/api/save-game', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        walletAddress: wallet,
+                        spinCost: costPerSpin,
+                        resultSymbols: [],
+                        wonAmount: 0,
+                        updateUnclaimedRewards: newUnclaimed,
+                        gameType: 'roulette'
+                    })
+                });
+            })
+            .then(function (res) {
+                if (!res.ok) return res.json().then(function (d) { throw new Error(d.error || 'Save failed'); });
+                return fetch('/api/collect', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userWallet: wallet, amount: chipValueXMA, gameType: 'roulette' })
+                });
+            })
+            .then(function (res) {
+                if (!res.ok) return res.json().then(function (d) { throw new Error(d.error || d.message || 'Collect failed'); });
+                return res.json();
+            })
+            .then(function (data) {
+                var txBytes = Uint8Array.from(atob(data.transaction), function (c) { return c.charCodeAt(0); });
+                var Transaction = (window.solanaWeb3 || solanaWeb3).Transaction;
+                var tx = Transaction.from(txBytes);
+                return connection.sendRawTransaction(tx.serialize(), { skipPreflight: false, maxRetries: 3 })
+                    .then(function (sig) {
+                        return connection.confirmTransaction(sig, 'confirmed').then(function () { return sig; });
+                    })
+                    .then(function (sig) {
+                        return fetch('/api/confirm-collect', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ userWallet: wallet, signature: sig, amount: data.actualAmount || chipValueXMA, gameType: 'roulette' })
+                        }).then(function (cr) {
+                            if (!cr.ok) return cr.json().then(function (d) { throw new Error(d.error || 'Confirm failed'); });
+                        });
+                    });
+            })
+            .then(function () {
+                chipBalance = 0;
+                unclaimedRewards = 0;
+                updateChipUI();
+                updateStakedUI();
+                renderChipStacks();
+                updateBalance();
+                loadPlayerData();
+                updateRouletteButtonStates();
+                alert('Successfully collected ' + chipValueXMA.toFixed(2) + ' XMA!');
+            })
+            .catch(function (err) {
+                if (String(err.message || '').match(/reject|authorized|cancelled/i)) return;
+                alert('Failed to collect: ' + (err.message || err));
+            })
+            .finally(function () {
+                isCollecting = false;
+                updateRouletteButtonStates();
+            });
+    }
+
     function init() {
         showThree(0);
         updateChipUI();
@@ -456,6 +815,20 @@
         bindSpinButton();
         bindUndoButton();
         bindReplaceButton();
+        var buyBtn = document.getElementById('roulette-buy-chips');
+        var collectBtn = document.getElementById('roulette-collect');
+        if (buyBtn) buyBtn.addEventListener('click', purchaseSpins);
+        if (collectBtn) collectBtn.addEventListener('click', withdrawWinnings);
+        var initWallet = function () {
+            setupWalletConnection();
+            updateRouletteButtonStates();
+        };
+        if (window.splToken) {
+            initWallet();
+        } else {
+            window.addEventListener('splTokenLoaded', initWallet);
+            setTimeout(initWallet, 2000);
+        }
         window.addEventListener('resize', renderChipStacks);
     }
 

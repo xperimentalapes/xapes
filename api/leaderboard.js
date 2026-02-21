@@ -49,9 +49,9 @@ module.exports = async function handler(req, res) {
             return res.status(400).json({ error: 'Invalid sortBy parameter. Must be: spins, won, or winRate' });
         }
 
-        // Build query based on sort option
+        // Build query based on sort option (slots leaderboard)
         let query = supabase
-            .from('players')
+            .from('slots_players')
             .select('wallet_address, total_spins, total_won, total_wagered, created_at')
             .gt('total_spins', 0); // Only show players who have played
 

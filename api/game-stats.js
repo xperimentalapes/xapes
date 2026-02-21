@@ -42,9 +42,9 @@ module.exports = async function handler(req, res) {
     }
 
     try {
-        // Get aggregated stats from players table
+        // Get aggregated stats from slots players table
         const { data: stats, error } = await supabase
-            .from('players')
+            .from('slots_players')
             .select('total_spins, total_won, total_wagered');
 
         if (error) {
