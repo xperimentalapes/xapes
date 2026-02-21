@@ -2,8 +2,10 @@
 .chests-page {
     height: 100vh;
     height: 100svh;
+    height: 100dvh;
     max-height: 100vh;
     max-height: 100svh;
+    max-height: 100dvh;
     overflow: hidden;
     background-image: linear-gradient(rgba(10, 10, 15, 0.72), rgba(10, 10, 15, 0.72)), url('/images/casino-bg2.jpg');
     background-size: cover;
@@ -183,7 +185,7 @@
     }
 
     .chests-hero {
-        padding: 12px 24px 10px;
+        padding: 6px 24px 8px;
     }
 
     .chests-hero-inner {
@@ -214,7 +216,6 @@
         justify-self: start;
         align-self: center;
         margin: 0;
-        margin-top: 25px;
         font-size: 26px;
     }
 
@@ -286,6 +287,28 @@
     }
     .chests-carousel-section {
         padding: 4px 12px 8px;
+    }
+}
+
+/* Mobile portrait: no big gap under header; bottom buttons above browser bar */
+@media (max-width: 600px) and (orientation: portrait) {
+    .chests-page {
+        padding-top: 56px;
+        padding-bottom: max(env(safe-area-inset-bottom), 56px);
+    }
+    .chests-main {
+        padding-top: 0;
+        padding-bottom: 0;
+    }
+    .chests-hero {
+        padding-top: 4px;
+        padding-bottom: 6px;
+    }
+    .chests-hero-title {
+        margin-top: 0;
+    }
+    .chests-carousel-section {
+        padding-bottom: max(12px, env(safe-area-inset-bottom));
     }
 }
 

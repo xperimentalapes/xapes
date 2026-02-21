@@ -2,8 +2,10 @@
 .slots-page {
     height: 100vh;
     height: 100svh;
+    height: 100dvh;
     max-height: 100vh;
     max-height: 100svh;
+    max-height: 100dvh;
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -120,6 +122,20 @@
 @media (max-width: 600px) {
     .slots-container {
         background-position: left top;
+    }
+}
+
+/* Mobile portrait: less gap under header; controls above browser bar */
+@media (max-width: 600px) and (orientation: portrait) {
+    .slots-page {
+        padding-top: 56px;
+        padding-bottom: max(env(safe-area-inset-bottom), 56px);
+    }
+    .slots-container {
+        padding: 2px 6px max(8px, env(safe-area-inset-bottom));
+    }
+    .slot-machine-wrapper .controls-panel {
+        padding-bottom: max(8px, env(safe-area-inset-bottom));
     }
 }
 
