@@ -141,6 +141,9 @@
 
 /* Mobile / short viewport: no gap above stats, below buttons, or right of content; reels keep height */
 @media (max-width: 600px) and (max-height: 700px) {
+    .slots-page {
+        padding-bottom: env(safe-area-inset-bottom, 0) !important;
+    }
     .slots-container {
         padding: 0 !important;
         margin: 0 !important;
