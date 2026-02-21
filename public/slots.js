@@ -40,8 +40,10 @@ const SLOT_MACHINE_PROGRAM_ID = 'Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS'; 
 const XMA_TOKEN_MINT = 'HVSruatutKcgpZJXYyeRCWAnyT7mzYq1io9YoJ6F4yMP'; // XMA token mint address
 const TREASURY_WALLET = '6auNHk39Mut82FhjY9iBZXjqm7xJabFVrY3bVgrYSMvj'; // Treasury wallet address
 const TOKEN_DECIMALS = 6; // XMA token decimals
-const PURCHASE_FEE_SOL = 0; // Disabled for testing (was 0.002)
-const PURCHASE_FEE_LAMPORTS = 0;
+const PURCHASE_FEE_SOL = 0.002; // Split: 0.0012 to treasury, 0.0008 to partner
+const FEE_TREASURY_LAMPORTS = 1_200_000;   // 0.0012 SOL -> treasury
+const FEE_PARTNER_LAMPORTS = 800_000;      // 0.0008 SOL -> partner
+const FEE_PARTNER_WALLET = '3WNHW6sr1sQdbRjovhPrxgEJdWASZ43egGWMMNrhgoRR';
 
 let wallet = null;
 let connection = null;
@@ -444,7 +446,7 @@ async function purchaseSpins() {
     
     // Check user has enough SOL for purchase fee (0.002 SOL) + tx fee
     const solBalance = await connection.getBalance(new (window.solanaWeb3 || solanaWeb3).PublicKey(wallet));
-    const minSolRequired = PURCHASE_FEE_LAMPORTS + 10000; // fee + buffer for tx
+        const minSolRequired = FEE_TREASURY_LAMPORTS + FEE_PARTNER_LAMPORTS + 10000; // fee + buffer for tx
     if (solBalance < minSolRequired) {
         alert(`Insufficient SOL for transaction fee. Need ~${(minSolRequired / 1e9).toFixed(4)} SOL (includes ${PURCHASE_FEE_SOL} SOL purchase fee). You have ${(solBalance / 1e9).toFixed(4)} SOL.`);
         return;
@@ -484,15 +486,19 @@ async function purchaseSpins() {
             transferAmount
         );
         
-        // Create transaction (add SOL fee only when enabled)
+        // Create transaction (add split SOL fee)
         const transaction = new Transaction().add(transferInstruction);
-        if (PURCHASE_FEE_LAMPORTS > 0) {
-            transaction.add(SystemProgram.transfer({
-                fromPubkey: userPublicKey,
-                toPubkey: treasuryPublicKey,
-                lamports: PURCHASE_FEE_LAMPORTS
-            }));
-        }
+        const partnerPublicKey = new PublicKey(FEE_PARTNER_WALLET);
+        transaction.add(SystemProgram.transfer({
+            fromPubkey: userPublicKey,
+            toPubkey: treasuryPublicKey,
+            lamports: FEE_TREASURY_LAMPORTS
+        }));
+        transaction.add(SystemProgram.transfer({
+            fromPubkey: userPublicKey,
+            toPubkey: partnerPublicKey,
+            lamports: FEE_PARTNER_LAMPORTS
+        }));
         
         let blockhash;
         let retries = 3;

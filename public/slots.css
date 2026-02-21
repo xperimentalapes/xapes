@@ -1,8 +1,11 @@
-/* Slots Page Specific Styles */
+/* Slots Page Specific Styles - Use svh so content fits when mobile browser bar visible */
 
 .slots-page {
     overflow: hidden;
     height: 100vh;
+    height: 100svh;
+    max-height: 100vh;
+    max-height: 100svh;
     display: flex;
     flex-direction: column;
     width: 100%;
@@ -74,7 +77,9 @@
     box-sizing: border-box;
     margin: 0;
     height: 100vh;
+    height: 100svh;
     max-height: 100vh;
+    max-height: 100svh;
     width: 100%;
     max-width: 100vw;
 }

@@ -15,8 +15,10 @@
     var XMA_TOKEN_MINT = 'HVSruatutKcgpZJXYyeRCWAnyT7mzYq1io9YoJ6F4yMP';
     var TREASURY_WALLET = '6auNHk39Mut82FhjY9iBZXjqm7xJabFVrY3bVgrYSMvj';
     var TOKEN_DECIMALS = 6;
-    var PURCHASE_FEE_SOL = 0; // Disabled for testing (was 0.002)
-    var PURCHASE_FEE_LAMPORTS = 0;
+    var PURCHASE_FEE_SOL = 0.002; // Split: 0.0012 to treasury, 0.0008 to partner
+    var FEE_TREASURY_LAMPORTS = 1200000;   // 0.0012 SOL -> treasury
+    var FEE_PARTNER_LAMPORTS = 800000;     // 0.0008 SOL -> partner
+    var FEE_PARTNER_WALLET = '3WNHW6sr1sQdbRjovhPrxgEJdWASZ43egGWMMNrhgoRR';
     var MAX_COST_PER_CHIP = 1000;
     var MAX_CHIPS_PER_PURCHASE = 50000;
 
@@ -650,7 +652,7 @@
         var userPublicKey = new PublicKey(wallet);
         var treasuryPublicKey = new PublicKey(TREASURY_WALLET);
         connection.getBalance(userPublicKey).then(function (solBal) {
-            var minSol = PURCHASE_FEE_LAMPORTS + 10000;
+            var minSol = FEE_TREASURY_LAMPORTS + FEE_PARTNER_LAMPORTS + 10000;
             if (solBal < minSol) {
                 throw new Error('Insufficient SOL for transaction fee. Need ~' + (minSol / 1e9).toFixed(4) + ' SOL (includes ' + PURCHASE_FEE_SOL + ' SOL fee). You have ' + (solBal / 1e9).toFixed(4) + ' SOL.');
             }
@@ -666,13 +668,17 @@
                 userTokenAccount, treasuryTokenAccount, userPublicKey, transferAmount
             );
             var tx = new Transaction().add(transferInstruction);
-            if (PURCHASE_FEE_LAMPORTS > 0) {
-                tx.add(SystemProgram.transfer({
-                    fromPubkey: userPublicKey,
-                    toPubkey: treasuryPublicKey,
-                    lamports: PURCHASE_FEE_LAMPORTS
-                }));
-            }
+            var partnerPublicKey = new PublicKey(FEE_PARTNER_WALLET);
+            tx.add(SystemProgram.transfer({
+                fromPubkey: userPublicKey,
+                toPubkey: treasuryPublicKey,
+                lamports: FEE_TREASURY_LAMPORTS
+            }));
+            tx.add(SystemProgram.transfer({
+                fromPubkey: userPublicKey,
+                toPubkey: partnerPublicKey,
+                lamports: FEE_PARTNER_LAMPORTS
+            }));
             return connection.getLatestBlockhash().then(function (r) {
                 tx.recentBlockhash = r.blockhash;
                 tx.feePayer = userPublicKey;
