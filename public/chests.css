@@ -73,7 +73,7 @@
     color: var(--primary-color);
 }
 
-/* Chests main - same as roulette-container: flex 1, min-height 0, overflow hidden */
+/* Chests main - same as roulette-container: flex 1, min-height 0, overflow hidden (no bg - page has it) */
 .chests-main {
     flex: 1;
     min-height: 0;
@@ -87,9 +87,6 @@
     width: 100%;
     box-sizing: border-box;
     position: relative;
-    background-image: linear-gradient(rgba(10, 10, 15, 0.72), rgba(10, 10, 15, 0.72)), url('/images/casino-bg2.jpg');
-    background-size: cover;
-    background-position: center top;
 }
 
 /* Hero: whole block (image + text + logos) centered on page, scaled to fill space */
