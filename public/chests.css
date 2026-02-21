@@ -1201,7 +1201,7 @@
 @media (max-width: 600px) and (max-height: 560px) {
     .chests-page {
         padding-top: 56px !important;
-        padding-bottom: max(20px, env(safe-area-inset-bottom)) !important;
+        padding-bottom: max(12px, env(safe-area-inset-bottom)) !important;
     }
     .chests-main {
         gap: 4px !important;
@@ -1236,12 +1236,16 @@
         width: 28px !important;
         height: 28px !important;
     }
-    /* Content-sized height so card sits under hero with no huge gap above/below */
+    /* Arrows vertically centered on card; hero grows so gap is above card, not below */
+    .chests-hero {
+        flex: 1 !important;
+        min-height: 0 !important;
+    }
     .chests-carousel-section {
         padding: 4px 8px 12px !important;
         flex: 0 1 auto !important;
         min-height: 0 !important;
-        align-items: flex-start !important;
+        align-items: center !important;  /* arrows halfway down card */
     }
     .chests-carousel .chest-card {
         padding: 8px 10px !important;
