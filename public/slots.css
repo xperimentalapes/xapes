@@ -2304,18 +2304,24 @@
 
 /* OVERRIDE 1024px block for small mobile: no gap above/below/sides, reels get height (must come last) */
 @media (max-width: 600px) and (max-height: 700px) {
+    .slots-page {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
     .slots-container {
         padding: 0 !important;
-        padding-bottom: max(8px, env(safe-area-inset-bottom)) !important;
-        padding-top: 0 !important;
+        margin: 0 !important;
         width: 100% !important;
         max-width: 100% !important;
+        box-sizing: border-box !important;
     }
     .slot-machine-wrapper {
         display: grid !important;
         grid-template-rows: 1fr 1fr 1fr !important;
         flex-direction: row !important;
         gap: 2px !important;
+        width: 100% !important;
+        max-width: 100% !important;
     }
     .slot-machine-wrapper .game-stats-bar {
         align-self: start !important;
@@ -2329,5 +2335,6 @@
     .slot-machine-wrapper .controls-panel {
         align-self: end !important;
         overflow: visible !important;
+        padding-bottom: 0 !important;
     }
 }
