@@ -1,21 +1,10 @@
-/* Prevent document scroll when chests page is fixed to viewport */
-html:has(body.chests-page) {
-    overflow: hidden;
-    height: 100%;
-}
-
-/* Chests page - Lock to viewport so bottom is never cut off (mobile/tablet) */
+/* Chests page - same layout as roulette-page so it fits in viewport on mobile */
 .chests-page {
-    position: fixed;
-    inset: 0;
-    overflow: hidden;
     height: 100vh;
     height: 100svh;
-    height: 100dvh;
     max-height: 100vh;
     max-height: 100svh;
-    max-height: 100dvh;
-    min-height: 0;
+    overflow: hidden;
     background-image: linear-gradient(rgba(10, 10, 15, 0.72), rgba(10, 10, 15, 0.72)), url('/images/casino-bg2.jpg');
     background-size: cover;
     background-position: center top;
@@ -25,24 +14,29 @@ html:has(body.chests-page) {
     padding-bottom: env(safe-area-inset-bottom, 0);
     box-sizing: border-box;
 }
-/* Mobile/tablet: extra bottom padding so buttons sit above browser bar */
-@media (max-height: 900px) {
-    .chests-page {
-        padding-bottom: max(80px, env(safe-area-inset-bottom, 0));
-    }
+
+.chests-page::-webkit-scrollbar {
+    display: none;
 }
 
 .chests-nav {
     flex-shrink: 0;
 }
 
+/* Chests main - same as roulette-container: flex 1, min-height 0, overflow hidden */
 .chests-main {
     flex: 1;
     min-height: 0;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
-    padding: 0;
-    overflow: hidden;
+    gap: 4px;
+    padding: 4px 8px 4px;
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+    box-sizing: border-box;
+    position: relative;
     background-image: linear-gradient(rgba(10, 10, 15, 0.72), rgba(10, 10, 15, 0.72)), url('/images/casino-bg2.jpg');
     background-size: cover;
     background-position: center top;
