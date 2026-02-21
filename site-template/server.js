@@ -65,6 +65,20 @@ app.use(
 
 app.use(express.static(path.join(__dirname)));
 
+// Serve game pages from repo public/; roulette with no-store so updates show immediately
+const publicDir = path.join(__dirname, '..', 'public');
+if (require('fs').existsSync(publicDir)) {
+  app.get('/roulette', function (req, res) {
+    res.setHeader('Cache-Control', 'no-store');
+    res.sendFile(path.join(publicDir, 'roulette.html'));
+  });
+  app.get('/roulette.html', function (req, res) {
+    res.setHeader('Cache-Control', 'no-store');
+    res.sendFile(path.join(publicDir, 'roulette.html'));
+  });
+  app.use(express.static(publicDir));
+}
+
 // Avoid 404 for favicon (browsers request it automatically)
 app.get('/favicon.ico', function (req, res) {
   res.status(204).end();

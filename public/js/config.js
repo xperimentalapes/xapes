@@ -40,9 +40,7 @@ window.MNK3YS_CONFIG = {
 
   holdingsLabels: {
     token: '$XMA',
-    mnk3ys: 'Collectibles',
-    zmb3ys: 'Col2',
-    totalNfts: 'Total NFTs',
+    totalNfts: 'NFTs',
     nfts: 'NFTs',
   },
   holdersLead: 'Top holders by token and NFT collections.',
@@ -63,6 +61,16 @@ window.MNK3YS_CONFIG = {
       discordId: '1023391537498963978',
       xProfileUrl: 'https://x.com/GK_OF_XAPELABZ',
       description: 'Founder/project lead',
+    },
+    {
+      discordId: '443298281007874048',
+      xProfileUrl: 'https://x.com/cheeze541',
+      description: 'Co-founder',
+    },
+    {
+      discordId: '369215556848582657',
+      xProfileUrl: 'https://x.com/ryzeldan',
+      description: 'Co-founder',
     },
     {
       discordId: '931160720261939230',

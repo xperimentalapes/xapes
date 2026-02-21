@@ -7,6 +7,16 @@
     <title>XMA Roulette | Xperimental Mutant Apes</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="roulette.css">
+    <style>
+      .roulette-reel-wrap { width: 120px; height: 200px; flex-shrink: 0; }
+      .roulette-reel { width: 100%; height: 100%; position: relative; overflow: hidden; background: #1a1a1a; border: 3px solid #5c4033; border-radius: 12px; }
+      .roulette-reel-visible { display: flex; flex-direction: column; height: 100%; }
+      .roulette-reel-cell { height: 66px; min-height: 66px; overflow: hidden; position: relative; }
+      .roulette-reel-cell.roulette-reel-cell-center { border-top: 3px solid #f59e0b; border-bottom: 3px solid #f59e0b; box-sizing: border-box; }
+      .roulette-cell-slider { transition: transform 0.12s ease-out; }
+      .roulette-cell-num { height: 66px; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 800; color: #fff; }
+      .roulette-reel-pointer { position: absolute; left: 0; top: 50%; width: 100%; height: 0; border-top: 2px solid #f59e0b; transform: translateY(-50%); z-index: 5; pointer-events: none; }
+    </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -33,9 +43,6 @@
                     </a>
                 </div>
                 <div class="nav-links">
-                    <a href="/slots" class="nav-link">Slots</a>
-                    <a href="/chests" class="nav-link">Chests</a>
-                    <a href="/roulette" class="nav-link nav-link-active">Roulette</a>
                     <div id="wallet-button-container" class="wallet-button-container">
                         <button id="connect-wallet" class="wallet-connect-btn">Connect Wallet</button>
                         <div id="wallet-info" class="wallet-info" style="display: none;">
@@ -49,37 +56,79 @@
     </nav>
 
     <div class="roulette-container">
-        <!-- Stats bar -->
-        <div class="roulette-stats-bar">
-            <div class="roulette-stat">
-                <span class="roulette-stat-label">Chips</span>
-                <span id="roulette-chips" class="roulette-stat-value">0</span>
-            </div>
-            <div class="roulette-stat">
-                <span class="roulette-stat-label">Total staked</span>
-                <span id="roulette-staked" class="roulette-stat-value">0</span>
-            </div>
-            <div class="roulette-stat">
-                <span class="roulette-stat-label">Last result</span>
-                <span id="roulette-last-result" class="roulette-stat-value roulette-last-number">—</span>
-            </div>
+        <!-- Win overlay: center screen, slots-style (shown for 3s after spin) -->
+        <div id="roulette-win-display" class="roulette-win-display" style="display: none;" aria-live="polite">
+            <h2 id="roulette-win-message" class="roulette-win-display-text"></h2>
         </div>
-
-        <!-- Main game: wheel + table -->
-        <div class="roulette-game-area">
-            <!-- Roulette wheel -->
-            <div class="roulette-wheel-wrap">
-                <div class="roulette-wheel-outer">
-                    <div id="roulette-wheel" class="roulette-wheel">
-                        <!-- 37 segments filled by JS in European order -->
+        <!-- Two columns: left = controls + reel + results; right = table only -->
+        <div class="roulette-two-col">
+            <div class="roulette-left-col">
+                <!-- Chips then Staked (stacked, room for 500K) -->
+                <div class="roulette-stats-bar">
+                    <div class="roulette-stat">
+                        <span class="roulette-stat-label">Chips</span>
+                        <span id="roulette-chips" class="roulette-stat-value">0</span>
                     </div>
-                    <div class="roulette-wheel-pointer"></div>
+                    <div class="roulette-stat">
+                        <span class="roulette-stat-label">Staked</span>
+                        <span id="roulette-staked" class="roulette-stat-value">0</span>
+                    </div>
+                </div>
+                <!-- Chips only (no label); popup when spins available -->
+                <div class="roulette-chip-selector-wrap">
+                    <div id="roulette-popup-select-chip" class="roulette-popup roulette-popup-gold roulette-popup-select-chip" role="tooltip" aria-hidden="true">
+                        <span class="roulette-popup-arrow roulette-popup-arrow-up">▲</span>
+                        <span class="roulette-popup-text">Select chip</span>
+                    </div>
+                    <div class="roulette-chip-selector">
+                        <button type="button" class="roulette-chip roulette-chip-10" data-value="10" aria-pressed="false">10</button>
+                        <button type="button" class="roulette-chip roulette-chip-50" data-value="50" aria-pressed="false">50</button>
+                        <button type="button" class="roulette-chip roulette-chip-100" data-value="100" aria-pressed="false">100</button>
+                        <button type="button" class="roulette-chip roulette-chip-200" data-value="200" aria-pressed="false">200</button>
+                    </div>
+                </div>
+                <!-- Reel + Last 10: vertically centered between chips and undo/replace -->
+                <div class="roulette-reel-last10-wrap">
+                <div class="roulette-reel-and-last10">
+                    <div class="roulette-reel-wrap">
+                        <div class="roulette-reel" id="roulette-reel">
+                            <div class="roulette-reel-visible" id="roulette-reel-cells">
+                                <div class="roulette-reel-cell" id="roulette-cell-above">
+                                    <div class="roulette-cell-slider"><div class="roulette-cell-num" data-which="0"></div><div class="roulette-cell-num" data-which="1"></div></div>
+                                </div>
+                                <div class="roulette-reel-cell roulette-reel-cell-center" id="roulette-cell-center">
+                                    <div class="roulette-cell-slider"><div class="roulette-cell-num" data-which="0"></div><div class="roulette-cell-num" data-which="1"></div></div>
+                                </div>
+                                <div class="roulette-reel-cell" id="roulette-cell-below">
+                                    <div class="roulette-cell-slider"><div class="roulette-cell-num" data-which="0"></div><div class="roulette-cell-num" data-which="1"></div></div>
+                                </div>
+                            </div>
+                            <div class="roulette-reel-pointer" aria-hidden="true"></div>
+                        </div>
+                    </div>
+                    <div id="roulette-last-10" class="roulette-last-10-list" aria-label="Last 7 spin results"></div>
+                </div>
+                <!-- Place chip popup: below reel in left column -->
+                <div id="roulette-popup-place-chip" class="roulette-popup roulette-popup-gold roulette-popup-place" role="tooltip" aria-hidden="true">
+                    <span class="roulette-popup-text">Place chip</span>
+                    <span class="roulette-popup-arrow roulette-popup-arrow-right">▶</span>
+                </div>
+                </div>
+                <!-- Undo & Replace: round buttons with replay/rewind icons -->
+                <div class="roulette-action-buttons">
+                    <button type="button" id="roulette-undo" class="roulette-btn-round" disabled title="Undo last bet" aria-label="Undo last bet">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13C5 16.866 8.13401 20 12 20C15.866 20 19 16.866 19 13C19 9.13401 15.866 6 12 6H7M7 6L10 3M7 6L10 9"/></svg>
+                    </button>
+                    <button type="button" id="roulette-replace" class="roulette-btn-round roulette-btn-replace" disabled title="Replace chips" aria-label="Replace chips">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12L21 17V7L12 12ZM12 12V7L3 12L12 17V12Z"/></svg>
+                    </button>
                 </div>
             </div>
-
-            <!-- Betting table: American-style layout (left outside | center 0+grid+00+2:1 | right dozens) -->
-            <div class="roulette-table-wrap">
-                <div class="roulette-table">
+            <!-- Right column: table only, must fit -->
+            <div class="roulette-right-col">
+                <div class="roulette-table-wrap">
+                    <div class="roulette-table">
+                    <div id="roulette-chip-overlay" class="roulette-chip-overlay" aria-hidden="true"></div>
                     <div class="roulette-table-body">
                         <!-- Left: outside bets (6 cells, each ~2 rows height) -->
                         <div class="roulette-outside-left">
@@ -149,21 +198,38 @@
                     </div>
                 </div>
             </div>
+            </div>
         </div>
 
-        <!-- Controls -->
+        <!-- Inputs: cost per spin, number of spins, token -->
+        <div class="roulette-inputs">
+            <div class="roulette-input-group">
+                <label for="roulette-cost-per-spin">Cost per spin</label>
+                <select id="roulette-cost-per-spin">
+                    <option value="10">10</option>
+                    <option value="100">100</option>
+                    <option value="500">500</option>
+                    <option value="1000">1000</option>
+                </select>
+            </div>
+            <div class="roulette-input-group">
+                <label for="roulette-num-spins">Number of spins</label>
+                <input type="number" id="roulette-num-spins" min="1" max="500" value="1" placeholder="Max 500">
+            </div>
+            <div class="roulette-input-group">
+                <label for="roulette-token">Token</label>
+                <select id="roulette-token">
+                    <option value="XMA">$XMA</option>
+                    <option value="BLUNANA">$BLUNANA</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Bottom row: BUY CHIPS, COLLECT, SPIN -->
         <div class="roulette-controls">
-            <div class="roulette-control-group">
-                <label for="roulette-buy-amount">Buy chips (XMA)</label>
-                <input type="number" id="roulette-buy-amount" min="0.1" step="0.1" value="10" placeholder="Amount">
-            </div>
             <button id="roulette-buy-chips" class="btn btn-roulette-buy" disabled>BUY CHIPS</button>
-            <div class="roulette-control-group roulette-bet-amount-wrap">
-                <label for="roulette-bet-amount">Chip amount per bet</label>
-                <input type="number" id="roulette-bet-amount" min="1" step="1" value="1" placeholder="Chips">
-            </div>
-            <button id="roulette-spin" class="btn btn-roulette-spin">SPIN</button>
             <button id="roulette-collect" class="btn btn-roulette-collect" disabled>COLLECT</button>
+            <button id="roulette-spin" class="btn btn-roulette-spin">SPIN</button>
         </div>
     </div>
 
