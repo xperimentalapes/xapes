@@ -23,6 +23,56 @@
     flex-shrink: 0;
 }
 
+/* Wallet header - same as slots/roulette so Connect Wallet is purple and matches */
+.chests-page .wallet-button-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.chests-page .wallet-connect-btn {
+    padding: 8px 20px;
+    background: var(--gradient-1);
+    border: none;
+    border-radius: 8px;
+    color: white !important;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+.chests-page .wallet-connect-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+.chests-page .wallet-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 16px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+}
+.chests-page .wallet-info span {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-family: monospace;
+}
+.chests-page .wallet-disconnect-btn {
+    padding: 4px 12px;
+    background: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-secondary);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+.chests-page .wallet-disconnect-btn:hover {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
 /* Chests main - same as roulette-container: flex 1, min-height 0, overflow hidden */
 .chests-main {
     flex: 1;
