@@ -40,8 +40,8 @@ const SLOT_MACHINE_PROGRAM_ID = 'Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS'; 
 const XMA_TOKEN_MINT = 'HVSruatutKcgpZJXYyeRCWAnyT7mzYq1io9YoJ6F4yMP'; // XMA token mint address
 const TREASURY_WALLET = '6auNHk39Mut82FhjY9iBZXjqm7xJabFVrY3bVgrYSMvj'; // Treasury wallet address
 const TOKEN_DECIMALS = 6; // XMA token decimals
-const PURCHASE_FEE_SOL = 0.002; // SOL fee per purchase (1 SOL per 500 purchases)
-const PURCHASE_FEE_LAMPORTS = 2_000_000; // 0.002 * 1e9
+const PURCHASE_FEE_SOL = 0; // Disabled for testing (was 0.002)
+const PURCHASE_FEE_LAMPORTS = 0;
 
 let wallet = null;
 let connection = null;
@@ -484,15 +484,15 @@ async function purchaseSpins() {
             transferAmount
         );
         
-        // SOL purchase fee (0.002 SOL to treasury per purchase)
-        const solFeeInstruction = SystemProgram.transfer({
-            fromPubkey: userPublicKey,
-            toPubkey: treasuryPublicKey,
-            lamports: PURCHASE_FEE_LAMPORTS
-        });
-        
-        // Create and send transaction with retry logic for rate limits
-        const transaction = new Transaction().add(transferInstruction).add(solFeeInstruction);
+        // Create transaction (add SOL fee only when enabled)
+        const transaction = new Transaction().add(transferInstruction);
+        if (PURCHASE_FEE_LAMPORTS > 0) {
+            transaction.add(SystemProgram.transfer({
+                fromPubkey: userPublicKey,
+                toPubkey: treasuryPublicKey,
+                lamports: PURCHASE_FEE_LAMPORTS
+            }));
+        }
         
         let blockhash;
         let retries = 3;
@@ -579,7 +579,7 @@ async function purchaseSpins() {
         updateDisplay();
         updateButtonStates();
         
-        alert(`Successfully purchased ${numSpins} spin(s) for ${totalCost} XMA + ${PURCHASE_FEE_SOL} SOL fee.`);
+        alert(`Successfully purchased ${numSpins} spin(s) for ${totalCost} XMA${PURCHASE_FEE_SOL > 0 ? ` + ${PURCHASE_FEE_SOL} SOL fee` : ''}.`);
     } catch (error) {
         console.error('Purchase error:', error);
         const errorMsg = error.message || error.toString() || '';

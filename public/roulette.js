@@ -16,8 +16,8 @@
     var XMA_TOKEN_MINT = 'HVSruatutKcgpZJXYyeRCWAnyT7mzYq1io9YoJ6F4yMP';
     var TREASURY_WALLET = '6auNHk39Mut82FhjY9iBZXjqm7xJabFVrY3bVgrYSMvj';
     var TOKEN_DECIMALS = 6;
-    var PURCHASE_FEE_SOL = 0.002;
-    var PURCHASE_FEE_LAMPORTS = 2000000;
+    var PURCHASE_FEE_SOL = 0; // Disabled for testing (was 0.002)
+    var PURCHASE_FEE_LAMPORTS = 0;
     var MAX_COST_PER_SPIN = 1500;
     var MAX_SPINS_PER_PURCHASE = 500;
 
@@ -669,12 +669,14 @@
             var transferInstruction = createTransferInstruction(
                 userTokenAccount, treasuryTokenAccount, userPublicKey, transferAmount
             );
-            var solFeeInstruction = SystemProgram.transfer({
-                fromPubkey: userPublicKey,
-                toPubkey: treasuryPublicKey,
-                lamports: PURCHASE_FEE_LAMPORTS
-            });
-            var tx = new Transaction().add(transferInstruction).add(solFeeInstruction);
+            var tx = new Transaction().add(transferInstruction);
+            if (PURCHASE_FEE_LAMPORTS > 0) {
+                tx.add(SystemProgram.transfer({
+                    fromPubkey: userPublicKey,
+                    toPubkey: treasuryPublicKey,
+                    lamports: PURCHASE_FEE_LAMPORTS
+                }));
+            }
             return connection.getLatestBlockhash().then(function (r) {
                 tx.recentBlockhash = r.blockhash;
                 tx.feePayer = userPublicKey;
@@ -704,7 +706,7 @@
         }).then(function () {
             updateBalance();
             updateRouletteButtonStates();
-            alert('Successfully bought ' + num + ' spin(s) for ' + total + ' XMA + ' + PURCHASE_FEE_SOL + ' SOL fee.');
+            alert('Successfully bought ' + num + ' spin(s) for ' + total + ' XMA' + (PURCHASE_FEE_SOL > 0 ? ' + ' + PURCHASE_FEE_SOL + ' SOL fee' : '') + '.');
         }).catch(function (err) {
             if (String(err.message || '').match(/reject|authorized|cancelled/i)) return;
             alert('Failed to purchase: ' + (err.message || err));

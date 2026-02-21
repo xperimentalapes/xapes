@@ -41,8 +41,8 @@ let currentReservationId = null;
 // XMA for buy flow (same as slots)
 const XMA_TOKEN_MINT = 'HVSruatutKcgpZJXYyeRCWAnyT7mzYq1io9YoJ6F4yMP';
 const TOKEN_DECIMALS = 6;
-const PURCHASE_FEE_SOL = 0.002;
-const PURCHASE_FEE_LAMPORTS = 2_000_000;
+const PURCHASE_FEE_SOL = 0; // Disabled for testing (was 0.002)
+const PURCHASE_FEE_LAMPORTS = 0;
 
 const resultModal = document.getElementById('result-modal');
 const resultLose = document.getElementById('result-lose');
@@ -591,12 +591,14 @@ async function buyChest() {
     try {
         while (attempt < maxAttempts) {
             attempt++;
-            var solFeeInstruction = SystemProgram.transfer({
-                fromPubkey: userPublicKey,
-                toPubkey: treasuryPublicKey,
-                lamports: PURCHASE_FEE_LAMPORTS
-            });
-            var transaction = new Transaction().add(transferInstruction).add(solFeeInstruction);
+            var transaction = new Transaction().add(transferInstruction);
+            if (PURCHASE_FEE_LAMPORTS > 0) {
+                transaction.add(SystemProgram.transfer({
+                    fromPubkey: userPublicKey,
+                    toPubkey: treasuryPublicKey,
+                    lamports: PURCHASE_FEE_LAMPORTS
+                }));
+            }
 
             var blockhashRetries = 3;
             while (blockhashRetries > 0) {
