@@ -211,9 +211,9 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-end;
     width: 100%;
-    margin-top: 20px;
+    margin-top: 40px;
     padding: 8px 0;
     position: relative;
 }
@@ -634,6 +634,7 @@
     position: relative;
     flex-shrink: 0;
     padding: 6px 0;
+    margin-bottom: 8px;
 }
 .roulette-chip-selector {
     display: grid;
