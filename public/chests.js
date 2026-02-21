@@ -380,47 +380,62 @@ function setupAvailablePrizesModal() {
     if (backdrop && modal) backdrop.addEventListener('click', () => modal.setAttribute('aria-hidden', 'true'));
 }
 
-function setupWallet() {
+async function setupWallet() {
     const connectBtn = document.getElementById('connect-wallet');
     const disconnectBtn = document.getElementById('disconnect-wallet');
     const walletInfo = document.getElementById('wallet-info');
     const walletAddressEl = document.getElementById('wallet-address');
 
-    connectBtn.addEventListener('click', () => {
-        if (window.solana?.isPhantom) {
-            window.solana.connect()
-                .then(async ({ publicKey }) => {
-                    walletAddress = publicKey.toBase58();
+    const isPhantom = typeof window.solana !== 'undefined' && (window.solana?.isPhantom || typeof window.solana?.connect === 'function');
+    if (isPhantom) {
+        try {
+            if (window.solana.isConnected) {
+                const resp = await window.solana.connect({ onlyIfTrusted: true });
+                if (resp && resp.publicKey) {
+                    walletAddress = resp.publicKey.toBase58();
                     walletConnected = true;
                     walletAddressEl.textContent = walletAddress.slice(0, 4) + '…' + walletAddress.slice(-4);
                     connectBtn.style.display = 'none';
                     walletInfo.style.display = 'flex';
                     await loadChestOpensFromServer();
                     updateChestButton();
-                })
-                .catch(() => useDemoWallet());
-        } else {
-            useDemoWallet();
+                }
+            }
+        } catch (e) {
+            /* Not auto-connected - user will click Connect */
         }
+    }
+
+    connectBtn.addEventListener('click', () => {
+        const isPhantom = typeof window.solana !== 'undefined' && (window.solana?.isPhantom || typeof window.solana?.connect === 'function');
+        if (!isPhantom) {
+            connectBtn.textContent = 'Install Phantom';
+            connectBtn.onclick = () => window.open('https://phantom.app/', '_blank');
+            return;
+        }
+        window.solana.connect()
+            .then(async ({ publicKey }) => {
+                walletAddress = publicKey.toBase58();
+                walletConnected = true;
+                walletAddressEl.textContent = walletAddress.slice(0, 4) + '…' + walletAddress.slice(-4);
+                connectBtn.style.display = 'none';
+                walletInfo.style.display = 'flex';
+                await loadChestOpensFromServer();
+                updateChestButton();
+            })
+            .catch(() => { /* User rejected - keep Connect visible */ });
     });
 
     disconnectBtn.addEventListener('click', () => {
+        if (window.solana?.disconnect) window.solana.disconnect();
         walletConnected = false;
         walletAddress = null;
         canOpenChest = false;
         walletInfo.style.display = 'none';
         connectBtn.style.display = 'block';
+        if (connectBtn.textContent === 'Install Phantom') connectBtn.textContent = 'Connect Wallet';
         updateChestButton();
     });
-
-    function useDemoWallet() {
-        walletAddress = 'Demo' + Math.random().toString(36).slice(2, 10);
-        walletConnected = true;
-        walletAddressEl.textContent = walletAddress;
-        connectBtn.style.display = 'none';
-        walletInfo.style.display = 'flex';
-        updateChestButton();
-    }
 
     if (window.solana?.isPhantom) {
         window.solana.on('accountChanged', () => {

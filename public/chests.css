@@ -537,52 +537,6 @@
     color: var(--primary-light);
 }
 
-.chests-page .wallet-connect-btn {
-    padding: 8px 20px;
-    background: var(--gradient-1);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-weight: 600;
-    font-size: 14px;
-    cursor: pointer;
-    transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.chests-page .wallet-connect-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
-}
-
-.chests-page .wallet-info {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.chests-page .wallet-info span {
-    font-size: 12px;
-    color: var(--text-secondary);
-    max-width: 120px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.chests-page .wallet-disconnect-btn {
-    padding: 6px 12px;
-    background: transparent;
-    border: 1px solid var(--border-color);
-    color: var(--text-secondary);
-    border-radius: 6px;
-    font-size: 12px;
-    cursor: pointer;
-}
-
-.chests-page .wallet-disconnect-btn:hover {
-    color: var(--text-primary);
-    border-color: var(--text-muted);
-}
-
 .chests-page .exit-home-btn {
     display: flex;
     align-items: center;
