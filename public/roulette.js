@@ -663,8 +663,8 @@
                 getAssociatedTokenAddress(tokenMint, treasuryPublicKey)
             ]);
         }).then(function (accounts) {
-            userTokenAccount = accounts[0];
-            treasuryTokenAccount = accounts[1];
+            var userTokenAccount = accounts[0];
+            var treasuryTokenAccount = accounts[1];
             var transferAmount = BigInt(Math.floor(total * Math.pow(10, TOKEN_DECIMALS)));
             var transferInstruction = createTransferInstruction(
                 userTokenAccount, treasuryTokenAccount, userPublicKey, transferAmount
