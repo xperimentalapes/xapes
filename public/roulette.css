@@ -1,13 +1,15 @@
-/* Roulette Page - Fits viewport, no scroll */
-
+/* Roulette Page - Use small viewport so content fits when browser bar visible */
 .roulette-page {
     height: 100vh;
+    height: 100svh;
     max-height: 100vh;
+    max-height: 100svh;
     overflow: hidden;
     background: var(--bg-dark);
     display: flex;
     flex-direction: column;
     padding-top: 72px;
+    padding-bottom: env(safe-area-inset-bottom, 0);
     box-sizing: border-box;
 }
 
