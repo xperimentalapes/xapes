@@ -85,18 +85,29 @@
     background-position: center top;
 }
 
-/* Mobile/tablet: allow grid rows to shrink so page fits; keep controls tappable */
+/* Mobile/tablet: pin controls to bottom of viewport so BUY/SPIN/COLLECT always visible */
 @media (max-height: 900px) {
     .slot-machine-wrapper {
         min-height: 0;
+        padding-bottom: 120px; /* space for fixed controls */
     }
     .slot-machine-wrapper .game-stats-bar,
-    .slot-machine-wrapper .slot-machine-main,
-    .slot-machine-wrapper .controls-panel {
+    .slot-machine-wrapper .slot-machine-main {
         min-height: 0;
     }
     .slot-machine-wrapper .controls-panel {
-        min-height: 44px;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 500;
+        margin: 0;
+        border-radius: 0;
+        padding: 8px;
+        padding-bottom: max(12px, env(safe-area-inset-bottom));
+        background: var(--bg-card);
+        border-top: 1px solid var(--border-color);
+        box-shadow: 0 -4px 20px rgba(0,0,0,0.3);
     }
 }
 
