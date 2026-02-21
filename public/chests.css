@@ -290,21 +290,25 @@
     }
 }
 
-/* Mobile portrait: minimal top gap so title sits under header; content fits, no cutoff */
-@media (max-width: 600px) and (orientation: portrait) {
+/* Mobile portrait / short mobile: tight top gap, bottom padding so card isn't flush */
+@media (max-width: 600px) and (orientation: portrait),
+       (max-width: 600px) and (max-height: 700px) {
     .chests-page {
-        padding-top: 48px;
-        padding-bottom: max(8px, env(safe-area-inset-bottom));
+        padding-top: 64px;   /* match nav height so title sits directly under header */
+        padding-bottom: 20px;
+        padding-bottom: max(20px, env(safe-area-inset-bottom));
     }
     .chests-main {
         padding-top: 0;
-        padding-bottom: 4px;
+        padding-bottom: 0;
         gap: 2px;
     }
     .chests-hero {
-        padding: 0 12px 2px;
+        padding: 0 12px 4px;
         flex-shrink: 1;
         min-height: 0;
+        align-items: flex-start;
+        justify-content: flex-start;
     }
     .chests-hero-inner {
         gap: 2px 8px;
@@ -333,7 +337,7 @@
         height: 28px;
     }
     .chests-carousel-section {
-        padding: 2px 12px 8px;
+        padding: 4px 12px 12px;
     }
 }
 
