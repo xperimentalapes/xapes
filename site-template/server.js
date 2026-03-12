@@ -93,8 +93,8 @@ app.get('/favicon.ico', function (req, res) {
   res.status(204).end();
 });
 
-// ——— Coin Flip API (local dev: same handlers as Vercel api/*.js) ———
-const apiDir = path.join(__dirname, '..', 'api');
+// ——— Coin Flip API (handlers in lib/coinflip/ to stay under Vercel 12-function limit) ———
+const coinflipDir = path.join(__dirname, '..', 'lib', 'coinflip');
 function useCoinflipHandler(handler) {
   return function (req, res) {
     handler(req, res).catch(function (err) {
@@ -103,14 +103,14 @@ function useCoinflipHandler(handler) {
     });
   };
 }
-if (require('fs').existsSync(apiDir)) {
+if (require('fs').existsSync(coinflipDir)) {
   try {
-    app.get('/api/coinflip-state', useCoinflipHandler(require(path.join(apiDir, 'coinflip-state.js'))));
-    app.get('/api/coinflip-stats', useCoinflipHandler(require(path.join(apiDir, 'coinflip-stats.js'))));
-    app.post('/api/coinflip-flip', useCoinflipHandler(require(path.join(apiDir, 'coinflip-flip.js'))));
-    app.post('/api/coinflip-purchase', useCoinflipHandler(require(path.join(apiDir, 'coinflip-purchase.js'))));
-    app.post('/api/coinflip-collect', useCoinflipHandler(require(path.join(apiDir, 'coinflip-collect.js'))));
-    app.post('/api/coinflip-confirm-collect', useCoinflipHandler(require(path.join(apiDir, 'coinflip-confirm-collect.js'))));
+    app.get('/api/coinflip-state', useCoinflipHandler(require(path.join(coinflipDir, 'coinflip-state.js'))));
+    app.get('/api/coinflip-stats', useCoinflipHandler(require(path.join(coinflipDir, 'coinflip-stats.js'))));
+    app.post('/api/coinflip-flip', useCoinflipHandler(require(path.join(coinflipDir, 'coinflip-flip.js'))));
+    app.post('/api/coinflip-purchase', useCoinflipHandler(require(path.join(coinflipDir, 'coinflip-purchase.js'))));
+    app.post('/api/coinflip-collect', useCoinflipHandler(require(path.join(coinflipDir, 'coinflip-collect.js'))));
+    app.post('/api/coinflip-confirm-collect', useCoinflipHandler(require(path.join(coinflipDir, 'coinflip-confirm-collect.js'))));
   } catch (e) {
     console.warn('Coinflip API routes not loaded:', e.message);
   }
