@@ -1273,11 +1273,28 @@ body {
 .card--lunarverse:hover {
   opacity: 0.95;
 }
+/* Pin bg right edge to card right: wrapper 2x width, right-aligned; card overflow clips left */
 .card--lunarverse .card__bg {
   position: absolute;
-  inset: 0;
-  background: url("../assets/lunarverse-bg.png") center / cover no-repeat;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: auto;
+  width: 200%;
+  height: 100%;
   z-index: 0;
+}
+.card--lunarverse .card__bg img {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 100% 100%;
+  display: block;
 }
 .card--lunarverse .card__bg::after {
   content: '';
@@ -1321,9 +1338,25 @@ body {
 }
 .card--gotm .card__bg {
   position: absolute;
-  inset: 0;
-  background: url("../assets/gotm-labz-bg.png") center / cover no-repeat;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: auto;
+  width: 200%;
+  height: 100%;
   z-index: 0;
+}
+.card--gotm .card__bg img {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 100% 100%;
+  display: block;
 }
 .card--gotm .card__bg::after {
   content: '';
@@ -1383,9 +1416,25 @@ body {
 }
 .card--mobtools .card__bg {
   position: absolute;
-  inset: 0;
-  background: url("../assets/mobtools-bg.png") center / cover no-repeat;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: auto;
+  width: 200%;
+  height: 100%;
   z-index: 0;
+}
+.card--mobtools .card__bg img {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 100% 100%;
+  display: block;
 }
 .card--mobtools .card__bg::after {
   content: '';
@@ -1851,4 +1900,22 @@ body {
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+
+/* Utilities cards: force bg pinned to bottom-right — never clip right, only left */
+#utilities .card--lunarverse .card__bg,
+#utilities .card--gotm .card__bg,
+#utilities .card--mobtools .card__bg {
+  left: auto !important;
+  top: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 200% !important;
+  height: 100% !important;
+}
+#utilities .card--lunarverse .card__bg img,
+#utilities .card--gotm .card__bg img,
+#utilities .card--mobtools .card__bg img {
+  object-position: 100% 100% !important;
+  object-fit: cover !important;
 }

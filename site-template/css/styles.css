@@ -1273,11 +1273,25 @@ body {
 .card--lunarverse:hover {
   opacity: 0.95;
 }
+/* Pin bg to card bottom-right: wrapper 2x width, right-aligned; card overflow clips left only */
 .card--lunarverse .card__bg {
   position: absolute;
-  inset: 0;
-  background: url("../assets/lunarverse-bg.png") center / cover no-repeat;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: auto;
+  width: 200%;
+  height: 100%;
   z-index: 0;
+}
+.card--lunarverse .card__bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("../assets/lunarverse-bg.png");
+  background-size: cover;
+  background-position: 100% 100%;
+  background-repeat: no-repeat;
 }
 .card--lunarverse .card__bg::after {
   content: '';
@@ -1321,9 +1335,22 @@ body {
 }
 .card--gotm .card__bg {
   position: absolute;
-  inset: 0;
-  background: url("../assets/gotm-labz-bg.png") center / cover no-repeat;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: auto;
+  width: 200%;
+  height: 100%;
   z-index: 0;
+}
+.card--gotm .card__bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("../assets/gotm-labz-bg.png");
+  background-size: cover;
+  background-position: 100% 100%;
+  background-repeat: no-repeat;
 }
 .card--gotm .card__bg::after {
   content: '';
@@ -1383,9 +1410,22 @@ body {
 }
 .card--mobtools .card__bg {
   position: absolute;
-  inset: 0;
-  background: url("../assets/mobtools-bg.png") center / cover no-repeat;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: auto;
+  width: 200%;
+  height: 100%;
   z-index: 0;
+}
+.card--mobtools .card__bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("../assets/mobtools-bg.png");
+  background-size: cover;
+  background-position: 100% 100%;
+  background-repeat: no-repeat;
 }
 .card--mobtools .card__bg::after {
   content: '';
