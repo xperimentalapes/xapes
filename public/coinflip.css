@@ -496,3 +496,86 @@
     opacity: 0.5;
     cursor: not-allowed;
 }
+
+/* Transaction confirmation modal */
+.tx-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    visibility: hidden;
+    opacity: 0;
+    transition: visibility 0.2s, opacity 0.2s;
+}
+.tx-modal.is-open {
+    visibility: visible;
+    opacity: 1;
+}
+.tx-modal-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+}
+.tx-modal-box {
+    position: relative;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 24px 28px;
+    max-width: 400px;
+    width: 100%;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    text-align: center;
+}
+.tx-modal-title {
+    font-size: clamp(18px, 4vw, 22px);
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+.tx-modal-message {
+    font-size: clamp(15px, 2.5vw, 17px);
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.5;
+}
+.tx-modal-link {
+    display: inline-block;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--primary-light);
+    text-decoration: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--primary-color);
+    transition: background 0.2s, color 0.2s;
+}
+.tx-modal-link:hover {
+    background: rgba(139, 92, 246, 0.2);
+    color: var(--text-primary);
+}
+.tx-modal-close {
+    padding: 10px 24px;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    background: var(--border-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+}
+.tx-modal-close:hover {
+    background: var(--text-muted);
+    border-color: var(--text-muted);
+}

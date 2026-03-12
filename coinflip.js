@@ -7,6 +7,7 @@ const WIN_MULTIPLIER = 1.9;
 const MAX_COST_PER_FLIP = 1500;
 const MAX_FLIPS_PER_PURCHASE = 500;
 const FLIP_ANIMATION_MS = 1200;
+const SOLSCAN_TX_URL = 'https://solscan.io/tx/';
 
 let wallet = null;
 let connection = null;
@@ -23,6 +24,33 @@ let isCollecting = false;
 function formatXma(n) {
     if (n == null || isNaN(n)) return '0 XMA';
     return (Number(n).toFixed(2)) + ' XMA';
+}
+
+function showTxModal(title, message, signature) {
+    const modal = document.getElementById('tx-modal');
+    const titleEl = document.getElementById('tx-modal-title');
+    const messageEl = document.getElementById('tx-modal-message');
+    const linkEl = document.getElementById('tx-modal-link');
+    if (!modal || !titleEl || !messageEl || !linkEl) return;
+    titleEl.textContent = title;
+    messageEl.textContent = message;
+    if (signature) {
+        linkEl.href = SOLSCAN_TX_URL + signature;
+        linkEl.style.display = '';
+    } else {
+        linkEl.href = '#';
+        linkEl.style.display = 'none';
+    }
+    modal.classList.add('is-open');
+    modal.setAttribute('aria-hidden', 'false');
+    const close = () => {
+        modal.classList.remove('is-open');
+        modal.setAttribute('aria-hidden', 'true');
+    };
+    const closeBtn = document.getElementById('tx-modal-close');
+    const overlay = modal.querySelector('.tx-modal-overlay');
+    if (closeBtn) closeBtn.onclick = close;
+    if (overlay) overlay.onclick = close;
 }
 
 function updateDisplay() {
@@ -51,9 +79,10 @@ function updateButtonStates() {
     const num = parseInt(numInput?.value || 0, 10);
     const totalCost = cost * num;
     const hasBalance = xmaBalance >= totalCost && totalCost > 0 && num > 0;
+    const canBuy = hasBalance && flipsRemaining <= 0 && totalWon <= 0;
 
     if (purchaseBtn) {
-        purchaseBtn.disabled = !wallet || isFlipping || isCollecting || !hasBalance || cost > MAX_COST_PER_FLIP || num > MAX_FLIPS_PER_PURCHASE;
+        purchaseBtn.disabled = !wallet || isFlipping || isCollecting || !canBuy;
     }
     if (flipBtn) {
         flipBtn.disabled = !wallet || flipsRemaining <= 0 || selectedPrediction === null || isFlipping || isCollecting;
@@ -268,7 +297,7 @@ async function purchaseFlips() {
             costPerFlip = cost;
             updateDisplay();
             updateButtonStates();
-            alert(`Purchased ${num} flip(s) for ${totalCost} XMA.`);
+            showTxModal('Purchase complete', `Purchased ${num} flip(s) for ${totalCost} XMA.`, sig);
         }
         await updateBalance();
     } catch (e) {
@@ -365,7 +394,7 @@ async function withdrawWinnings() {
         updateDisplay();
         updateButtonStates();
         await updateBalance();
-        alert('Collected ' + (actualAmount || totalWon).toFixed(2) + ' XMA! Check your wallet.');
+        showTxModal('Collect complete', 'Collected ' + (actualAmount || 0).toFixed(2) + ' XMA. Check your wallet.', signature);
     } catch (e) {
         const msg = e.message || String(e);
         if (!msg.includes('rejected')) alert(msg || 'Collect failed');
