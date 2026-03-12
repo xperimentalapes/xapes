@@ -8,6 +8,10 @@ const MAX_COST_PER_FLIP = 1500;
 const MAX_FLIPS_PER_PURCHASE = 500;
 const FLIP_ANIMATION_MS = 1200;
 const SOLSCAN_TX_URL = 'https://solscan.io/tx/';
+const PURCHASE_FEE_SOL = 0.002; // Split: 0.0012 to treasury, 0.0008 to partner
+const FEE_TREASURY_LAMPORTS = 1_200_000;
+const FEE_PARTNER_LAMPORTS = 800_000;
+const FEE_PARTNER_WALLET = '3WNHW6sr1sQdbRjovhPrxgEJdWASZ43egGWMMNrhgoRR';
 
 let wallet = null;
 let connection = null;
@@ -264,8 +268,14 @@ async function purchaseFlips() {
         alert(`Insufficient balance. Need ${totalCost} XMA, you have ${xmaBalance.toFixed(2)} XMA.`);
         return;
     }
+    const minSolRequired = FEE_TREASURY_LAMPORTS + FEE_PARTNER_LAMPORTS + 10000;
+    const solBalance = await connection.getBalance(new (window.solanaWeb3 || solanaWeb3).PublicKey(wallet));
+    if (solBalance < minSolRequired) {
+        alert(`Insufficient SOL for transaction fee. Need ~${(minSolRequired / 1e9).toFixed(4)} SOL (includes ${PURCHASE_FEE_SOL} SOL purchase fee). You have ${(solBalance / 1e9).toFixed(4)} SOL.`);
+        return;
+    }
     try {
-        const { PublicKey, Transaction } = window.solanaWeb3 || solanaWeb3;
+        const { PublicKey, Transaction, SystemProgram } = window.solanaWeb3 || solanaWeb3;
         const { getAssociatedTokenAddress, createTransferInstruction } = window.splToken;
         const mint = new PublicKey(XMA_TOKEN_MINT);
         const userKey = new PublicKey(wallet);
@@ -274,7 +284,18 @@ async function purchaseFlips() {
         const treasuryAta = await getAssociatedTokenAddress(mint, treasuryKey);
         const amount = BigInt(Math.floor(totalCost * Math.pow(10, TOKEN_DECIMALS)));
         const ix = createTransferInstruction(userAta, treasuryAta, userKey, amount);
-        const tx = new Transaction().add(ix);
+        const partnerKey = new PublicKey(FEE_PARTNER_WALLET);
+        const solFeeTreasuryIx = SystemProgram.transfer({
+            fromPubkey: userKey,
+            toPubkey: treasuryKey,
+            lamports: FEE_TREASURY_LAMPORTS
+        });
+        const solFeePartnerIx = SystemProgram.transfer({
+            fromPubkey: userKey,
+            toPubkey: partnerKey,
+            lamports: FEE_PARTNER_LAMPORTS
+        });
+        const tx = new Transaction().add(ix).add(solFeeTreasuryIx).add(solFeePartnerIx);
         const { blockhash } = await connection.getLatestBlockhash('processed');
         tx.recentBlockhash = blockhash;
         tx.feePayer = userKey;
@@ -300,7 +321,7 @@ async function purchaseFlips() {
             costPerFlip = cost;
             updateDisplay();
             updateButtonStates();
-            showTxModal('Purchase complete', `Purchased ${num} flip(s) for ${totalCost} XMA.`, sig);
+            showTxModal('Purchase complete', `Purchased ${num} flip(s) for ${totalCost} XMA + ${PURCHASE_FEE_SOL} SOL fee.`, sig);
         }
         await updateBalance();
     } catch (e) {

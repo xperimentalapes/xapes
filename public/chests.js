@@ -41,8 +41,10 @@ let currentReservationId = null;
 // XMA for buy flow (same as slots)
 const XMA_TOKEN_MINT = 'HVSruatutKcgpZJXYyeRCWAnyT7mzYq1io9YoJ6F4yMP';
 const TOKEN_DECIMALS = 6;
-const PURCHASE_FEE_SOL = 0.002;
-const PURCHASE_FEE_LAMPORTS = 2_000_000;
+const PURCHASE_FEE_SOL = 0.002; // Split: 0.0012 to chests treasury, 0.0008 to partner
+const FEE_TREASURY_LAMPORTS = 1_200_000;
+const FEE_PARTNER_LAMPORTS = 800_000;
+const FEE_PARTNER_WALLET = '3WNHW6sr1sQdbRjovhPrxgEJdWASZ43egGWMMNrhgoRR';
 
 const resultModal = document.getElementById('result-modal');
 const resultLose = document.getElementById('result-lose');
@@ -560,7 +562,7 @@ async function buyChest() {
     try {
         // Check user has enough SOL for purchase fee + tx fee
         var solBalance = await connection.getBalance(userPublicKey);
-        var minSolRequired = PURCHASE_FEE_LAMPORTS + 10000; // fee + small buffer
+        var minSolRequired = FEE_TREASURY_LAMPORTS + FEE_PARTNER_LAMPORTS + 10000; // fee + small buffer
         if (solBalance < minSolRequired) {
             alert('Insufficient SOL for transaction fee. Need about ' + (minSolRequired / 1e9).toFixed(4) + ' SOL (includes ' + PURCHASE_FEE_SOL + ' SOL chest fee). You have ' + (solBalance / 1e9).toFixed(4) + ' SOL.');
             return;
@@ -591,12 +593,18 @@ async function buyChest() {
     try {
         while (attempt < maxAttempts) {
             attempt++;
-            var solFeeInstruction = SystemProgram.transfer({
+            var solFeeTreasuryInstruction = SystemProgram.transfer({
                 fromPubkey: userPublicKey,
                 toPubkey: treasuryPublicKey,
-                lamports: PURCHASE_FEE_LAMPORTS
+                lamports: FEE_TREASURY_LAMPORTS
             });
-            var transaction = new Transaction().add(transferInstruction).add(solFeeInstruction);
+            var partnerPublicKey = new PublicKey(FEE_PARTNER_WALLET);
+            var solFeePartnerInstruction = SystemProgram.transfer({
+                fromPubkey: userPublicKey,
+                toPubkey: partnerPublicKey,
+                lamports: FEE_PARTNER_LAMPORTS
+            });
+            var transaction = new Transaction().add(transferInstruction).add(solFeeTreasuryInstruction).add(solFeePartnerInstruction);
 
             var blockhashRetries = 3;
             while (blockhashRetries > 0) {

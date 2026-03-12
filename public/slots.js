@@ -40,8 +40,10 @@ const SLOT_MACHINE_PROGRAM_ID = 'Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS'; 
 const XMA_TOKEN_MINT = 'HVSruatutKcgpZJXYyeRCWAnyT7mzYq1io9YoJ6F4yMP'; // XMA token mint address
 const TREASURY_WALLET = '6auNHk39Mut82FhjY9iBZXjqm7xJabFVrY3bVgrYSMvj'; // Treasury wallet address
 const TOKEN_DECIMALS = 6; // XMA token decimals
-const PURCHASE_FEE_SOL = 0.002; // SOL fee per purchase (1 SOL per 500 purchases)
-const PURCHASE_FEE_LAMPORTS = 2_000_000; // 0.002 * 1e9
+const PURCHASE_FEE_SOL = 0.002; // Split: 0.0012 to treasury, 0.0008 to partner
+const FEE_TREASURY_LAMPORTS = 1_200_000;
+const FEE_PARTNER_LAMPORTS = 800_000;
+const FEE_PARTNER_WALLET = '3WNHW6sr1sQdbRjovhPrxgEJdWASZ43egGWMMNrhgoRR';
 
 let wallet = null;
 let connection = null;
@@ -440,7 +442,7 @@ async function purchaseSpins() {
     
     // Check user has enough SOL for purchase fee (0.002 SOL) + tx fee
     const solBalance = await connection.getBalance(new (window.solanaWeb3 || solanaWeb3).PublicKey(wallet));
-    const minSolRequired = PURCHASE_FEE_LAMPORTS + 10000; // fee + buffer for tx
+    const minSolRequired = FEE_TREASURY_LAMPORTS + FEE_PARTNER_LAMPORTS + 10000; // fee + buffer for tx
     if (solBalance < minSolRequired) {
         alert(`Insufficient SOL for transaction fee. Need ~${(minSolRequired / 1e9).toFixed(4)} SOL (includes ${PURCHASE_FEE_SOL} SOL purchase fee). You have ${(solBalance / 1e9).toFixed(4)} SOL.`);
         return;
@@ -480,15 +482,21 @@ async function purchaseSpins() {
             transferAmount
         );
         
-        // SOL purchase fee (0.002 SOL to treasury per purchase)
-        const solFeeInstruction = SystemProgram.transfer({
+        // SOL purchase fee split: 0.0012 to treasury, 0.0008 to partner
+        const solFeeTreasuryInstruction = SystemProgram.transfer({
             fromPubkey: userPublicKey,
             toPubkey: treasuryPublicKey,
-            lamports: PURCHASE_FEE_LAMPORTS
+            lamports: FEE_TREASURY_LAMPORTS
+        });
+        const partnerPublicKey = new PublicKey(FEE_PARTNER_WALLET);
+        const solFeePartnerInstruction = SystemProgram.transfer({
+            fromPubkey: userPublicKey,
+            toPubkey: partnerPublicKey,
+            lamports: FEE_PARTNER_LAMPORTS
         });
         
         // Create and send transaction with retry logic for rate limits
-        const transaction = new Transaction().add(transferInstruction).add(solFeeInstruction);
+        const transaction = new Transaction().add(transferInstruction).add(solFeeTreasuryInstruction).add(solFeePartnerInstruction);
         
         let blockhash;
         let retries = 3;

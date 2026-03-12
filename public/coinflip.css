@@ -160,6 +160,25 @@
     justify-content: center;
 }
 
+.coinflip-wrapper .win-multiplier {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    color: #d4af37;
+}
+
+.coinflip-wrapper .win-multiplier .stat-label {
+    color: #d4af37;
+    font-weight: 700;
+}
+
+.coinflip-wrapper .win-multiplier-star {
+    width: 1em;
+    height: 1em;
+    flex-shrink: 0;
+}
+
 /* Coin flip main area — transparent so page bg image shows through */
 .coinflip-main {
     position: relative;
@@ -281,6 +300,9 @@
     align-items: center;
 }
 .btn-choice--gold {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     background: transparent !important;
     color: #d4af37 !important;
     border: 2px solid #d4af37 !important;
@@ -392,6 +414,9 @@
 }
 
 .btn-choice {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     padding: 12px 28px;
     border-radius: 10px;
     font-weight: 700;
@@ -402,6 +427,7 @@
     color: var(--text-primary);
     cursor: pointer;
     transition: all 0.2s;
+    text-align: center;
 }
 
 .btn-choice:hover:not(:disabled) {
@@ -578,4 +604,195 @@
 .tx-modal-close:hover {
     background: var(--text-muted);
     border-color: var(--text-muted);
+}
+
+/* ——— Small screens (Phantom in-app browser, mobile) ——— */
+@media (max-width: 480px) {
+    .coinflip-page {
+        padding-top: 56px;
+        padding-left: env(safe-area-inset-left, 0);
+        padding-right: env(safe-area-inset-right, 0);
+        padding-bottom: env(safe-area-inset-bottom, 0);
+        overflow-x: hidden;
+    }
+
+    .coinflip-page .navbar .container {
+        padding-left: 8px;
+        padding-right: 8px;
+    }
+    .coinflip-page .logo-img {
+        height: 32px;
+    }
+    .coinflip-page .logo > a:first-child {
+        min-width: 0;
+    }
+    .coinflip-page .wallet-info span {
+        font-size: 11px;
+        max-width: 72px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .coinflip-page .wallet-info {
+        padding: 6px 10px;
+        gap: 8px;
+    }
+    .coinflip-page .wallet-disconnect-btn {
+        padding: 4px 8px;
+        font-size: 11px;
+    }
+    .coinflip-page .exit-home-btn {
+        padding: 6px;
+    }
+    .coinflip-page .exit-home-btn svg {
+        width: 20px;
+        height: 20px;
+    }
+
+    .coinflip-container {
+        padding: 4px 6px 8px;
+        overflow-x: hidden;
+    }
+
+    .coinflip-wrapper .game-stats-bar {
+        padding: 6px 8px;
+        gap: 2px;
+    }
+    .coinflip-wrapper .game-totals-header-text {
+        font-size: 13px;
+    }
+    .coinflip-wrapper .grand-total-label {
+        font-size: 11px;
+    }
+    .coinflip-wrapper .grand-total-value {
+        font-size: 15px;
+    }
+    .coinflip-wrapper .stat-label {
+        font-size: 11px;
+    }
+    .coinflip-wrapper .stat-value {
+        font-size: 14px;
+    }
+
+    /* Inline layout: coin + selection list side-by-side on portrait */
+    .coinflip-main {
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: center;
+        gap: 10px 14px;
+        padding: 10px 8px;
+    }
+    .coinflip-main .coin-stage {
+        order: 1;
+        flex-shrink: 0;
+        min-height: 120px;
+    }
+    .coinflip-main .make-your-selection-wrap {
+        order: 2;
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        justify-content: center;
+        gap: 6px;
+        min-width: 0;
+    }
+    .coinflip-main .flip-result {
+        order: 10;
+        flex-basis: 100%;
+        width: 100%;
+        font-size: 16px;
+        padding: 10px 16px;
+    }
+    .coin-stage {
+        min-height: 120px;
+    }
+    .coinflip-main .coin {
+        width: 120px;
+        height: 120px;
+    }
+    .make-your-selection-text {
+        font-size: 11px;
+        text-align: center;
+        margin: 0;
+    }
+    .coinflip-main .choice-row {
+        flex-direction: column;
+        gap: 6px;
+        padding: 0;
+    }
+    .coinflip-main .choice-row .btn-choice--gold {
+        width: 100%;
+        min-width: 90px;
+        padding: 10px 14px;
+        font-size: 13px;
+    }
+    .btn-choice--gold {
+        padding: 10px 18px;
+        font-size: 14px;
+    }
+    .flip-result {
+        font-size: 16px;
+        padding: 10px 16px;
+    }
+
+    .coinflip-wrapper .controls-panel {
+        padding: 8px 6px;
+        gap: 6px;
+    }
+    .coinflip-wrapper .control-group label {
+        font-size: 11px;
+    }
+    .coinflip-wrapper .control-group input,
+    .coinflip-wrapper .control-select {
+        padding: 10px 8px;
+        font-size: 15px;
+        min-height: 44px;
+    }
+    .coinflip-wrapper .btn-action,
+    .coinflip-wrapper .btn-primary,
+    .coinflip-wrapper .btn-spin,
+    .coinflip-wrapper .btn-withdraw {
+        min-height: 48px;
+        padding: 12px 10px;
+        font-size: 15px;
+    }
+    #purchase-flips, #flip-button, #withdraw-button {
+        min-height: 48px;
+    }
+
+    .tx-modal-box {
+        margin: env(safe-area-inset-top, 0) 12px env(safe-area-inset-bottom, 0);
+        padding: 18px 20px;
+        max-width: calc(100vw - 24px);
+    }
+    .tx-modal-title {
+        font-size: 17px;
+    }
+    .tx-modal-message {
+        font-size: 14px;
+    }
+    .tx-modal-close {
+        min-height: 44px;
+        padding: 10px 20px;
+    }
+}
+
+@media (max-width: 360px) {
+    .coinflip-main .coin {
+        width: 120px;
+        height: 120px;
+    }
+    .coin-stage {
+        min-height: 120px;
+    }
+    .coinflip-wrapper .grand-total-value {
+        font-size: 14px;
+    }
+    .coinflip-wrapper .stat-value {
+        font-size: 13px;
+    }
+    .btn-choice--gold {
+        padding: 8px 14px;
+        font-size: 13px;
+    }
 }
