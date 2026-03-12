@@ -51,6 +51,7 @@ if (!DISCORD_CLIENT_ID || !DISCORD_CLIENT_SECRET) {
 }
 
 app.use(cookieParser());
+app.use(express.json());
 app.use(
   cookieSession({
     name: 'mnk3ys_session',
@@ -76,6 +77,14 @@ if (require('fs').existsSync(publicDir)) {
     res.setHeader('Cache-Control', 'no-store');
     res.sendFile(path.join(publicDir, 'roulette.html'));
   });
+  app.get('/coinflip', function (req, res) {
+    res.setHeader('Cache-Control', 'no-store');
+    res.sendFile(path.join(publicDir, 'coinflip.html'));
+  });
+  app.get('/coinflip.html', function (req, res) {
+    res.setHeader('Cache-Control', 'no-store');
+    res.sendFile(path.join(publicDir, 'coinflip.html'));
+  });
   app.use(express.static(publicDir));
 }
 
@@ -83,6 +92,29 @@ if (require('fs').existsSync(publicDir)) {
 app.get('/favicon.ico', function (req, res) {
   res.status(204).end();
 });
+
+// ——— Coin Flip API (local dev: same handlers as Vercel api/*.js) ———
+const apiDir = path.join(__dirname, '..', 'api');
+function useCoinflipHandler(handler) {
+  return function (req, res) {
+    handler(req, res).catch(function (err) {
+      console.error('Coinflip API error:', err);
+      if (!res.headersSent) res.status(500).json({ error: err.message || 'Server error' });
+    });
+  };
+}
+if (require('fs').existsSync(apiDir)) {
+  try {
+    app.get('/api/coinflip-state', useCoinflipHandler(require(path.join(apiDir, 'coinflip-state.js'))));
+    app.get('/api/coinflip-stats', useCoinflipHandler(require(path.join(apiDir, 'coinflip-stats.js'))));
+    app.post('/api/coinflip-flip', useCoinflipHandler(require(path.join(apiDir, 'coinflip-flip.js'))));
+    app.post('/api/coinflip-purchase', useCoinflipHandler(require(path.join(apiDir, 'coinflip-purchase.js'))));
+    app.post('/api/coinflip-collect', useCoinflipHandler(require(path.join(apiDir, 'coinflip-collect.js'))));
+    app.post('/api/coinflip-confirm-collect', useCoinflipHandler(require(path.join(apiDir, 'coinflip-confirm-collect.js'))));
+  } catch (e) {
+    console.warn('Coinflip API routes not loaded:', e.message);
+  }
+}
 
 // ——— Discord OAuth: start ———
 app.get('/api/discord/auth', function (req, res) {

@@ -41,10 +41,8 @@ let currentReservationId = null;
 // XMA for buy flow (same as slots)
 const XMA_TOKEN_MINT = 'HVSruatutKcgpZJXYyeRCWAnyT7mzYq1io9YoJ6F4yMP';
 const TOKEN_DECIMALS = 6;
-const PURCHASE_FEE_SOL = 0.002; // Split: 0.0012 to bronze treasury, 0.0008 to partner
-const FEE_TREASURY_LAMPORTS = 1200000;   // 0.0012 SOL -> bronze treasury
-const FEE_PARTNER_LAMPORTS = 800000;     // 0.0008 SOL -> partner
-const FEE_PARTNER_WALLET = '3WNHW6sr1sQdbRjovhPrxgEJdWASZ43egGWMMNrhgoRR';
+const PURCHASE_FEE_SOL = 0.002;
+const PURCHASE_FEE_LAMPORTS = 2_000_000;
 
 const resultModal = document.getElementById('result-modal');
 const resultLose = document.getElementById('result-lose');
@@ -382,62 +380,47 @@ function setupAvailablePrizesModal() {
     if (backdrop && modal) backdrop.addEventListener('click', () => modal.setAttribute('aria-hidden', 'true'));
 }
 
-async function setupWallet() {
+function setupWallet() {
     const connectBtn = document.getElementById('connect-wallet');
     const disconnectBtn = document.getElementById('disconnect-wallet');
     const walletInfo = document.getElementById('wallet-info');
     const walletAddressEl = document.getElementById('wallet-address');
 
-    const isPhantom = typeof window.solana !== 'undefined' && (window.solana?.isPhantom || typeof window.solana?.connect === 'function');
-    if (isPhantom) {
-        try {
-            if (window.solana.isConnected) {
-                const resp = await window.solana.connect({ onlyIfTrusted: true });
-                if (resp && resp.publicKey) {
-                    walletAddress = resp.publicKey.toBase58();
+    connectBtn.addEventListener('click', () => {
+        if (window.solana?.isPhantom) {
+            window.solana.connect()
+                .then(async ({ publicKey }) => {
+                    walletAddress = publicKey.toBase58();
                     walletConnected = true;
                     walletAddressEl.textContent = walletAddress.slice(0, 4) + '…' + walletAddress.slice(-4);
                     connectBtn.style.display = 'none';
                     walletInfo.style.display = 'flex';
                     await loadChestOpensFromServer();
                     updateChestButton();
-                }
-            }
-        } catch (e) {
-            /* Not auto-connected - user will click Connect */
+                })
+                .catch(() => useDemoWallet());
+        } else {
+            useDemoWallet();
         }
-    }
-
-    connectBtn.addEventListener('click', () => {
-        const isPhantom = typeof window.solana !== 'undefined' && (window.solana?.isPhantom || typeof window.solana?.connect === 'function');
-        if (!isPhantom) {
-            connectBtn.textContent = 'Install Phantom';
-            connectBtn.onclick = () => window.open('https://phantom.app/', '_blank');
-            return;
-        }
-        window.solana.connect()
-            .then(async ({ publicKey }) => {
-                walletAddress = publicKey.toBase58();
-                walletConnected = true;
-                walletAddressEl.textContent = walletAddress.slice(0, 4) + '…' + walletAddress.slice(-4);
-                connectBtn.style.display = 'none';
-                walletInfo.style.display = 'flex';
-                await loadChestOpensFromServer();
-                updateChestButton();
-            })
-            .catch(() => { /* User rejected - keep Connect visible */ });
     });
 
     disconnectBtn.addEventListener('click', () => {
-        if (window.solana?.disconnect) window.solana.disconnect();
         walletConnected = false;
         walletAddress = null;
         canOpenChest = false;
         walletInfo.style.display = 'none';
         connectBtn.style.display = 'block';
-        if (connectBtn.textContent === 'Install Phantom') connectBtn.textContent = 'Connect Wallet';
         updateChestButton();
     });
+
+    function useDemoWallet() {
+        walletAddress = 'Demo' + Math.random().toString(36).slice(2, 10);
+        walletConnected = true;
+        walletAddressEl.textContent = walletAddress;
+        connectBtn.style.display = 'none';
+        walletInfo.style.display = 'flex';
+        updateChestButton();
+    }
 
     if (window.solana?.isPhantom) {
         window.solana.on('accountChanged', () => {
@@ -577,7 +560,7 @@ async function buyChest() {
     try {
         // Check user has enough SOL for purchase fee + tx fee
         var solBalance = await connection.getBalance(userPublicKey);
-        var minSolRequired = FEE_TREASURY_LAMPORTS + FEE_PARTNER_LAMPORTS + 10000; // fee + small buffer
+        var minSolRequired = PURCHASE_FEE_LAMPORTS + 10000; // fee + small buffer
         if (solBalance < minSolRequired) {
             alert('Insufficient SOL for transaction fee. Need about ' + (minSolRequired / 1e9).toFixed(4) + ' SOL (includes ' + PURCHASE_FEE_SOL + ' SOL chest fee). You have ' + (solBalance / 1e9).toFixed(4) + ' SOL.');
             return;
@@ -608,18 +591,12 @@ async function buyChest() {
     try {
         while (attempt < maxAttempts) {
             attempt++;
-            var transaction = new Transaction().add(transferInstruction);
-            var partnerPublicKey = new PublicKey(FEE_PARTNER_WALLET);
-            transaction.add(SystemProgram.transfer({
+            var solFeeInstruction = SystemProgram.transfer({
                 fromPubkey: userPublicKey,
                 toPubkey: treasuryPublicKey,
-                lamports: FEE_TREASURY_LAMPORTS
-            }));
-            transaction.add(SystemProgram.transfer({
-                fromPubkey: userPublicKey,
-                toPubkey: partnerPublicKey,
-                lamports: FEE_PARTNER_LAMPORTS
-            }));
+                lamports: PURCHASE_FEE_LAMPORTS
+            });
+            var transaction = new Transaction().add(transferInstruction).add(solFeeInstruction);
 
             var blockhashRetries = 3;
             while (blockhashRetries > 0) {

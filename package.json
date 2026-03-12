@@ -4,7 +4,7 @@
   "description": "Xperimental Mutant Apes website",
   "scripts": {
     "build": "node scripts/inject-env.js",
-    "start": "cd site-template && node server.js"
+    "start": "NODE_PATH=. node site-template/server.js"
   },
   "dependencies": {
     "@solana/web3.js": "^1.87.6",

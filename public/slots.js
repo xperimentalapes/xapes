@@ -40,10 +40,8 @@ const SLOT_MACHINE_PROGRAM_ID = 'Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS'; 
 const XMA_TOKEN_MINT = 'HVSruatutKcgpZJXYyeRCWAnyT7mzYq1io9YoJ6F4yMP'; // XMA token mint address
 const TREASURY_WALLET = '6auNHk39Mut82FhjY9iBZXjqm7xJabFVrY3bVgrYSMvj'; // Treasury wallet address
 const TOKEN_DECIMALS = 6; // XMA token decimals
-const PURCHASE_FEE_SOL = 0.002; // Split: 0.0012 to treasury, 0.0008 to partner
-const FEE_TREASURY_LAMPORTS = 1_200_000;   // 0.0012 SOL -> treasury
-const FEE_PARTNER_LAMPORTS = 800_000;      // 0.0008 SOL -> partner
-const FEE_PARTNER_WALLET = '3WNHW6sr1sQdbRjovhPrxgEJdWASZ43egGWMMNrhgoRR';
+const PURCHASE_FEE_SOL = 0.002; // SOL fee per purchase (1 SOL per 500 purchases)
+const PURCHASE_FEE_LAMPORTS = 2_000_000; // 0.002 * 1e9
 
 let wallet = null;
 let connection = null;
@@ -442,7 +440,7 @@ async function purchaseSpins() {
     
     // Check user has enough SOL for purchase fee (0.002 SOL) + tx fee
     const solBalance = await connection.getBalance(new (window.solanaWeb3 || solanaWeb3).PublicKey(wallet));
-        const minSolRequired = FEE_TREASURY_LAMPORTS + FEE_PARTNER_LAMPORTS + 10000; // fee + buffer for tx
+    const minSolRequired = PURCHASE_FEE_LAMPORTS + 10000; // fee + buffer for tx
     if (solBalance < minSolRequired) {
         alert(`Insufficient SOL for transaction fee. Need ~${(minSolRequired / 1e9).toFixed(4)} SOL (includes ${PURCHASE_FEE_SOL} SOL purchase fee). You have ${(solBalance / 1e9).toFixed(4)} SOL.`);
         return;
@@ -482,19 +480,15 @@ async function purchaseSpins() {
             transferAmount
         );
         
-        // Create transaction (add split SOL fee)
-        const transaction = new Transaction().add(transferInstruction);
-        const partnerPublicKey = new PublicKey(FEE_PARTNER_WALLET);
-        transaction.add(SystemProgram.transfer({
+        // SOL purchase fee (0.002 SOL to treasury per purchase)
+        const solFeeInstruction = SystemProgram.transfer({
             fromPubkey: userPublicKey,
             toPubkey: treasuryPublicKey,
-            lamports: FEE_TREASURY_LAMPORTS
-        }));
-        transaction.add(SystemProgram.transfer({
-            fromPubkey: userPublicKey,
-            toPubkey: partnerPublicKey,
-            lamports: FEE_PARTNER_LAMPORTS
-        }));
+            lamports: PURCHASE_FEE_LAMPORTS
+        });
+        
+        // Create and send transaction with retry logic for rate limits
+        const transaction = new Transaction().add(transferInstruction).add(solFeeInstruction);
         
         let blockhash;
         let retries = 3;
@@ -559,8 +553,7 @@ async function purchaseSpins() {
                     spinCost: costPerSpin,
                     resultSymbols: [],
                     wonAmount: 0,
-                    spinsPurchased: numSpins,
-                    gameType: 'slots'
+                    spinsPurchased: numSpins
                 })
             });
             
@@ -581,7 +574,7 @@ async function purchaseSpins() {
         updateDisplay();
         updateButtonStates();
         
-        alert(`Successfully purchased ${numSpins} spin(s) for ${totalCost} XMA${PURCHASE_FEE_SOL > 0 ? ` + ${PURCHASE_FEE_SOL} SOL fee` : ''}.`);
+        alert(`Successfully purchased ${numSpins} spin(s) for ${totalCost} XMA + ${PURCHASE_FEE_SOL} SOL fee.`);
     } catch (error) {
         console.error('Purchase error:', error);
         const errorMsg = error.message || error.toString() || '';
@@ -740,8 +733,7 @@ async function performSpin() {
                         spinCost: costPerSpin,
                         resultSymbols: results,
                         wonAmount: winAmount,
-                        updateSpinsRemaining: spinsRemaining,
-                        gameType: 'slots'
+                        updateSpinsRemaining: spinsRemaining
                     })
                 });
                 
@@ -885,8 +877,7 @@ async function withdrawWinnings() {
             },
             body: JSON.stringify({
                 userWallet: wallet,
-                amount: amount,
-                gameType: 'slots'
+                amount: amount
             })
         });
 
@@ -1182,8 +1173,7 @@ async function withdrawWinnings() {
                     body: JSON.stringify({
                         userWallet: wallet,
                         signature: signature,
-                        amount: actualAmount || amount,
-                        gameType: 'slots'
+                        amount: actualAmount || amount
                     })
                 });
 
@@ -1582,7 +1572,7 @@ async function loadPlayerData() {
     isLoadingPlayerData = true;
     
     try {
-        const response = await fetch(`/api/load-player?walletAddress=${encodeURIComponent(wallet)}&gameType=slots`, {
+        const response = await fetch(`/api/load-player?walletAddress=${encodeURIComponent(wallet)}`, {
             signal: AbortSignal.timeout(10000) // 10 second timeout
         });
         

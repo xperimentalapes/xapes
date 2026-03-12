@@ -9,6 +9,8 @@
     "vercel-build": "node scripts/copy-static.js"
   },
   "dependencies": {
+    "@solana/web3.js": "^1.87.6",
+    "@supabase/supabase-js": "^2.39.0",
     "axios": "^1.6.0",
     "bs58": "^5.0.0",
     "cookie-parser": "^1.4.6",

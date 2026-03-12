@@ -10,5 +10,6 @@
   {"source":"/slots","destination":"/slots.html"},
   {"source":"/chests","destination":"/chests.html"},
   {"source":"/roulette","destination":"/roulette.html"},
+  {"source":"/coinflip","destination":"/coinflip.html"},
   {"source":"/casino","destination":"/casino.html"}
 ],"buildCommand":"npm run build","outputDirectory":"public","framework":null}

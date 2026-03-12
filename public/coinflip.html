@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="XMA Coin Flip - Heads or Tails">
+    <title>Coin Flip | XMA Royal Casino</title>
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="/coinflip.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
+    <!-- Helius RPC key injected at build from env (HELIUS_API_KEY) -->
+    <script>window.HELIUS_API_KEY = '34aeae5f-d678-444f-9900-da3bf94f63d6';</script>
+    <script type="module">
+        import('https://esm.sh/@solana/spl-token@0.3.9').then(splToken => {
+            window.splToken = splToken;
+            window.dispatchEvent(new Event('splTokenLoaded'));
+        }).catch(err => console.error('SPL token load failed:', err));
+    </script>
+</head>
+<body class="coinflip-page">
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-content">
+                <div class="logo" style="display: flex; align-items: center; gap: 16px;">
+                    <a href="/"><img src="/images/logo.png" alt="Xperimental Mutant Apes" class="logo-img"></a>
+                    <a href="/casino" class="exit-home-btn" title="Back to Casino">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M9 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H9M16 17L21 12M21 12L16 7M21 12H9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </a>
+                </div>
+                <div class="nav-links">
+                    <div id="wallet-button-container" class="wallet-button-container">
+                        <button id="connect-wallet" class="wallet-connect-btn">Connect Wallet</button>
+                        <div id="wallet-info" class="wallet-info" style="display: none;">
+                            <span id="wallet-address"></span>
+                            <button id="disconnect-wallet" class="wallet-disconnect-btn">Disconnect</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="coinflip-container">
+        <div class="coinflip-wrapper">
+            <!-- Stats bar (slots-style) -->
+            <div class="game-stats-bar">
+                <div class="game-totals-header">
+                    <span class="game-totals-header-text">GAME TOTALS</span>
+                </div>
+                <div class="grand-totals-row">
+                    <div class="grand-total-item">
+                        <span class="grand-total-label">FLIPS</span>
+                        <span id="grand-total-flips" class="grand-total-value">0</span>
+                    </div>
+                    <div class="grand-total-item">
+                        <span class="grand-total-label">WON</span>
+                        <span id="grand-total-won" class="grand-total-value">0 XMA</span>
+                    </div>
+                </div>
+                <div class="game-totals-divider"></div>
+                <div class="game-stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-label">Balance:</span>
+                        <span id="xma-balance" class="stat-value">0 XMA</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Total Won:</span>
+                        <span id="total-won" class="stat-value">0 XMA</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Flips Remaining:</span>
+                        <span id="flips-remaining" class="stat-value">0</span>
+                    </div>
+                    <div class="stat-item stat-item-buttons">
+                        <span class="stat-label">Win: 1.9x</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Coin area -->
+            <div class="coinflip-main">
+                <div class="coin-stage">
+                    <div id="coin" class="coin" aria-live="polite">
+                        <div class="coin-face coin-heads"><img src="/images/heads.png" alt="Heads"></div>
+                        <div class="coin-face coin-tails"><img src="/images/tails.png" alt="Tails"></div>
+                    </div>
+                </div>
+                <div id="flip-result" class="flip-result" style="display: none;"></div>
+            </div>
+
+            <!-- Controls -->
+            <div class="controls-panel">
+                <div class="inputs-row">
+                    <div class="control-group">
+                        <label for="cost-per-flip">Cost Per Flip (XMA):</label>
+                        <input type="number" id="cost-per-flip" min="0.1" max="1500" value="1" step="0.1" title="Max 1,500 XMA per flip">
+                    </div>
+                    <div class="control-group">
+                        <label for="number-of-flips">Number of Flips:</label>
+                        <input type="number" id="number-of-flips" min="1" max="500" value="1" step="1" title="Max 500 per purchase">
+                    </div>
+                </div>
+                <div class="choice-row">
+                    <button type="button" id="pick-heads" class="btn btn-choice" disabled>HEADS</button>
+                    <button type="button" id="pick-tails" class="btn btn-choice" disabled>TAILS</button>
+                </div>
+                <div class="button-group">
+                    <button id="purchase-flips" class="btn btn-primary" disabled>BUY</button>
+                    <button id="flip-button" class="btn btn-spin" disabled>FLIP</button>
+                    <button id="withdraw-button" class="btn btn-withdraw" disabled>COLLECT</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="coinflip.js"></script>
+</body>
+</html>

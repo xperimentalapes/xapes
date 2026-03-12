@@ -1,0 +1,440 @@
+/* Coin Flip page - slots-style layout */
+.coinflip-page {
+    height: 100vh;
+    height: 100svh;
+    height: 100dvh;
+    max-height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding-top: 72px;
+    padding-bottom: env(safe-area-inset-bottom, 0);
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100vw;
+}
+
+.coinflip-page .navbar {
+    z-index: 1000;
+    position: fixed;
+}
+
+.coinflip-container {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 4px 8px 4px;
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+    box-sizing: border-box;
+    background-image: linear-gradient(rgba(10, 10, 15, 0.72), rgba(10, 10, 15, 0.72)), url('/images/casino-bg2.jpg');
+    background-size: cover;
+    background-position: center top;
+}
+
+.coinflip-wrapper {
+    width: 100%;
+    max-width: 100vw;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    gap: 2px;
+    height: 100%;
+    min-height: 0;
+    flex: 1;
+    overflow: hidden;
+    padding: 0;
+    box-sizing: border-box;
+    margin: 0;
+}
+
+/* Stats bar - same as slots */
+.coinflip-wrapper .game-stats-bar {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    background: rgba(20, 20, 28, 0.75);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 8px 12px;
+    flex-shrink: 0;
+    width: 100%;
+    max-width: 100vw;
+    box-sizing: border-box;
+    min-height: 0;
+    overflow: hidden;
+    grid-row: 1;
+    margin: 0;
+}
+
+.coinflip-wrapper .game-totals-header-text {
+    font-size: clamp(14px, 3vw, 18px);
+    font-weight: 700;
+    color: var(--text-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.coinflip-wrapper .grand-totals-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+    width: 100%;
+    margin-bottom: 4px;
+}
+
+.coinflip-wrapper .grand-total-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    text-align: center;
+}
+
+.coinflip-wrapper .grand-total-label {
+    font-size: clamp(12px, 2vw, 14px);
+    color: var(--text-secondary);
+    text-transform: uppercase;
+}
+
+.coinflip-wrapper .grand-total-value {
+    font-size: clamp(16px, 3vw, 20px);
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.coinflip-wrapper .game-totals-divider {
+    width: 100%;
+    height: 1px;
+    background: var(--border-color);
+    margin-bottom: 4px;
+}
+
+.coinflip-wrapper .game-stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 2px;
+    width: 100%;
+    flex: 1;
+    min-height: 0;
+}
+
+.coinflip-wrapper .game-stats-grid > .stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 1px;
+    width: 100%;
+    padding: 1px;
+}
+
+.coinflip-wrapper .stat-label {
+    font-size: clamp(12px, 2vw, 14px);
+    color: var(--text-secondary);
+    text-transform: uppercase;
+}
+
+.coinflip-wrapper .stat-value {
+    font-size: clamp(16px, 3vw, 20px);
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.coinflip-wrapper .stat-item-buttons {
+    grid-row: 2;
+    grid-column: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Coin flip main area — transparent so page bg image shows through */
+.coinflip-main {
+    position: relative;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    padding: 20px;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    overflow: hidden;
+    grid-row: 2;
+}
+
+.coin-stage {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 180px;
+    perspective: 800px;
+    background: transparent;
+}
+
+.coin {
+    position: relative;
+    width: 180px;
+    height: 180px;
+    transform-style: preserve-3d;
+    transition: transform 0.1s linear;
+}
+
+.coin-face {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    backface-visibility: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.4);
+    background: transparent;
+}
+
+.coin-face img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+.coin-tails {
+    transform: rotateY(180deg);
+}
+
+/* Spinning animation */
+.coin.coin-spinning {
+    animation: coin-spin 1.2s ease-out forwards;
+    pointer-events: none;
+}
+
+@keyframes coin-spin {
+    0% {
+        transform: rotateY(0deg) rotateX(0deg);
+    }
+    20% {
+        transform: rotateY(360deg) rotateX(20deg);
+    }
+    40% {
+        transform: rotateY(720deg) rotateX(-10deg);
+    }
+    60% {
+        transform: rotateY(1080deg) rotateX(5deg);
+    }
+    80% {
+        transform: rotateY(1440deg) rotateX(-2deg);
+    }
+    100% {
+        transform: rotateY(1800deg) rotateX(0deg);
+    }
+}
+
+.coin.coin-result-heads {
+    transform: rotateY(0deg);
+}
+
+.coin.coin-result-tails {
+    transform: rotateY(180deg);
+}
+
+.flip-result {
+    font-size: clamp(18px, 4vw, 26px);
+    font-weight: 700;
+    text-align: center;
+    padding: 12px 20px;
+    border-radius: 8px;
+}
+
+.flip-result.win {
+    color: #22c55e;
+    background: rgba(34, 197, 94, 0.15);
+}
+
+.flip-result.lose {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.15);
+}
+
+/* Controls - slots style */
+.coinflip-wrapper .controls-panel {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 10px;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: auto auto auto;
+    gap: 4px;
+    flex-shrink: 0;
+    width: 100%;
+    max-width: 100vw;
+    box-sizing: border-box;
+    margin: 0;
+    overflow: hidden;
+    min-height: 0;
+    grid-row: 3;
+}
+
+.coinflip-wrapper .inputs-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+    grid-column: 1 / 4;
+    grid-row: 1;
+    width: 100%;
+}
+
+.coinflip-wrapper .control-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    flex: 1;
+    min-width: 0;
+    width: 100%;
+    padding: 2px;
+}
+
+.coinflip-wrapper .control-group label {
+    font-size: clamp(13px, 2vw, 16px);
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+}
+
+.coinflip-wrapper .control-group input {
+    padding: 10px 12px;
+    background: var(--bg-darker);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: clamp(16px, 3vw, 20px);
+    font-weight: 600;
+    width: 100%;
+    text-align: center;
+}
+
+.choice-row {
+    grid-column: 1 / 4;
+    grid-row: 2;
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    align-items: center;
+    padding: 8px 0;
+}
+
+.btn-choice {
+    padding: 12px 28px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: clamp(16px, 2.5vw, 20px);
+    text-transform: uppercase;
+    border: 2px solid var(--border-color);
+    background: var(--bg-darker);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-choice:hover:not(:disabled) {
+    border-color: var(--primary-color);
+    background: rgba(139, 92, 246, 0.2);
+}
+
+.btn-choice.selected {
+    border-color: var(--primary-color);
+    background: var(--primary-color);
+    color: #fff;
+}
+
+.btn-choice:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.coinflip-wrapper .button-group {
+    display: contents;
+}
+
+#purchase-flips {
+    grid-column: 1;
+    grid-row: 3;
+    width: 100%;
+    min-height: 52px;
+}
+
+#flip-button {
+    grid-column: 2;
+    grid-row: 3;
+    width: 100%;
+    min-height: 52px;
+}
+
+#withdraw-button {
+    grid-column: 3;
+    grid-row: 3;
+    width: 100%;
+    min-height: 52px;
+}
+
+.coinflip-wrapper .btn-primary,
+.coinflip-wrapper .btn-spin,
+.coinflip-wrapper .btn-withdraw {
+    padding: 14px 20px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: clamp(16px, 2.5vw, 20px);
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+}
+
+.coinflip-wrapper .btn-primary {
+    background: var(--primary-color);
+    color: #fff;
+}
+
+.coinflip-wrapper .btn-primary:hover:not(:disabled) {
+    background: var(--primary-dark);
+}
+
+.coinflip-wrapper .btn-spin {
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    color: #fff;
+}
+
+.coinflip-wrapper .btn-spin:hover:not(:disabled) {
+    filter: brightness(1.1);
+}
+
+.coinflip-wrapper .btn-withdraw {
+    background: var(--accent-color);
+    color: #fff;
+}
+
+.coinflip-wrapper .btn-withdraw:hover:not(:disabled) {
+    filter: brightness(1.1);
+}
+
+.coinflip-wrapper .btn-primary:disabled,
+.coinflip-wrapper .btn-spin:disabled,
+.coinflip-wrapper .btn-withdraw:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
