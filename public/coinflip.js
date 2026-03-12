@@ -51,13 +51,16 @@ function updateButtonStates() {
     const num = parseInt(numInput?.value || 0, 10);
     const totalCost = cost * num;
     const hasBalance = xmaBalance >= totalCost && totalCost > 0 && num > 0;
+    const canBuy = hasBalance && flipsRemaining <= 0 && totalWon <= 0;
 
     if (purchaseBtn) {
-        purchaseBtn.disabled = !wallet || isFlipping || isCollecting || !hasBalance || cost > MAX_COST_PER_FLIP || num > MAX_FLIPS_PER_PURCHASE;
+        purchaseBtn.disabled = !wallet || isFlipping || isCollecting || !canBuy;
     }
     if (flipBtn) {
         flipBtn.disabled = !wallet || flipsRemaining <= 0 || selectedPrediction === null || isFlipping || isCollecting;
     }
+    const makeSelectionWrap = document.getElementById('make-your-selection-wrap');
+    if (makeSelectionWrap) makeSelectionWrap.classList.toggle('hidden', isFlipping);
     if (withdrawBtn) {
         withdrawBtn.disabled = !wallet || totalWon <= 0 || isFlipping || isCollecting;
     }
@@ -102,7 +105,10 @@ async function loadCoinflipState() {
             grandTotalWon = data.grandTotalWon != null ? Number(data.grandTotalWon) : 0;
         }
         const costInput = document.getElementById('cost-per-flip');
-        if (costPerFlip > 0 && costInput) costInput.value = costPerFlip;
+        if (costPerFlip > 0 && costInput) {
+            const v = String(Math.round(costPerFlip));
+            if (costInput.querySelector('option[value="' + v + '"]')) costInput.value = v;
+        }
         updateDisplay();
         updateButtonStates();
     } catch (e) {
@@ -208,7 +214,7 @@ function setupControls() {
     document.getElementById('withdraw-button').addEventListener('click', withdrawWinnings);
     ['cost-per-flip', 'number-of-flips'].forEach(id => {
         const el = document.getElementById(id);
-        if (el) el.addEventListener('input', updateButtonStates);
+        if (el) el.addEventListener('change', updateButtonStates);
     });
 }
 
@@ -225,8 +231,6 @@ async function purchaseFlips() {
         alert('Enter valid cost per flip and number of flips.');
         return;
     }
-    cost = Math.min(cost, MAX_COST_PER_FLIP);
-    num = Math.min(num, MAX_FLIPS_PER_PURCHASE);
     const totalCost = cost * num;
     if (xmaBalance < totalCost) {
         alert(`Insufficient balance. Need ${totalCost} XMA, you have ${xmaBalance.toFixed(2)} XMA.`);
