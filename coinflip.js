@@ -243,12 +243,12 @@ async function purchaseFlips() {
         const amount = BigInt(Math.floor(totalCost * Math.pow(10, TOKEN_DECIMALS)));
         const ix = createTransferInstruction(userAta, treasuryAta, userKey, amount);
         const tx = new Transaction().add(ix);
-        const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
+        const { blockhash } = await connection.getLatestBlockhash('processed');
         tx.recentBlockhash = blockhash;
         tx.feePayer = userKey;
         const signed = await window.solana.signTransaction(tx);
         const sig = await connection.sendRawTransaction(signed.serialize(), { skipPreflight: true, maxRetries: 5 });
-        await connection.confirmTransaction({ signature: sig, blockhash, lastValidBlockHeight }, 'confirmed');
+        await connection.confirmTransaction(sig, 'confirmed');
 
         const saveRes = await fetch('/api/coinflip-purchase', {
             method: 'POST',
