@@ -805,7 +805,7 @@
             .finally(function () {
                 isCollecting = false;
                 updateRouletteButtonStates();
-            });
+        });
     }
 
     function init() {

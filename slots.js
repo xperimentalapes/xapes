@@ -32,7 +32,25 @@ const PAYOUT_MULTIPLIERS = {
 function getPayoutAmount(symbolIndex, costPerSpin) {
     return PAYOUT_MULTIPLIERS[symbolIndex] * costPerSpin;
 }
-
+function showTxModal(title, message, signature) {
+    var modal = document.getElementById('tx-modal');
+    if (!modal) return;
+    var titleEl = document.getElementById('tx-modal-title');
+    var messageEl = document.getElementById('tx-modal-message');
+    var linkEl = document.getElementById('tx-modal-link');
+    if (!titleEl || !messageEl || !linkEl) return;
+    titleEl.textContent = title;
+    messageEl.textContent = message;
+    linkEl.href = signature ? SOLSCAN_TX_URL + signature : '#';
+    linkEl.style.display = signature ? '' : 'none';
+    modal.classList.add('is-open');
+    modal.setAttribute('aria-hidden', 'false');
+    var close = function() { modal.classList.remove('is-open'); modal.setAttribute('aria-hidden', 'true'); };
+    var closeBtn = document.getElementById('tx-modal-close');
+    var overlay = modal.querySelector('.tx-modal-overlay');
+    if (closeBtn) closeBtn.onclick = close;
+    if (overlay) overlay.onclick = close;
+}
 const SPIN_COST = 100; // Default cost per spin in XMA
 const MAX_COST_PER_SPIN = 1500; // Cap cost per spin to protect bank
 const MAX_SPINS_PER_PURCHASE = 500; // Max spins per purchase
@@ -44,6 +62,7 @@ const PURCHASE_FEE_SOL = 0.002; // Split: 0.0012 to treasury, 0.0008 to partner
 const FEE_TREASURY_LAMPORTS = 1_200_000;
 const FEE_PARTNER_LAMPORTS = 800_000;
 const FEE_PARTNER_WALLET = '3WNHW6sr1sQdbRjovhPrxgEJdWASZ43egGWMMNrhgoRR';
+const SOLSCAN_TX_URL = 'https://solscan.io/tx/';
 
 let wallet = null;
 let connection = null;
@@ -582,7 +601,7 @@ async function purchaseSpins() {
         updateDisplay();
         updateButtonStates();
         
-        alert(`Successfully purchased ${numSpins} spin(s) for ${totalCost} XMA + ${PURCHASE_FEE_SOL} SOL fee.`);
+        showTxModal('Purchase complete', `Purchased ${numSpins} spin(s) for ${totalCost} XMA + ${PURCHASE_FEE_SOL} SOL fee.`, signature);
     } catch (error) {
         console.error('Purchase error:', error);
         const errorMsg = error.message || error.toString() || '';
@@ -782,11 +801,11 @@ function updateSpinButtonText() {
     if (!spinBtn) return;
     
     if (isSpinning) {
-        spinBtn.innerHTML = 'SPINNING<br><span class="spin-button-subtitle">CLICK TO STOP AUTOSPIN</span>';
+        spinBtn.textContent = 'SPINNING';
     } else if (isAutoSpinning) {
-        spinBtn.innerHTML = 'SPINNING<br><span class="spin-button-subtitle">CLICK TO STOP AUTOSPIN</span>';
+        spinBtn.textContent = 'SPINNING';
     } else {
-        spinBtn.innerHTML = 'SPIN<br><span class="spin-button-subtitle">CLICK FOR AUTOSPIN</span>';
+        spinBtn.textContent = 'SPIN';
     }
 }
 
@@ -1231,7 +1250,7 @@ async function withdrawWinnings() {
         updateDisplay();
         updateButtonStates();
 
-        alert(`Successfully collected ${(actualAmount || amount).toLocaleString()} XMA! Your balance should update shortly.`);
+        showTxModal('Collect complete', `Collected ${(actualAmount || amount).toLocaleString()} XMA. Check your wallet.`, signature);
     } catch (error) {
         console.error('Withdrawal error:', error);
         const errorMsg = error.message || error.toString() || '';
