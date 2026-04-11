@@ -66,6 +66,12 @@ if (!DISCORD_CLIENT_ID || !DISCORD_CLIENT_SECRET) {
 }
 
 app.use(cookieParser());
+// Discord interactions: must verify Ed25519 signature against raw body (before express.json).
+app.post(
+  '/api/discord/interactions',
+  express.raw({ type: 'application/json', limit: '1mb' }),
+  require('../lib/discord/express-interactions')
+);
 app.use(express.json());
 const SESSION_COOKIE_SECURE =
   process.env.COOKIE_SECURE === '1' ||

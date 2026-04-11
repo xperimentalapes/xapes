@@ -10,7 +10,8 @@
     "backfill-trait-flags": "node scripts/backfill-trait-flags.js",
     "seed-discord-roles": "node scripts/seed-discord-roles.js",
     "extract-traits": "node scripts/extract-trait-values.js",
-    "list-body-head-traits": "node scripts/list-body-head-traits.js"
+    "list-body-head-traits": "node scripts/list-body-head-traits.js",
+    "register-discord-commands": "node scripts/register-discord-commands.js"
   },
   "dependencies": {
     "@solana/web3.js": "^1.87.6",
@@ -22,6 +23,7 @@
     "cookie-session": "^2.1.1",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
-    "express-session": "^1.17.3"
+    "express-session": "^1.17.3",
+    "tweetnacl": "^1.0.3"
   }
 }
