@@ -1789,6 +1789,28 @@ body {
 .holders-wallet:hover {
   text-decoration: underline;
 }
+.holders-wallet--linked {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.2rem;
+  font-family: inherit;
+}
+.holders-discord-name {
+  color: #f97316;
+  font-weight: 600;
+  font-family: var(--font-sans);
+  font-size: 0.9375rem;
+}
+.holders-wallet--linked:hover .holders-discord-name {
+  text-decoration: underline;
+}
+.holders-wallet-addr {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  font-weight: 400;
+}
 .holders-loading,
 .holders-empty {
   text-align: center;

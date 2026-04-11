@@ -17,6 +17,7 @@ const cookieSession = require('cookie-session');
 const cookieParser = require('cookie-parser');
 const axios = require('axios');
 const bs58 = require('bs58');
+const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
 app.set('trust proxy', 1);
@@ -608,9 +609,46 @@ function decodeTokenAccountOwnerAndAmount(dataBase64) {
   }
 }
 
+/** Load wallet -> Discord display name for holders leaderboard (paginated). */
+async function loadDiscordDisplayNamesByWallet() {
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_KEY;
+  if (!url || !key) return new Map();
+  const supabase = createClient(url, key);
+  const map = new Map();
+  const pageSize = 1000;
+  let from = 0;
+  try {
+    while (true) {
+      const { data, error } = await supabase
+        .from('discord_wallet_links')
+        .select('wallet_address, discord_display_name')
+        .order('wallet_address')
+        .range(from, from + pageSize - 1);
+      if (error) {
+        console.warn('Holders: discord_wallet_links fetch', error.message);
+        break;
+      }
+      const rows = data || [];
+      for (const row of rows) {
+        if (row.wallet_address && row.discord_display_name) {
+          map.set(row.wallet_address, String(row.discord_display_name));
+        }
+      }
+      if (rows.length < pageSize) break;
+      from += pageSize;
+    }
+  } catch (e) {
+    console.warn('Holders: Supabase display names', e.message);
+  }
+  return map;
+}
+
 app.get('/api/holders', async function (req, res) {
   const sortBy = (req.query.sort || 'total').toLowerCase();
   const validSort = ['total', 'token', 'nfts'].includes(sortBy) ? sortBy : 'total';
+
+  const discordByWallet = await loadDiscordDisplayNamesByWallet();
 
   const holderMap = new Map(); // wallet -> { tokenBalance, tokenBalanceFormatted, mnk3ysCount, zmb3ysCount }
 
@@ -712,8 +750,10 @@ app.get('/api/holders', async function (req, res) {
 
   let list = Array.from(holderMap.values()).map(function (h) {
     const totalNfts = (h.mnk3ysCount || 0) + (h.zmb3ysCount || 0);
+    const discordDisplayName = discordByWallet.get(h.wallet) || null;
     return {
       wallet: h.wallet,
+      discordDisplayName,
       tokenBalance: h.tokenBalance,
       tokenBalanceFormatted: h.tokenBalanceFormatted,
       mnk3ysCount: h.mnk3ysCount || 0,

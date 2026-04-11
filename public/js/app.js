@@ -1128,10 +1128,33 @@
           var valueUsd = item.valueUsd;
           var walletShort = h.wallet.length > 12 ? h.wallet.slice(0, 4) + '…' + h.wallet.slice(-4) : h.wallet;
           var walletLink = 'https://solscan.io/account/' + encodeURIComponent(h.wallet);
+          var discordName = h.discordDisplayName && String(h.discordDisplayName).trim();
+          var walletCell;
+          if (discordName) {
+            walletCell =
+              '<a href="' +
+              escapeHtml(walletLink) +
+              '" target="_blank" rel="noopener" class="holders-wallet holders-wallet--linked" title="' +
+              escapeHtml(h.wallet) +
+              '"><span class="holders-discord-name">' +
+              escapeHtml(discordName) +
+              '</span><span class="holders-wallet-addr">' +
+              escapeHtml(walletShort) +
+              '</span></a>';
+          } else {
+            walletCell =
+              '<a href="' +
+              escapeHtml(walletLink) +
+              '" target="_blank" rel="noopener" class="holders-wallet" title="' +
+              escapeHtml(h.wallet) +
+              '">' +
+              escapeHtml(walletShort) +
+              '</a>';
+          }
           var valueCell = valueUsd != null ? formatUsd(valueUsd) : '—';
           return '<tr>' +
             '<td>' + (i + 1) + '</td>' +
-            '<td><a href="' + escapeHtml(walletLink) + '" target="_blank" rel="noopener" class="holders-wallet">' + escapeHtml(walletShort) + '</a></td>' +
+            '<td>' + walletCell + '</td>' +
             '<td data-col="token">' + escapeHtml(h.tokenBalanceFormatted || '0') + '</td>' +
             '<td data-col="nfts">' + (h.totalNfts || 0) + '</td>' +
             '<td>' + escapeHtml(valueCell) + '</td>' +
