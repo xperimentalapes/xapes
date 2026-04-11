@@ -70,7 +70,7 @@ app.use(cookieParser());
 app.post(
   '/api/discord/interactions',
   express.raw({ type: 'application/json', limit: '1mb' }),
-  require('../lib/discord/express-interactions')
+  require('../../lib/discord/express-interactions')
 );
 app.use(express.json());
 const SESSION_COOKIE_SECURE =
@@ -91,7 +91,7 @@ app.use(
 app.use(express.static(path.join(__dirname)));
 
 // Serve game pages from repo public/; roulette with no-store so updates show immediately
-const publicDir = path.join(__dirname, '..', 'public');
+const publicDir = path.join(__dirname, '..', '..', 'public');
 if (require('fs').existsSync(publicDir)) {
   app.get('/roulette', function (req, res) {
     res.setHeader('Cache-Control', 'no-store');
@@ -118,7 +118,7 @@ app.get('/favicon.ico', function (req, res) {
 });
 
 // ——— Coin Flip API (handlers in lib/coinflip/ to stay under Vercel 12-function limit) ———
-const coinflipDir = path.join(__dirname, '..', 'lib', 'coinflip');
+const coinflipDir = path.join(__dirname, '..', '..', 'lib', 'coinflip');
 function useCoinflipHandler(handler) {
   return function (req, res) {
     handler(req, res).catch(function (err) {
@@ -141,7 +141,7 @@ if (require('fs').existsSync(coinflipDir)) {
 }
 
 // ——— Holder verify: wallet link + Discord roles (Supabase + bot) ———
-const holderDir = path.join(__dirname, '..', 'lib', 'holder');
+const holderDir = path.join(__dirname, '..', '..', 'lib', 'holder');
 function useHolderHandler(mod) {
   return function (req, res) {
     Promise.resolve(mod(req, res)).catch(function (err) {
@@ -467,7 +467,7 @@ app.get('/api/xma-ohlc', tokenOhlcHandler);
 app.get('/api/blunana-ohlc', tokenOhlcHandler); // legacy alias
 
 // ——— Verify: wallet XMA balance + NFT count per collection ———
-const getWalletHoldings = require(path.join(__dirname, '..', 'lib', 'holder', 'wallet-holdings.js')).getWalletHoldings;
+const getWalletHoldings = require(path.join(__dirname, '..', '..', 'lib', 'holder', 'wallet-holdings.js')).getWalletHoldings;
 app.get('/api/verify', async function (req, res) {
   const wallet = (req.query.wallet || '').trim();
   if (!wallet) {

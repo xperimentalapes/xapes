@@ -7,8 +7,8 @@ Monorepo for **XapeLabz**: marketing dashboard, **$XMA** token tooling, **Discor
 ```bash
 npm install
 # Create a root `.env` with the variables listed below (never commit secrets).
-npm run build          # copies `site-template/` + games into `public/` and injects env into HTML where needed
-npm start              # Express: `site-template/server.js` on PORT (default 3000)
+npm run build          # copies `apps/web/` (dashboard + `games/`) into `public/` and injects env into HTML where needed
+npm start              # Express: `apps/web/server.js` on PORT (default 3000)
 ```
 
 Open [http://localhost:3000](http://localhost:3000). The live site is produced from **`public/`** after `npm run build`; local `npm start` also serves game assets from `public/`.
@@ -17,11 +17,11 @@ Open [http://localhost:3000](http://localhost:3000). The live site is produced f
 
 | Area | Location |
 |------|-----------|
-| Dashboard (hero, collections, `#xma` token section, holders, team, Discord connect) | `site-template/` → copied to `public/` by build |
-| Express API (Discord OAuth, prices, holders, Birdeye OHLC, games, holder verify) | `site-template/server.js`; Vercel entry `api/dashboard.js` |
+| Dashboard (hero, collections, `#xma` token section, holders, team, Discord connect) | `apps/web/` → copied to `public/` by build |
+| Express API (Discord OAuth, prices, holders, Birdeye OHLC, games, holder verify) | `apps/web/server.js`; Vercel entry `api/dashboard.js` |
 | Discord slash commands | `lib/discord/*`, `POST /api/discord/interactions` |
 | Holder sync + roles | `lib/holder/*`, `scripts/sync-nfts-roles.js`, GitHub Action `.github/workflows/sync-nfts-roles.yml` |
-| Game pages (HTML/JS at repo root) | Copied into `public/` by `scripts/inject-env.js` |
+| Casino game pages (HTML, JS, CSS) | `apps/web/games/` → copied into `public/` by `scripts/inject-env.js` |
 | On-chain slot program (Anchor) | `slot-machine/` |
 
 ## Environment variables
@@ -63,8 +63,9 @@ Set in **Vercel → Project → Settings → Environment Variables** (and locall
 
 ```
 xapes/
-├── site-template/       # Dashboard source (index.html, css/, js/config.js, js/app.js, server.js)
-├── public/              # Deployed static output + games (run `npm run build` to refresh dashboard files)
+├── apps/
+│   └── web/             # Dashboard source + Express server; `games/` = casino HTML/JS/CSS
+├── public/              # Deployed static output (run `npm run build` to refresh)
 ├── api/                 # Vercel serverless handlers (dashboard, games, chests, etc.)
 ├── lib/                 # discord/, holder/, coinflip/
 ├── scripts/             # build, sync, DB helpers, `solana-*.js` key utilities
@@ -75,7 +76,7 @@ xapes/
 
 ## Configuration
 
-Front-end copy, links, team Discord IDs, and token labels live in **`site-template/js/config.js`** as `window.XAPES_CONFIG`. After edits, run **`npm run build`** so `public/js/config.js` updates.
+Front-end copy, links, team Discord IDs, and token labels live in **`apps/web/js/config.js`** as `window.XAPES_CONFIG`. After edits, run **`npm run build`** so `public/js/config.js` updates.
 
 ## Docs
 

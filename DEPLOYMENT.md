@@ -4,7 +4,7 @@ This project is configured for **Vercel**: `vercel.json` sets `buildCommand` to 
 
 1. Connect the GitHub repo to Vercel (or use `vercel` CLI from the repo root).
 2. Add **environment variables** in the Vercel project (see root **README.md**).
-3. Deploy. Each build runs `npm run build`, which refreshes the dashboard files in `public/` from `site-template/` and copies game pages from the repo root.
+3. Deploy. Each build runs `npm run build`, which refreshes `public/` from **`apps/web/`** (dashboard + **`apps/web/games/`**).
 
 **Discord OAuth:** Register every production callback URL, e.g. `https://your-domain.com/api/discord/callback`, in the Discord Developer Portal (same for `www` if you use it).
 

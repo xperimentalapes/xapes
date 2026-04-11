@@ -1,13 +1,23 @@
-/* Slots Page Specific Styles */
-
+/* Slots Page - same layout as roulette-page so it fits in viewport on mobile */
 .slots-page {
-    overflow: hidden;
     height: 100vh;
+    height: 100svh;
+    height: 100dvh;
+    max-height: 100vh;
+    max-height: 100svh;
+    max-height: 100dvh;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
+    padding-top: 72px;
+    padding-bottom: env(safe-area-inset-bottom, 0);
+    box-sizing: border-box;
     width: 100%;
     max-width: 100vw;
-    box-sizing: border-box;
+}
+
+.slots-page::-webkit-scrollbar {
+    display: none;
 }
 
 .slots-page .navbar {
@@ -30,7 +40,7 @@
 }
 
 .orientation-prompt.show {
-    display: flex;
+    display: none !important; /* never show – wallet browsers can't rotate */
 }
 
 .orientation-content {
@@ -59,24 +69,54 @@
     color: var(--text-secondary);
 }
 
-/* Slots Container - 3 equal sections */
+/* Slots Container - same as roulette-container: flex 1, min-height 0, overflow hidden */
 .slots-container {
     flex: 1;
+    min-height: 0;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
-    padding: 0;
-    padding-top: 80px; /* Header height */
-    overflow: hidden;
+    padding: 4px 8px 4px;
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+    box-sizing: border-box;
+    position: relative;
     background-image: linear-gradient(rgba(10, 10, 15, 0.72), rgba(10, 10, 15, 0.72)), url('/images/casino-bg2.jpg');
     background-size: cover;
     background-position: center top;
-    min-height: 0;
-    box-sizing: border-box;
-    margin: 0;
-    height: 100vh;
-    max-height: 100vh;
-    width: 100%;
-    max-width: 100vw;
+}
+
+/* Mobile/tablet: allow grid rows to shrink so page fits in one viewheight (no scroll) */
+@media (max-height: 900px) {
+    .slot-machine-wrapper {
+        min-height: 0;
+    }
+    .slot-machine-wrapper .game-stats-bar,
+    .slot-machine-wrapper .slot-machine-main,
+    .slot-machine-wrapper .controls-panel {
+        min-height: 0;
+    }
+    .slot-machine-wrapper .controls-panel {
+        min-height: 44px;
+    }
+}
+
+/* Short viewport: reduce padding/gaps so slots fit in one viewheight */
+@media (max-height: 700px) {
+    .slot-machine-wrapper {
+        gap: 0;
+    }
+    .slot-machine-wrapper .game-stats-bar {
+        padding: 4px 8px;
+    }
+    .slot-machine-wrapper .slot-machine-main {
+        padding: 4px 8px;
+    }
+    .slot-machine-wrapper .controls-panel {
+        padding: 6px 8px;
+        min-height: 40px;
+    }
 }
 
 @media (max-width: 600px) {
@@ -85,11 +125,52 @@
     }
 }
 
+/* Mobile portrait: less gap under header; controls above browser bar */
+@media (max-width: 600px) and (orientation: portrait) {
+    .slots-page {
+        padding-top: 56px;
+        padding-bottom: max(env(safe-area-inset-bottom), 56px);
+    }
+    .slots-container {
+        padding: 2px 6px max(8px, env(safe-area-inset-bottom));
+    }
+    .slot-machine-wrapper .controls-panel {
+        padding-bottom: max(8px, env(safe-area-inset-bottom));
+    }
+}
+
+/* Mobile / short viewport: no gap above stats, below buttons, or right of content; reels keep height */
+@media (max-width: 600px) and (max-height: 700px) {
+    .slots-page {
+        padding-bottom: max(12px, env(safe-area-inset-bottom)) !important;
+    }
+    .slots-container {
+        padding: 0 !important;
+        margin: 0 !important;
+        max-width: 100% !important;
+        width: 100% !important;
+    }
+    .slot-machine-wrapper {
+        display: grid !important;
+        grid-template-rows: 1fr 1fr auto !important;
+        gap: 2px !important;
+    }
+    .slot-machine-wrapper .game-stats-bar {
+        align-self: start !important;
+        padding: 4px 6px !important;
+    }
+    .slot-machine-wrapper .controls-panel {
+        align-self: end !important;
+        padding: 4px 6px 0 !important;
+    }
+}
+
+/* Layout aligned with coinflip: stats bar auto, reels fill middle, controls auto */
 .slot-machine-wrapper {
     width: 100%;
     max-width: 100vw;
     display: grid;
-    grid-template-rows: 1fr 1fr 1fr;
+    grid-template-rows: auto 1fr auto;
     gap: 2px;
     height: 100%;
     min-height: 0;
@@ -104,28 +185,26 @@
     display: none;
 }
 
-/* Game Stats Bar - Header + 2x2 grid - Takes 1/3 of viewport */
+/* Game Stats Bar - same size/positioning as coinflip */
 .game-stats-bar {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 4px;
     background: rgba(20, 20, 28, 0.75);
     border: 1px solid var(--border-color);
-    border-radius: 6px;
-    padding: 3px 6px;
+    border-radius: 8px;
+    padding: 8px 12px;
     flex-shrink: 0;
     width: 100%;
     max-width: 100vw;
     box-sizing: border-box;
     min-height: 0;
-    height: 100%;
-    max-height: 100%;
     overflow: hidden;
     grid-row: 1;
     margin: 0;
 }
 
-/* Game Totals Header */
+/* Game Totals Header - same as coinflip */
 .game-totals-header {
     text-align: center;
     width: 100%;
@@ -133,8 +212,12 @@
     flex-shrink: 0;
 }
 
+.game-totals-header.game-totals-header--centered .game-totals-header-text {
+    text-align: center;
+    width: 100%;
+}
 .game-totals-header-text {
-    font-size: clamp(8px, 2vw, 11px);
+    font-size: clamp(14px, 3vw, 18px);
     font-weight: 700;
     color: var(--text-primary);
     text-transform: uppercase;
@@ -162,7 +245,7 @@
 }
 
 .grand-total-item .grand-total-label {
-    font-size: clamp(8px, 1.5vw, 10px);
+    font-size: clamp(12px, 2vw, 14px);
     color: var(--text-secondary);
     text-transform: uppercase;
     letter-spacing: 0.03em;
@@ -170,7 +253,7 @@
 }
 
 .grand-total-item .grand-total-value {
-    font-size: clamp(11px, 2vw, 13px);
+    font-size: clamp(16px, 3vw, 20px);
     font-weight: 700;
     color: var(--text-primary);
     line-height: 1.2;
@@ -255,6 +338,16 @@
     width: auto;
 }
 
+.game-stats-grid > .stat-item .stat-label {
+    font-size: clamp(12px, 2vw, 14px);
+    color: var(--text-secondary);
+    text-transform: uppercase;
+}
+.game-stats-grid > .stat-item .stat-value {
+    font-size: clamp(16px, 3vw, 20px);
+    font-weight: 700;
+    color: var(--text-primary);
+}
 .stat-item {
     display: flex;
     flex-direction: column;
@@ -262,7 +355,7 @@
     justify-content: center;
     gap: 8px;
     text-align: center;
-    height: 100%; /* Take full height of parent to ensure alignment */
+    height: 100%;
 }
 
 .stat-label {
@@ -536,15 +629,15 @@
     min-width: 0;
 }
 
-/* Controls Panel - Takes 1/3 of viewport - Top row: inputs side-by-side, Bottom row: 3 buttons */
+/* Controls Panel - same size/positioning as coinflip */
 .controls-panel {
     background: var(--bg-card);
     border: 1px solid var(--border-color);
-    border-radius: 8px;
-    padding: 4px;
+    border-radius: 10px;
+    padding: 10px;
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
-    grid-template-rows: 1fr 1fr;
+    grid-template-rows: auto auto;
     gap: 4px;
     flex-shrink: 0;
     width: 100%;
@@ -553,8 +646,6 @@
     margin: 0;
     overflow: hidden;
     min-height: 0;
-    height: 100%;
-    max-height: 100%;
     grid-row: 3;
 }
 
@@ -583,7 +674,7 @@
 }
 
 .control-group label {
-    font-size: clamp(8px, 1.5vw, 10px);
+    font-size: clamp(13px, 2vw, 16px);
     font-weight: 600;
     color: var(--text-secondary);
     text-transform: uppercase;
@@ -594,19 +685,23 @@
     line-height: 1.1;
 }
 
-.control-group input {
-    padding: 4px 6px;
+.control-group input,
+.control-select {
+    padding: 10px 12px;
     background: var(--bg-darker);
     border: 1px solid var(--border-color);
-    border-radius: 6px;
+    border-radius: 8px;
     color: var(--text-primary);
-    font-size: clamp(12px, 2.5vw, 14px);
+    font-size: clamp(16px, 3vw, 20px);
     font-weight: 600;
-    flex: 1;
     min-width: 0;
     width: 100%;
     text-align: center;
-    min-height: 0;
+    min-height: 44px;
+}
+.control-select {
+    cursor: pointer;
+    appearance: auto;
 }
 
 .control-group input:focus {
@@ -619,13 +714,12 @@
     display: contents;
 }
 
-/* Buy button - bottom row, column 1 (33% width) */
+/* Buy button - same height as coinflip */
 #purchase-spins {
     grid-column: 1;
     grid-row: 2;
     width: 100%;
-    height: 100%;
-    min-height: 0;
+    min-height: 56px;
 }
 
 /* Spin button - bottom row, column 2 (33% width) */
@@ -641,27 +735,40 @@
     grid-column: 2;
     grid-row: 2;
     width: 100%;
-    height: 100%;
-    min-height: 0;
+    min-height: 56px;
 }
 
-/* Collect button - bottom row, column 3 (33% width) */
+/* Collect button - same height as coinflip */
 #withdraw-button {
     grid-column: 3;
     grid-row: 2;
     width: 100%;
-    height: 100%;
-    min-height: 0;
+    min-height: 56px;
 }
 
+/* Action buttons - same size as coinflip */
+.controls-panel .btn,
+.controls-panel .btn-primary,
+.controls-panel .btn-spin,
+.controls-panel .btn-withdraw {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 56px;
+    padding: 14px 20px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: clamp(18px, 3vw, 22px);
+    text-transform: uppercase;
+}
 .btn {
     width: 100%;
-    height: 100%;
-    padding: 2px 6px;
-    font-size: clamp(10px, 1.8vw, 12px);
+    min-height: 56px;
+    padding: 14px 20px;
+    font-size: clamp(18px, 3vw, 22px);
     font-weight: 700;
     border: none;
-    border-radius: 6px;
+    border-radius: 10px;
     cursor: pointer;
     transition: all 0.2s ease;
     font-family: inherit;
@@ -1256,18 +1363,17 @@
 @media (min-width: 1025px) {
     .slots-page {
         height: 100vh;
+        height: 100svh;
         overflow: hidden;
     }
     
     .slots-container {
         padding: 0 !important;
         padding-top: 80px !important;
-        height: 100vh !important;
-        min-height: 100vh !important;
-        max-height: 100vh !important;
+        flex: 1 !important;
+        min-height: 0 !important;
         display: flex !important;
         flex-direction: column !important;
-        flex: 1 !important;
         box-sizing: border-box !important;
     }
     
@@ -1362,8 +1468,8 @@
     }
 }
 
-/* Responsive - Mobile Portrait */
-@media (max-width: 1024px) {
+/* Responsive - Mobile Portrait (skip when width<=600 so small mobile gets correct layout) */
+@media (max-width: 1024px) and (min-width: 601px) {
     .slots-container {
         padding: 8px;
         padding-top: 100px; /* Increased to prevent stats bar from being hidden */
@@ -1566,7 +1672,7 @@
     }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 768px) and (min-width: 601px) {
     /* Hide orientation prompt - we support portrait now */
     .orientation-prompt {
         display: none !important;
@@ -1763,7 +1869,7 @@
     }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 480px) and (min-width: 401px) {
     .slots-container {
         padding: 5px;
         padding-top: 85px; /* Increased to prevent stats bar from being hidden */
@@ -2225,4 +2331,230 @@
     .leaderboard-stat .stat-value {
         font-size: 14px;
     }
+}
+
+/* OVERRIDE 1024/768/480px for mobile: no gaps, full width. body selector so we win. */
+@media (max-width: 600px) {
+    body.slots-page {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+        overflow-x: hidden !important;
+        box-sizing: border-box !important;
+    }
+    body.slots-page .slots-container {
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+        max-width: none !important;
+        min-width: 100% !important;
+        box-sizing: border-box !important;
+    }
+    body.slots-page .slot-machine-wrapper {
+        display: grid !important;
+        grid-template-rows: 1fr 1fr auto !important;
+        flex-direction: row !important;
+        gap: 2px !important;
+        width: 100% !important;
+        max-width: none !important;
+        height: 100% !important;
+        min-height: 0 !important;
+    }
+    body.slots-page .slot-machine-wrapper .game-stats-bar {
+        align-self: start !important;
+    }
+    body.slots-page .slot-machine-wrapper .slot-machine-main {
+        height: 100% !important;
+        min-height: 0 !important;
+        max-height: 100% !important;
+        flex: 1 1 0 !important;
+    }
+    body.slots-page .slot-machine-wrapper .controls-panel {
+        align-self: end !important;
+        overflow: visible !important;
+        padding: 4px 6px 0 !important;
+        padding-bottom: 0 !important;
+        flex: none !important;
+        min-height: 0 !important;
+        height: auto !important;
+    }
+}
+
+/* ——— Coinflip-consistent: stats bar font sizes, controls height, dropdowns, action buttons ——— */
+.slot-machine-wrapper .game-stats-bar .game-totals-header {
+    text-align: center;
+    width: 100%;
+}
+.slot-machine-wrapper .game-stats-bar .game-totals-header-text {
+    text-align: center;
+    font-size: clamp(14px, 3vw, 18px);
+}
+.slot-machine-wrapper .grand-total-item .grand-total-label {
+    font-size: clamp(12px, 2vw, 14px);
+}
+.slot-machine-wrapper .grand-total-item .grand-total-value {
+    font-size: clamp(16px, 3vw, 20px);
+}
+.slot-machine-wrapper .game-stats-grid .stat-label {
+    font-size: clamp(12px, 2vw, 14px);
+}
+.slot-machine-wrapper .game-stats-grid .stat-value {
+    font-size: clamp(16px, 3vw, 20px);
+}
+.slot-machine-wrapper .control-group label {
+    font-size: clamp(13px, 2vw, 16px);
+}
+.slot-machine-wrapper .control-group input,
+.slot-machine-wrapper .control-select {
+    padding: 10px 12px;
+    font-size: clamp(16px, 3vw, 20px);
+    font-weight: 600;
+    min-height: 44px;
+}
+.slot-machine-wrapper .control-select {
+    cursor: pointer;
+    appearance: auto;
+    background: var(--bg-darker);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-primary);
+    width: 100%;
+    text-align: center;
+}
+.slot-machine-wrapper .controls-panel {
+    padding: 10px;
+    border-radius: 10px;
+    grid-template-rows: auto auto;
+}
+.slot-machine-wrapper #purchase-spins,
+.slot-machine-wrapper #spin-button,
+.slot-machine-wrapper #withdraw-button {
+    min-height: 56px !important;
+    height: auto !important;
+}
+.slot-machine-wrapper .controls-panel .btn,
+.slot-machine-wrapper .controls-panel .btn-primary,
+.slot-machine-wrapper .controls-panel .btn-spin,
+.slot-machine-wrapper .controls-panel .btn-withdraw {
+    min-height: 56px !important;
+    height: auto !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 14px 20px;
+    font-size: clamp(18px, 3vw, 22px);
+    font-weight: 700;
+}
+.slot-machine-wrapper .btn-action {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 56px !important;
+    height: auto !important;
+    padding: 14px 20px;
+    font-size: clamp(18px, 3vw, 22px);
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+/* Same as coinflip: 48px button height on small screens */
+@media (max-width: 480px) {
+    .slot-machine-wrapper #purchase-spins,
+    .slot-machine-wrapper #spin-button,
+    .slot-machine-wrapper #withdraw-button {
+        min-height: 48px !important;
+    }
+    .slot-machine-wrapper .controls-panel .btn,
+    .slot-machine-wrapper .controls-panel .btn-primary,
+    .slot-machine-wrapper .controls-panel .btn-spin,
+    .slot-machine-wrapper .controls-panel .btn-withdraw {
+        min-height: 48px !important;
+    }
+    .slot-machine-wrapper .btn-action {
+        min-height: 48px !important;
+    }
+}
+
+/* Transaction confirmation modal (same as coinflip) */
+.tx-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    visibility: hidden;
+    opacity: 0;
+    transition: visibility 0.2s, opacity 0.2s;
+}
+.tx-modal.is-open {
+    visibility: visible;
+    opacity: 1;
+}
+.tx-modal-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+}
+.tx-modal-box {
+    position: relative;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 24px 28px;
+    max-width: 400px;
+    width: 100%;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    text-align: center;
+}
+.tx-modal-title {
+    font-size: clamp(18px, 4vw, 22px);
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+.tx-modal-message {
+    font-size: clamp(15px, 2.5vw, 17px);
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.5;
+}
+.tx-modal-link {
+    display: inline-block;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--primary-light);
+    text-decoration: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--primary-color);
+    transition: background 0.2s, color 0.2s;
+}
+.tx-modal-link:hover {
+    background: rgba(139, 92, 246, 0.2);
+    color: var(--text-primary);
+}
+.tx-modal-close {
+    padding: 10px 24px;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    background: var(--border-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+}
+.tx-modal-close:hover {
+    background: var(--text-muted);
+    border-color: var(--text-muted);
 }

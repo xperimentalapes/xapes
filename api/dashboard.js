@@ -1,6 +1,6 @@
 /**
  * Vercel: dashboard API handler. Invoked via rewrites from /api/discord/*, /api/verify, etc.
- * Uses req.query.__path (set by vercel.json rewrites) and forwards to site-template Express app.
+ * Uses req.query.__path (set by vercel.json rewrites) and forwards to apps/web Express app.
  */
 const path = require('path');
 
@@ -11,7 +11,7 @@ if (require('fs').existsSync(envPath)) {
 }
 
 const discordInteractionsExpress = require('../lib/discord/express-interactions');
-const app = require('../site-template/server');
+const app = require('../apps/web/server');
 
 function readRawBodyBuffer(req) {
   if (Buffer.isBuffer(req.body)) return Promise.resolve(req.body);

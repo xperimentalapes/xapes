@@ -1,8 +1,8 @@
 /**
- * Build script: copies site-template (new dashboard) + game pages to public/.
- * - New homepage: site-template index.html, css/, js/, assets/
- * - Games: slots, chests, casino (and roulette if present at root) from repo root
- * - Injects HELIUS_API_KEY into chests.html when copying.
+ * Build script: copies apps/web (dashboard + casino games) into public/.
+ * - Dashboard: apps/web index.html, css/, js/, assets/
+ * - Games: apps/web/games/* (HTML, JS, shared + per-game CSS) → public/ (flat paths for existing URLs)
+ * - Injects HELIUS_API_KEY into chests.html / coinflip.html when copying.
  * Reads HELIUS_API_KEY from process.env (Vercel) or root .env.
  */
 const fs = require('fs');
@@ -10,7 +10,8 @@ const path = require('path');
 
 const root = path.join(__dirname, '..');
 const publicDir = path.join(root, 'public');
-const templateDir = path.join(root, 'site-template');
+const webDir = path.join(root, 'apps', 'web');
+const gamesDir = path.join(webDir, 'games');
 
 // Load .env if present (for local builds)
 const envPath = path.join(root, '.env');
@@ -40,9 +41,9 @@ function copyDir(src, dest) {
   });
 }
 
-// 1) New dashboard from site-template (replaces old homepage)
+// 1) Dashboard from apps/web
 ['index.html', 'css', 'js', 'assets'].forEach((name) => {
-  const src = path.join(templateDir, name);
+  const src = path.join(webDir, name);
   const dest = path.join(publicDir, name);
   if (!fs.existsSync(src)) return;
   if (fs.statSync(src).isDirectory()) copyDir(src, dest);
@@ -58,25 +59,24 @@ if (fs.existsSync(repoLogo)) {
   fs.copyFileSync(repoLogo, path.join(publicDir, 'assets', 'logo.png'));
 }
 
-// 2) Shared CSS for casino + game pages (navbar, layout, buttons – they all use styles.css)
-const sharedRootFiles = ['styles.css'];
-sharedRootFiles.forEach((file) => {
-  const src = path.join(root, file);
-  const dest = path.join(publicDir, file);
-  if (fs.existsSync(src)) fs.copyFileSync(src, dest);
-});
-
-// 3) Game pages and assets from root (keep /casino, /slots, /chests, /roulette working)
-// Skip slots.css and chests.css so public/ versions (viewport fix for mobile) are not overwritten
+// 2) Game pages, scripts, and CSS (flat public/ paths — matches vercel.json rewrites)
 const gameFiles = [
-  'slots.html', 'slots.js',
-  'chests.html', 'chests.js',
+  'slots.html',
+  'slots.js',
+  'chests.html',
+  'chests.js',
   'casino.html',
   'roulette.html',
-  'coinflip.html', 'coinflip.js',
+  'coinflip.html',
+  'coinflip.js',
+  'styles.css',
+  'slots.css',
+  'chests.css',
+  'coinflip.css',
+  'roulette.css',
 ];
 gameFiles.forEach((file) => {
-  const src = path.join(root, file);
+  const src = path.join(gamesDir, file);
   const dest = path.join(publicDir, file);
   if (!fs.existsSync(src)) return;
   let data = fs.readFileSync(src, 'utf8');
@@ -86,10 +86,10 @@ gameFiles.forEach((file) => {
   fs.writeFileSync(dest, data);
 });
 
-// 4) Images for games (logo, banner, symbols, etc.)
+// 3) Images for games (logo, banner, symbols, etc.)
 const imagesSrc = path.join(root, 'images');
 if (fs.existsSync(imagesSrc)) {
   copyDir(imagesSrc, path.join(publicDir, 'images'));
 }
 
-console.log('Build done. New dashboard + games in public/. HELIUS_API_KEY', key ? 'injected' : 'not set.');
+console.log('Build done. Dashboard + games in public/. HELIUS_API_KEY', key ? 'injected' : 'not set.');
