@@ -442,7 +442,8 @@
     verifyWithRoles(wallet)
       .then(function (result) {
         if (result.ok && result.body && !result.body.error) {
-          finish(result.body, result.body, true);
+          var body = result.body;
+          finish(body, body, body.rolesSynced === true);
           return;
         }
         if (result.body && result.body.error && result.status === 401) {
