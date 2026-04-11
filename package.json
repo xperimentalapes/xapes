@@ -11,9 +11,11 @@
     "seed-discord-roles": "node scripts/seed-discord-roles.js",
     "extract-traits": "node scripts/extract-trait-values.js",
     "list-body-head-traits": "node scripts/list-body-head-traits.js",
-    "register-discord-commands": "node scripts/register-discord-commands.js"
+    "register-discord-commands": "node scripts/register-discord-commands.js",
+    "discord-engagement-bot": "node scripts/discord-engagement-bot.js"
   },
   "dependencies": {
+    "discord.js": "^14.16.3",
     "@solana/spl-token": "^0.3.9",
     "@solana/web3.js": "^1.87.6",
     "@supabase/supabase-js": "^2.39.0",
