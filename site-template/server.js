@@ -2,7 +2,11 @@
  * Mnk3ys — Express server with Discord OAuth2 login
  * Serves static site and provides /api/discord/* routes.
  *
- * Required env: DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET, SESSION_SECRET, BASE_URL
+ * Required env: DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET, SESSION_SECRET
+ * Optional: BASE_URL — fallback when Host header is missing (local scripts only).
+ * Discord OAuth redirect URI must be derived from the request host so login works on
+ * every deployed domain (e.g. www.xapelabz.com vs xapes.vercel.app). Register each
+ * full callback URL in the Discord Developer Portal.
  */
 
 require('dotenv').config();
@@ -15,13 +19,22 @@ const axios = require('axios');
 const bs58 = require('bs58');
 
 const app = express();
+app.set('trust proxy', 1);
 const PORT = process.env.PORT || 3000;
 
 const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID;
 const DISCORD_CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET;
 const SESSION_SECRET = process.env.SESSION_SECRET || 'mnk3ys-session-secret-change-in-production';
-const BASE_URL = (process.env.BASE_URL || 'http://localhost:' + PORT).replace(/\/$/, '');
-const REDIRECT_URI = BASE_URL + '/api/discord/callback';
+const DEFAULT_BASE_URL = (process.env.BASE_URL || 'http://localhost:' + PORT).replace(/\/$/, '');
+
+/** Public site origin for this request (Vercel: x-forwarded-*). Used for Discord redirect_uri. */
+function publicOrigin(req) {
+  const xfProto = (req.headers['x-forwarded-proto'] || '').split(',')[0].trim();
+  const proto = xfProto || req.protocol || 'http';
+  const host = (req.headers['x-forwarded-host'] || req.headers.host || '').split(',')[0].trim();
+  if (host) return `${proto}://${host}`.replace(/\/$/, '');
+  return DEFAULT_BASE_URL;
+}
 
 const DISCORD_AUTH_URL = 'https://discord.com/api/oauth2/authorize';
 const DISCORD_TOKEN_URL = 'https://discord.com/api/oauth2/token';
@@ -53,13 +66,16 @@ if (!DISCORD_CLIENT_ID || !DISCORD_CLIENT_SECRET) {
 
 app.use(cookieParser());
 app.use(express.json());
+const SESSION_COOKIE_SECURE =
+  process.env.COOKIE_SECURE === '1' ||
+  (process.env.COOKIE_SECURE !== '0' && (process.env.VERCEL === '1' || process.env.NODE_ENV === 'production'));
 app.use(
   cookieSession({
     name: 'mnk3ys_session',
     keys: [SESSION_SECRET],
     maxAge: 7 * 24 * 60 * 60 * 1000,
     httpOnly: true,
-    secure: false,
+    secure: SESSION_COOKIE_SECURE,
     sameSite: 'lax',
     path: '/',
   })
@@ -146,10 +162,12 @@ app.get('/api/discord/auth', function (req, res) {
     return res.redirect('/?discord=not_configured');
   }
   const state = Math.random().toString(36).slice(2);
+  const redirectUri = publicOrigin(req) + '/api/discord/callback';
   req.session.discordState = state;
+  req.session.discordOauthRedirectUri = redirectUri;
   const qs = new URLSearchParams({
     client_id: DISCORD_CLIENT_ID,
-    redirect_uri: REDIRECT_URI,
+    redirect_uri: redirectUri,
     response_type: 'code',
     scope: SCOPES,
     state: state,
@@ -162,8 +180,16 @@ app.get('/api/discord/auth', function (req, res) {
 app.get('/api/discord/callback', async function (req, res) {
   const { code, state } = req.query;
   const savedState = req.session.discordState;
+  const redirectUri =
+    req.session.discordOauthRedirectUri || publicOrigin(req) + '/api/discord/callback';
+  delete req.session.discordOauthRedirectUri;
 
   if (!code || state !== savedState) {
+    delete req.session.discordState;
+    console.warn('Discord OAuth callback: bad state or missing code', {
+      hasCode: !!code,
+      stateMatch: state === savedState,
+    });
     return res.redirect('/?discord=error');
   }
   delete req.session.discordState;
@@ -180,7 +206,7 @@ app.get('/api/discord/callback', async function (req, res) {
         client_secret: DISCORD_CLIENT_SECRET,
         code: code,
         grant_type: 'authorization_code',
-        redirect_uri: REDIRECT_URI,
+        redirect_uri: redirectUri,
       }).toString(),
       {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -189,7 +215,7 @@ app.get('/api/discord/callback', async function (req, res) {
     );
 
     if (tokenRes.status !== 200 || !tokenRes.data.access_token) {
-      console.warn('Discord token exchange failed', tokenRes.status, tokenRes.data);
+      console.warn('Discord token exchange failed', tokenRes.status, tokenRes.data, 'redirect_uri was', redirectUri);
       return res.redirect('/?discord=error');
     }
 
@@ -719,7 +745,11 @@ if (process.env.VERCEL !== '1') {
     if (!DISCORD_CLIENT_ID || !DISCORD_CLIENT_SECRET) {
       console.log('Discord login disabled: set DISCORD_CLIENT_ID and DISCORD_CLIENT_SECRET in .env');
     } else {
-      console.log('Discord redirect URI for Dev Portal:', REDIRECT_URI);
+      console.log(
+        'Discord OAuth: add each site callback to the Dev Portal, e.g.',
+        DEFAULT_BASE_URL + '/api/discord/callback',
+        '(and your custom domains with the same path)'
+      );
     }
   });
 }
