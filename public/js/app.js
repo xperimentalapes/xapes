@@ -21,7 +21,9 @@
     if (!btn || !balEl) return;
     var bal = parseFloat(String(balEl.textContent).replace(/,/g, '').trim(), 10);
     if (!isFinite(bal)) bal = 0;
-    btn.disabled = bal < threshold;
+    var canClaim = bal >= threshold;
+    btn.disabled = !canClaim;
+    btn.setAttribute('aria-disabled', canClaim ? 'false' : 'true');
   }
 
   // ----- Apply project config to DOM (template: brand, hero, token, footer, etc.) -----
@@ -89,9 +91,12 @@
       if (dex && dexUrl) dex.href = dexUrl;
     }
     var rewardsCfg = c.xmaDiscordRewards || {};
-    var threshEl = document.getElementById('xma-claim-threshold');
-    if (threshEl && rewardsCfg.claimThresholdXma != null) {
-      threshEl.textContent = Number(rewardsCfg.claimThresholdXma).toLocaleString('en-US');
+    var claimHint = document.getElementById('xma-claim-hint');
+    if (claimHint && rewardsCfg.claimThresholdXma != null) {
+      var thNum = Number(rewardsCfg.claimThresholdXma);
+      var thStr = isFinite(thNum) ? thNum.toLocaleString('en-US') : String(rewardsCfg.claimThresholdXma);
+      claimHint.textContent =
+        'Claim unlocks when unclaimed balance reaches ' + thStr + ' XMA or more.';
     }
     var engNote = document.getElementById('xma-engagement-note');
     if (engNote) {
