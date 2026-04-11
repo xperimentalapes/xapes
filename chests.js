@@ -15,12 +15,10 @@ var availableTokenPrizes = []; // { tokenId, symbol, tierAmount, tierStr, image 
 
 // For each token symbol: 3 prize amounts (small, medium, large). When adding a new token, add tiers + image URL here.
 const TOKEN_PRIZE_TIERS = {
-    BLUNANA: [50000, 150000, 250000],
     XMA: [350000, 1050000, 1750000], // 350k, x3, x5
     FRENS: [1000000, 3000000, 5000000]
 };
 const TOKEN_IMAGES = {
-    BLUNANA: 'https://ipfs.io/ipfs/QmTKRAZEcTfDeVDt8hebrCv27DctYghtdfXRMc9FRA6NU3',
     XMA: 'images/logo.png',
     FRENS: 'https://img-cdn.magiceden.dev/rs:fill:400:0:0/plain/https%3A%2F%2Fcreator-hub-prod.s3.us-east-2.amazonaws.com%2Ffrens_factory_pfp_1736409521055.gif'
 };

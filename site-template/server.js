@@ -1,5 +1,5 @@
 /**
- * Mnk3ys — Express server with Discord OAuth2 login
+ * XapeLabz — Express server with Discord OAuth2 login
  * Serves static site and provides /api/discord/* routes.
  *
  * Required env: DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET, SESSION_SECRET
@@ -25,7 +25,7 @@ const PORT = process.env.PORT || 3000;
 
 const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID;
 const DISCORD_CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET;
-const SESSION_SECRET = process.env.SESSION_SECRET || 'mnk3ys-session-secret-change-in-production';
+const SESSION_SECRET = process.env.SESSION_SECRET || 'xapes-session-secret-change-in-production';
 const DEFAULT_BASE_URL = (process.env.BASE_URL || 'http://localhost:' + PORT).replace(/\/$/, '');
 
 /** Public site origin for this request (Vercel: x-forwarded-*). Used for Discord redirect_uri. */
@@ -78,7 +78,7 @@ const SESSION_COOKIE_SECURE =
   (process.env.COOKIE_SECURE !== '0' && (process.env.VERCEL === '1' || process.env.NODE_ENV === 'production'));
 app.use(
   cookieSession({
-    name: 'mnk3ys_session',
+    name: 'xapes_session',
     keys: [SESSION_SECRET],
     maxAge: 7 * 24 * 60 * 60 * 1000,
     httpOnly: true,
@@ -413,12 +413,12 @@ app.get('/api/prices', async function (req, res) {
   res.json(out);
 });
 
-// ——— 15m OHLC for Blunana (Birdeye); optional BIRDEYE_API_KEY ———
+// ——— Token OHLC (Birdeye, XMA mint); optional BIRDEYE_API_KEY ———
 const BIRDEYE_API_KEY = process.env.BIRDEYE_API_KEY;
 const OHLC_CACHE_MS = 2 * 60 * 1000;
 let ohlcCache = { data: null, ts: 0 };
 
-app.get('/api/blunana-ohlc', async function (req, res) {
+async function tokenOhlcHandler(req, res) {
   const type = (req.query.type || '15m').toLowerCase().replace(/\s/g, '');
   const validType = ['1m', '3m', '5m', '15m', '30m', '1h', '2h', '4h', '6h', '8h', '12h', '1d'].includes(type) ? type : '15m';
   if (!BIRDEYE_API_KEY) {
@@ -461,9 +461,12 @@ app.get('/api/blunana-ohlc', async function (req, res) {
     console.warn('Birdeye OHLC failed', e.message);
     res.json({ success: false, data: { items: [] }, message: e.message || 'OHLC fetch failed' });
   }
-});
+}
 
-// ——— Verify: wallet's Blunana balance + NFT count per collection ———
+app.get('/api/xma-ohlc', tokenOhlcHandler);
+app.get('/api/blunana-ohlc', tokenOhlcHandler); // legacy alias
+
+// ——— Verify: wallet XMA balance + NFT count per collection ———
 const getWalletHoldings = require(path.join(__dirname, '..', 'lib', 'holder', 'wallet-holdings.js')).getWalletHoldings;
 app.get('/api/verify', async function (req, res) {
   const wallet = (req.query.wallet || '').trim();
@@ -600,7 +603,7 @@ app.get('/api/collections', async function (req, res) {
   res.json({ collections: results });
 });
 
-// ——— Holders table (token + NFT by collection), filter/sort by total | token | mnk3ys | zmb3ys | nfts ———
+// ——— Holders table (token + NFT by collection index 0/1), sort by total | token | nfts ———
 // Decode owner (32 bytes) + amount (8 bytes LE) from getProgramAccounts dataSlice(32, 40)
 function decodeTokenAccountOwnerAndAmount(dataBase64) {
   if (!dataBase64) return null;
@@ -787,7 +790,7 @@ function formatTokenAmount(n) {
 // On Vercel, do not listen; the app is used by api/[[...path]].js
 if (process.env.VERCEL !== '1') {
   app.listen(PORT, function () {
-    console.log('Mnk3ys server at http://localhost:' + PORT);
+    console.log('XapeLabz server at http://localhost:' + PORT);
     if (!DISCORD_CLIENT_ID || !DISCORD_CLIENT_SECRET) {
       console.log('Discord login disabled: set DISCORD_CLIENT_ID and DISCORD_CLIENT_SECRET in .env');
     } else {

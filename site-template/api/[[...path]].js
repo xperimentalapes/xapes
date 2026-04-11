@@ -47,12 +47,12 @@ module.exports = (req, res) => {
     const rest = Array.isArray(pathSegments) ? pathSegments.join('/') : String(pathSegments);
     raw = '/api/' + (rest ? rest.replace(/^\/+/, '') : '');
   }
-  if (/^\/(discord|verify|collections|holders|prices|blunana-ohlc)(\/|$|\?)/.test(raw)) {
+  if (/^\/(discord|verify|collections|holders|prices|xma-ohlc|blunana-ohlc)(\/|$|\?)/.test(raw)) {
     raw = '/api' + raw;
   }
   const q = (req.url || '').includes('?') ? '?' + (req.url || '').split('?').slice(1).join('?') : '';
 
-  const isApiRoute = /^\/api\/(discord|verify|collections|holders|prices|blunana-ohlc)(\/|$|\?)/.test(raw);
+  const isApiRoute = /^\/api\/(discord|verify|collections|holders|prices|xma-ohlc|blunana-ohlc)(\/|$|\?)/.test(raw);
   if (isApiRoute) {
     req.url = raw + q;
     return app(req, res);
@@ -61,8 +61,6 @@ module.exports = (req, res) => {
   let u = raw;
   if (u.startsWith('/api/')) u = u.slice(4) || '/';
   else if (u === '/api') u = '/';
-  if (u === '/Mnk3ys' || u === '/Mnk3ys/') u = '/';
-  else if (u.startsWith('/Mnk3ys/')) u = u.slice(8) || '/';
   u = (u || '/').trim().replace(/\/+/g, '/').replace(/\/$/, '') || '/';
 
   if (u === '/favicon.ico') return res.status(204).end();

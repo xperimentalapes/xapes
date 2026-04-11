@@ -8,6 +8,7 @@
   {"source":"/api/collections","destination":"/api/dashboard?__path=collections"},
   {"source":"/api/holders","destination":"/api/dashboard?__path=holders"},
   {"source":"/api/prices","destination":"/api/dashboard?__path=prices"},
+  {"source":"/api/xma-ohlc","destination":"/api/dashboard?__path=xma-ohlc"},
   {"source":"/api/blunana-ohlc","destination":"/api/dashboard?__path=blunana-ohlc"},
   {"source":"/api/coinflip-state","destination":"/api/dashboard?__path=coinflip-state"},
   {"source":"/api/coinflip-stats","destination":"/api/dashboard?__path=coinflip-stats"},

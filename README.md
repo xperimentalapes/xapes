@@ -1,107 +1,89 @@
-# Xperimental Mutant Apes Website
+# XapeLabz / Xperimental Mutant Apes (`xapes`)
 
-A modern, responsive website for the Xperimental Mutant Apes (XMA) Solana NFT project.
+Monorepo for **XapeLabz**: marketing dashboard, **$XMA** token tooling, **Discord** (OAuth + slash commands), **Supabase** holder/NFT data, and **casino** pages (slots, chests, roulette, coinflip) deployed on **Vercel**.
 
-## Features
-
-- **Hero Section**: Prominent mint CTA button
-- **About Section**: Project information and tagline
-- **Marketplace Links**: Direct links to Magic Eden and Tensor collections
-- **Utilities Section**: Links to various project utilities and tools
-- **Community Section**: Social media links
-- **Responsive Design**: Works on all devices
-- **Smooth Animations**: Modern UI interactions and scroll effects
-
-## Setup
-
-1. Open `index.html` in a web browser, or
-2. Serve using a local web server:
+## Quick start
 
 ```bash
-# Using Python 3
-python3 -m http.server 8000
-
-# Using Node.js (if you have http-server installed)
-npx http-server
-
-# Using PHP
-php -S localhost:8000
+npm install
+# Create a root `.env` with the variables listed below (never commit secrets).
+npm run build          # copies `site-template/` + games into `public/` and injects env into HTML where needed
+npm start              # Express: `site-template/server.js` on PORT (default 3000)
 ```
 
-Then visit `http://localhost:8000` in your browser.
+Open [http://localhost:3000](http://localhost:3000). The live site is produced from **`public/`** after `npm run build`; local `npm start` also serves game assets from `public/`.
 
-## Customization
+## Stack
 
-### Update Links
+| Area | Location |
+|------|-----------|
+| Dashboard (hero, collections, `#xma` token section, holders, team, Discord connect) | `site-template/` → copied to `public/` by build |
+| Express API (Discord OAuth, prices, holders, Birdeye OHLC, games, holder verify) | `site-template/server.js`; Vercel entry `api/dashboard.js` |
+| Discord slash commands | `lib/discord/*`, `POST /api/discord/interactions` |
+| Holder sync + roles | `lib/holder/*`, `scripts/sync-nfts-roles.js`, GitHub Action `.github/workflows/sync-nfts-roles.yml` |
+| Game pages (HTML/JS at repo root) | Copied into `public/` by `scripts/inject-env.js` |
+| On-chain slot program (Anchor) | `slot-machine/` |
 
-Edit `index.html` to update the following links:
+## Environment variables
 
-1. **Mint Link** (Hero CTA): Update the `href` in the hero section's mint button
-   ```html
-   <a href="YOUR_MINT_URL" ...>Mint Now</a>
-   ```
+Set in **Vercel → Project → Settings → Environment Variables** (and locally in `.env`).
 
-2. **Marketplace Links**: Update Magic Eden and Tensor collection URLs
-   ```html
-   <a href="YOUR_MAGIC_EDEN_URL" ...>Magic Eden</a>
-   <a href="YOUR_TENSOR_URL" ...>Tensor</a>
-   ```
+**Site / Discord**
 
-3. **Utility Links**: Update all utility card links in the utilities section
-   - XMA Vault
-   - The Lab
-   - Lunarverse
-   - DEXTools
-   - XMA Lock Up
-   - Pump.fun
-   - LaunchMyNFT
+- `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET` — OAuth “Connect Discord”
+- `SESSION_SECRET` — cookie-session signing
+- `DISCORD_BOT_TOKEN` — team avatars, slash-command follow-ups, role sync
+- `DISCORD_PUBLIC_KEY` — **required** for `POST /api/discord/interactions`
+- `DISCORD_GUILD_ID` — guild slash command registration (`npm run register-discord-commands`)
+- `DISCORD_APPLICATION_ID` or `DISCORD_CLIENT_ID` — same app as the bot
+- `DISCORD_ADMIN_ROLE_IDS` — optional comma-separated role IDs for `/my_* member:` option
 
-4. **Social Links**: Update Twitter/X and other community links
+**Data / chain**
 
-### Update Content
+- `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`
+- `HELIUS_API_KEY` — NFT sync + balances
+- `MUTANT_APES_COLLECTION_MINT`, `COLLECTION_NAME`, `COLLECTION_ME_SLUG` (optional)
+- `XMA_TOKEN_MINT` (and optional `BLUNA_TOKEN_MINT` / `TOKEN_MINT` aliases)
+- `BIRDEYE_API_KEY` — optional; token OHLC chart (`/api/xma-ohlc`)
 
-- Edit the about section text in `index.html`
-- Modify project description and tagline
-- Update statistics in the hero section
+**GitHub Action** (`sync-nfts-roles`): same Supabase, Helius, collection mint, `DISCORD_BOT_TOKEN`, `DISCORD_GUILD_ID`, `COLLECTION_NAME` as secrets.
 
-### Styling
+## NPM scripts
 
-- Colors and gradients are defined in `styles.css` using CSS variables
-- Modify the `:root` section to change the color scheme
-- Adjust spacing, fonts, and sizes as needed
+| Script | Purpose |
+|--------|---------|
+| `npm run build` | `scripts/inject-env.js` — refresh `public/` dashboard + games |
+| `npm start` | Local Express server |
+| `npm run sync-nfts` | Helius → `nfts` table + Discord role reconciliation |
+| `npm run populate-nfts` | Populate `nfts` (no full role pass) |
+| `npm run register-discord-commands` | Register guild slash commands from `lib/discord/command-definitions.js` |
+| `npm run seed-discord-roles` | Seed `discord_roles` (see `database/`) |
 
-## Project Structure
+## Project layout (abbrev.)
 
 ```
 xapes/
-├── index.html      # Main HTML file
-├── styles.css      # All styling
-├── script.js       # JavaScript for interactions
-└── README.md       # This file
+├── site-template/       # Dashboard source (index.html, css/, js/config.js, js/app.js, server.js)
+├── public/              # Deployed static output + games (run `npm run build` to refresh dashboard files)
+├── api/                 # Vercel serverless handlers (dashboard, games, chests, etc.)
+├── lib/                 # discord/, holder/, coinflip/
+├── scripts/             # build, sync, DB helpers, `solana-*.js` key utilities
+├── database/            # SQL migrations and notes
+├── slot-machine/        # Anchor program + app for on-chain slots
+└── vercel.json          # rewrites → `api/dashboard` + static routes
 ```
 
-## Browser Support
+## Configuration
 
-- Chrome (latest)
-- Firefox (latest)
-- Safari (latest)
-- Edge (latest)
+Front-end copy, links, team Discord IDs, and token labels live in **`site-template/js/config.js`** as `window.XAPES_CONFIG`. After edits, run **`npm run build`** so `public/js/config.js` updates.
 
-## Notes
+## Docs
 
-- All external links open in new tabs (`target="_blank"`)
-- The site uses Google Fonts (Inter) - requires internet connection
-- Placeholder links are marked with `#` - replace with actual URLs
-- The design is optimized for dark mode/theme
+- **`HOMEPAGE_SETUP.md`** — how the dashboard template is wired
+- **`DATABASE_SETUP.md`** / **`database/`** — Supabase schema and migrations
+- **`DEPLOYMENT.md`** — Vercel-focused notes
+- **`SECURITY.md`** — operational security reminders
 
-## Deployment
+## License / usage
 
-You can deploy this site to:
-- **Netlify**: Drag and drop the folder
-- **Vercel**: Connect your repository
-- **GitHub Pages**: Push to a repository and enable Pages
-- **Any static hosting service**
-
-## License
-
-This website is for the Xperimental Mutant Apes project.
+Site and tooling for the **Xperimental Mutant Apes / XapeLabz** project. Adjust branding and env for your deployment.

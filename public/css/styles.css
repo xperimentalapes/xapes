@@ -1518,7 +1518,7 @@ body {
   border-color: rgba(255, 255, 255, 0.6);
 }
 
-/* Stake BLUNANA with MOB TOOLS — card with MOBTOOLS logo bg */
+/* Roulette stake card (MOBTOOLS-style layout) */
 .card--mobtools {
   display: block;
   position: relative;

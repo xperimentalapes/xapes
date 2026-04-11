@@ -1,5 +1,7 @@
 # API Endpoints
 
+For the main dashboard Discord OAuth, prices, holders, and related routes, see the root **`README.md`** and **`api/dashboard.js`**.
+
 ## `/api/collect`
 
 Collects winnings from the treasury wallet to the user's wallet.

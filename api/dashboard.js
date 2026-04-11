@@ -24,7 +24,7 @@ function readRawBodyBuffer(req) {
   });
 }
 
-const DASHBOARD_API = /^\/api\/(discord|verify|collections|holders|prices|blunana-ohlc|coinflip-state|coinflip-stats|coinflip-flip|coinflip-purchase|coinflip-collect|coinflip-confirm-collect|holder-link-wallet|holder-verify)(\/|$|\?)/;
+const DASHBOARD_API = /^\/api\/(discord|verify|collections|holders|prices|xma-ohlc|blunana-ohlc|coinflip-state|coinflip-stats|coinflip-flip|coinflip-purchase|coinflip-collect|coinflip-confirm-collect|holder-link-wallet|holder-verify)(\/|$|\?)/;
 
 function getPathAndQuery(req) {
   const __path = req.query && req.query.__path;

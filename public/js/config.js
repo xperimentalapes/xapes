@@ -2,7 +2,7 @@
  * Project config — edit this file for your project.
  * All site copy, logos, and URLs are driven from here.
  */
-window.MNK3YS_CONFIG = {
+window.XAPES_CONFIG = {
   projectName: 'XapeLabz',
   tagline: 'XapeLabz',
   logoUrl: 'assets/logo.png',

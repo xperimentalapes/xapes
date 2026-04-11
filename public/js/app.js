@@ -1,13 +1,13 @@
 /**
  * Project dashboard — config-driven template for NFT/token projects.
- * All project-specific copy and URLs come from window.MNK3YS_CONFIG (js/config.js).
+ * All project-specific copy and URLs come from window.XAPES_CONFIG (js/config.js).
  */
 
 (function () {
   'use strict';
 
   const BREAKPOINT = 900;
-  const CONFIG = window.MNK3YS_CONFIG || { holderPortalUrl: '', endpoints: {}, discordConnectUrl: '' };
+  const CONFIG = window.XAPES_CONFIG || { holderPortalUrl: '', endpoints: {}, discordConnectUrl: '' };
   const BASE_PATH = '';
   const PORTAL_URL = (CONFIG.holderPortalUrl || '').replace(/\/$/, '');
   const HOLDINGS_ENDPOINT = PORTAL_URL && CONFIG.endpoints?.holdings ? PORTAL_URL + CONFIG.endpoints.holdings : '';
@@ -105,7 +105,7 @@
 
     // Holders labels (sidebar + mobile panel key labels)
     var labels = c.holdingsLabels || {};
-    ['token', 'mnk3ys', 'zmb3ys', 'totalNfts', 'nfts'].forEach(function (key) {
+    ['token', 'totalNfts', 'nfts'].forEach(function (key) {
       if (!labels[key]) return;
       document.querySelectorAll('[data-holdings-key="' + key + '"]').forEach(function (el) {
         el.textContent = labels[key];
@@ -158,6 +158,11 @@
     }, 1200);
   }
 
+  var fromLegacyBlunanaHash = window.location.hash === '#blunana';
+  if (fromLegacyBlunanaHash) {
+    window.history.replaceState(null, '', '#xma');
+  }
+
   navLinks.forEach(function (link) {
     link.addEventListener('click', function (e) {
       const sectionId = link.getAttribute('data-section');
@@ -192,6 +197,7 @@
     if (section.id) observer.observe(section);
   });
   setActiveSection(getSectionIdFromHash());
+  if (fromLegacyBlunanaHash) scrollToSection('xma');
 
   // ----- Wallet (Solana) -----
   function getDetectedWallets() {
@@ -340,7 +346,7 @@
     var blunana = data && data.blunanaFormatted != null ? data.blunanaFormatted : (data && data.blunana != null ? String(data.blunana) : '—');
     var totalNfts = data && data.totalNfts != null ? String(data.totalNfts) : '—';
     [
-      [document.getElementById('holdings-blunana'), document.getElementById('holdings-blunana-mobile')],
+      [document.getElementById('holdings-xma'), document.getElementById('holdings-xma-mobile')],
       [document.getElementById('holdings-total-nfts'), document.getElementById('holdings-total-nfts-mobile')],
     ].forEach(function (pair, i) {
       var val = [blunana, totalNfts][i];
@@ -1001,10 +1007,10 @@
     } catch (_) { return ''; }
   }
 
-  // ----- Team (from MNK3YS_CONFIG.team: xProfileUrl, discordId, description) -----
+  // ----- Team (from XAPES_CONFIG.team: xProfileUrl, discordId, description) -----
   var teamGrid = document.getElementById('team-grid');
-  if (teamGrid && window.MNK3YS_CONFIG && Array.isArray(window.MNK3YS_CONFIG.team) && window.MNK3YS_CONFIG.team.length > 0) {
-    var teamList = window.MNK3YS_CONFIG.team;
+  if (teamGrid && window.XAPES_CONFIG && Array.isArray(window.XAPES_CONFIG.team) && window.XAPES_CONFIG.team.length > 0) {
+    var teamList = window.XAPES_CONFIG.team;
     teamGrid.innerHTML = '';
     teamList.forEach(function (member) {
       var xUrl = member.xProfileUrl || '';
@@ -1088,7 +1094,7 @@
             if (c.floorPriceSol != null) floorByIndex[idx] = parseFloat(String(c.floorPriceSol), 10);
           });
         }
-        var floorMnk3ysSol = floorByIndex[0] != null ? floorByIndex[0] : null;
+        var floorFirstColSol = floorByIndex[0] != null ? floorByIndex[0] : null;
         var floorZmb3ysSol = floorByIndex[1] != null ? floorByIndex[1] : null;
         var solUsdNum = solUsd != null ? Number(solUsd) : null;
         var blunanaUsdNum = blunanaUsd != null ? Number(blunanaUsd) : null;
@@ -1098,12 +1104,12 @@
         }
         var holders = data.holders.map(function (h) {
           var tokenBal = h.tokenBalance != null ? Number(h.tokenBalance) : null;
-          var mnk3ysCount = Number(h.mnk3ysCount) || 0;
-          var zmb3ysCount = Number(h.zmb3ysCount) || 0;
+          var col0NftCount = Number(h.mnk3ysCount) || 0;
+          var col1NftCount = Number(h.zmb3ysCount) || 0;
           var tokenValueUsd = (blunanaUsdNum != null && !isNaN(blunanaUsdNum) && tokenBal != null && !isNaN(tokenBal)) ? tokenBal * blunanaUsdNum : null;
           var nftValueUsd = null;
-          if (solUsdNum != null && !isNaN(solUsdNum) && (floorMnk3ysSol != null || floorZmb3ysSol != null)) {
-            var nftSol = mnk3ysCount * (floorMnk3ysSol || 0) + zmb3ysCount * (floorZmb3ysSol || 0);
+          if (solUsdNum != null && !isNaN(solUsdNum) && (floorFirstColSol != null || floorZmb3ysSol != null)) {
+            var nftSol = col0NftCount * (floorFirstColSol || 0) + col1NftCount * (floorZmb3ysSol || 0);
             nftValueUsd = nftSol * solUsdNum;
           }
           var totalValueUsd = null;
@@ -1178,8 +1184,8 @@
   var mcapEl = document.getElementById('tokenomics-mcap');
   var liqEl = document.getElementById('tokenomics-liq');
   var volEl = document.getElementById('tokenomics-vol');
-  var chartEl = document.getElementById('blunana-chart');
-  var chartHintEl = document.getElementById('blunana-chart-hint');
+  var chartEl = document.getElementById('xma-chart');
+  var chartHintEl = document.getElementById('xma-chart-hint');
 
   function formatUsd(val) {
     if (val == null || isNaN(val)) return '—';
@@ -1218,7 +1224,7 @@
   }
 
   if (chartEl) {
-    fetch(window.location.origin + '/api/blunana-ohlc?type=15m', { credentials: 'include' })
+    fetch(window.location.origin + '/api/xma-ohlc?type=15m', { credentials: 'include' })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (data) {
         var items = (data && data.data && data.data.items) ? data.data.items : [];

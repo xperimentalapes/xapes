@@ -1,75 +1,13 @@
-# Deployment Guide for Xperimental Mutant Apes Website
+# Deployment (Vercel)
 
-## Option 1: Deploy via Vercel Dashboard (Recommended - No Git Required)
+This project is configured for **Vercel**: `vercel.json` sets `buildCommand` to `npm run build` and `outputDirectory` to `public`.
 
-1. **Prepare your files:**
-   - All files are ready in the `/Users/tombuxdao/xapes` directory
-   - Files needed: `index.html`, `styles.css`, `script.js`, and `public/images/` folder
+1. Connect the GitHub repo to Vercel (or use `vercel` CLI from the repo root).
+2. Add **environment variables** in the Vercel project (see root **README.md**).
+3. Deploy. Each build runs `npm run build`, which refreshes the dashboard files in `public/` from `site-template/` and copies game pages from the repo root.
 
-2. **Deploy to Vercel:**
-   - Go to [vercel.com](https://vercel.com) and log in with your new account
-   - Click "Add New..." → "Project"
-   - Choose "Import Git Repository" OR "Deploy from local files"
-   - If deploying from local files, you can drag and drop the folder
+**Discord OAuth:** Register every production callback URL, e.g. `https://your-domain.com/api/discord/callback`, in the Discord Developer Portal (same for `www` if you use it).
 
-## Option 2: Use Vercel CLI (No Git Required)
+**Discord interactions:** Set the interactions URL to `https://your-domain.com/api/discord/interactions` and set `DISCORD_PUBLIC_KEY` in Vercel.
 
-1. Install Vercel CLI:
-   ```bash
-   npm install -g vercel
-   ```
-
-2. Navigate to project:
-   ```bash
-   cd /Users/tombuxdao/xapes
-   ```
-
-3. Deploy:
-   ```bash
-   vercel
-   ```
-   - Follow the prompts
-   - Login with your new account when prompted
-   - Vercel will deploy directly without needing git
-
-## Option 3: GitHub + Vercel (After resolving Xcode license)
-
-If you want to use GitHub:
-
-1. **Resolve Xcode license:**
-   ```bash
-   sudo xcodebuild -license
-   ```
-   (Press space to scroll, type 'agree' at the end)
-
-2. **Clear old GitHub credentials:**
-   - Open Keychain Access (Applications → Utilities)
-   - Search for "github.com"
-   - Delete any GitHub credentials found
-   - Or use: `git credential-osxkeychain erase` (after Xcode is resolved)
-
-3. **Set up new GitHub account:**
-   ```bash
-   git config --global user.name "Your New Name"
-   git config --global user.email "your-new-email@example.com"
-   ```
-
-4. **Initialize and push:**
-   ```bash
-   git init
-   git add .
-   git commit -m "Initial commit"
-   git branch -M main
-   git remote add origin https://github.com/YOUR-NEW-USERNAME/xapes.git
-   git push -u origin main
-   ```
-   (You'll be prompted to login with your new GitHub account)
-
-5. **Connect to Vercel:**
-   - Go to Vercel dashboard
-   - Import the GitHub repository
-   - Deploy automatically
-
-## Recommended: Option 1 or 2
-
-Since you have a new temporary account, I recommend **Option 1 or 2** (Vercel Dashboard or CLI) as they don't require resolving the Xcode license issue or setting up git credentials.
+For local production-like checks: `npm run build && npm start`.
