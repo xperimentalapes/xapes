@@ -7,6 +7,7 @@
 
 require('dotenv').config();
 const path = require('path');
+const fs = require('fs');
 const express = require('express');
 const cookieSession = require('cookie-session');
 const cookieParser = require('cookie-parser');
@@ -113,6 +114,29 @@ if (require('fs').existsSync(coinflipDir)) {
     app.post('/api/coinflip-confirm-collect', useCoinflipHandler(require(path.join(coinflipDir, 'coinflip-confirm-collect.js'))));
   } catch (e) {
     console.warn('Coinflip API routes not loaded:', e.message);
+  }
+}
+
+// ——— Holder verify: wallet link + Discord roles (Supabase + bot) ———
+const holderDir = path.join(__dirname, '..', 'lib', 'holder');
+function useHolderHandler(mod) {
+  return function (req, res) {
+    Promise.resolve(mod(req, res)).catch(function (err) {
+      console.error('Holder API error:', err);
+      if (!res.headersSent) res.status(500).json({ error: err.message || 'Server error' });
+    });
+  };
+}
+if (fs.existsSync(path.join(holderDir, 'link-wallet.js'))) {
+  try {
+    const linkWallet = require(path.join(holderDir, 'link-wallet.js'));
+    const verifyRoles = require(path.join(holderDir, 'verify-roles.js'));
+    app.post('/api/holder/link-wallet', useHolderHandler(linkWallet));
+    app.post('/api/holder/verify', useHolderHandler(verifyRoles));
+    app.post('/api/holder-link-wallet', useHolderHandler(linkWallet));
+    app.post('/api/holder-verify', useHolderHandler(verifyRoles));
+  } catch (e) {
+    console.warn('Holder API routes not loaded:', e.message);
   }
 }
 
@@ -407,92 +431,26 @@ app.get('/api/blunana-ohlc', async function (req, res) {
 });
 
 // ——— Verify: wallet's Blunana balance + NFT count per collection ———
+const getWalletHoldings = require(path.join(__dirname, '..', 'lib', 'holder', 'wallet-holdings.js')).getWalletHoldings;
 app.get('/api/verify', async function (req, res) {
   const wallet = (req.query.wallet || '').trim();
   if (!wallet) {
     return res.status(400).json({ error: 'Missing wallet' });
   }
-
-  const out = {
-    blunana: 0,
-    blunanaFormatted: '0',
-    mnk3ysCount: 0,
-    zmb3ysCount: 0,
-    totalNfts: 0,
-  };
-
-  if (!HELIUS_API_KEY) {
-    return res.json(out);
-  }
-
   try {
-    // 1) Blunana token balance — Helius getTokenAccounts(owner, mint)
-    const tokenRes = await axios.post(
-      `${HELIUS_RPC}/?api-key=${HELIUS_API_KEY}`,
-      {
-        jsonrpc: '2.0',
-        id: '1',
-        method: 'getTokenAccounts',
-        params: {
-          owner: wallet,
-          mint: BLUNA_TOKEN_MINT,
-          limit: 10,
-        },
-      },
-      { timeout: 10000, validateStatus: () => true }
-    );
-    const tokenAccounts = tokenRes.data?.result?.token_accounts || [];
-    let totalRaw = 0;
-    for (const acc of tokenAccounts) {
-      totalRaw += Number(acc.amount || 0);
-    }
-    out.blunana = totalRaw / Math.pow(10, BLUNA_DECIMALS);
-    out.blunanaFormatted = formatTokenAmount(out.blunana);
-
-    // 2) NFT counts per collection — getAssetsByOwner, filter by grouping.collection
-    const collectionMints = COLLECTIONS.map((c) => c.collectionMint).filter(Boolean);
-    if (collectionMints.length > 0) {
-      let page = 1;
-      let hasMore = true;
-      while (hasMore) {
-        const assetsRes = await axios.post(
-          `${HELIUS_RPC}/?api-key=${HELIUS_API_KEY}`,
-          {
-            jsonrpc: '2.0',
-            id: '1',
-            method: 'getAssetsByOwner',
-            params: {
-              ownerAddress: wallet,
-              page,
-              limit: 1000,
-              options: { showUnverifiedCollections: true },
-            },
-          },
-          { timeout: 15000, validateStatus: () => true }
-        );
-        const items = assetsRes.data?.result?.items || [];
-        for (const item of items) {
-          const group = item.grouping?.find((g) => g.group_key === 'collection');
-          const colVal = group?.group_value;
-          for (let i = 0; i < COLLECTIONS.length; i++) {
-            if (COLLECTIONS[i].collectionMint && colVal === COLLECTIONS[i].collectionMint) {
-              if (i === 0) out.mnk3ysCount++;
-              else if (i === 1) out.zmb3ysCount++;
-              break;
-            }
-          }
-        }
-        hasMore = items.length === 1000;
-        page++;
-        if (page > 20) break;
-      }
-      out.totalNfts = out.mnk3ysCount + out.zmb3ysCount;
-    }
+    const out = await getWalletHoldings(wallet);
+    const { collectionItems, ...rest } = out;
+    res.json(rest);
   } catch (e) {
     console.warn('Verify failed', e.message);
+    res.json({
+      blunana: 0,
+      blunanaFormatted: '0',
+      mnk3ysCount: 0,
+      zmb3ysCount: 0,
+      totalNfts: 0,
+    });
   }
-
-  res.json(out);
 });
 
 // ——— Collections (Magic Eden stats + optional Helius DAS) ———

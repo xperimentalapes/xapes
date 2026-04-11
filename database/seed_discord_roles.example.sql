@@ -1,0 +1,8 @@
+-- Production seed for this project: use **seed_discord_roles_xapes.sql** (real role IDs + rules).
+--
+-- rule_type values (lib/holder/role-evaluator.js):
+--   collection_min_one     — ≥1 NFT in collection (linked wallets + DB / live overlay on verify)
+--   collection_min_nfts    — rule_config {"min": N}
+--   nft_column_true        — {"column":"is_crown"|"is_cowboy"|"is_burn_squad"}
+--   token_balance_min      — {"min": N} total XMA (human units) summed across linked wallets
+--   metadata_trait         — {"trait_type","trait_value"} optional / legacy

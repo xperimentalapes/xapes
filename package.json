@@ -4,7 +4,13 @@
   "description": "Xperimental Mutant Apes website",
   "scripts": {
     "build": "node scripts/inject-env.js",
-    "start": "NODE_PATH=. node site-template/server.js"
+    "start": "NODE_PATH=. node site-template/server.js",
+    "sync-nfts": "node scripts/sync-nfts-roles.js",
+    "populate-nfts": "node scripts/populate-nfts.js",
+    "backfill-trait-flags": "node scripts/backfill-trait-flags.js",
+    "seed-discord-roles": "node scripts/seed-discord-roles.js",
+    "extract-traits": "node scripts/extract-trait-values.js",
+    "list-body-head-traits": "node scripts/list-body-head-traits.js"
   },
   "dependencies": {
     "@solana/web3.js": "^1.87.6",

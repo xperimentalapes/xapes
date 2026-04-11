@@ -843,6 +843,134 @@ body {
   display: none;
 }
 
+/* Verify result popup (above verify modal + wallet picker) */
+.verify-result-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 220;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  visibility: hidden;
+  opacity: 0;
+  transition: visibility 0.2s, opacity 0.2s;
+}
+.verify-result-modal[aria-hidden="false"] {
+  visibility: visible;
+  opacity: 1;
+}
+.verify-result-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  cursor: pointer;
+}
+.verify-result-modal__box {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: var(--bg-elevated);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+}
+.verify-result-modal__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+}
+.verify-result-modal__title {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+.verify-result-modal__close {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: -0.5rem -0.5rem -0.5rem 0;
+  padding: 0;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: color 0.2s, background 0.2s;
+}
+.verify-result-modal__close:hover {
+  color: var(--text);
+  background: var(--bg-hover);
+}
+.verify-result-modal__body {
+  padding: 1.25rem;
+}
+.verify-result-modal__status {
+  margin: 0 0 0.75rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+.verify-result-modal__status--success {
+  color: var(--accent);
+}
+.verify-result-modal__status--warning {
+  color: #e8a849;
+}
+.verify-result-modal__status--error {
+  color: #e85d5d;
+}
+.verify-result-modal__status--info {
+  color: var(--text-muted);
+}
+.verify-result-modal__message {
+  margin: 0 0 1rem;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+.verify-result-modal__message[hidden] {
+  display: none;
+}
+.verify-result-modal__roles-block[hidden] {
+  display: none;
+}
+.verify-result-modal__roles-section {
+  margin-bottom: 1rem;
+}
+.verify-result-modal__roles-section[hidden] {
+  display: none;
+}
+.verify-result-modal__roles-label {
+  margin: 0 0 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+.verify-result-modal__roles-list {
+  margin: 0;
+  padding-left: 1.15rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--text);
+}
+.verify-result-modal__roles-list li {
+  margin-bottom: 0.2rem;
+}
+.verify-result-modal .btn {
+  margin-top: 0.25rem;
+}
+
 /* Wallet picker modal */
 .wallet-picker {
   position: fixed;

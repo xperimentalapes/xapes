@@ -1,0 +1,281 @@
+{
+  "generated_at": "2026-04-10T23:27:33.605Z",
+  "body_note": "trait_type matched case-insensitively as \"body\"",
+  "body_distinct_values": 35,
+  "head_note": "trait_type matched case-insensitively as head | hat | headwear",
+  "head_distinct_entries": 26,
+  "body": [
+    {
+      "value": "Spider Ape",
+      "count": 133
+    },
+    {
+      "value": "Reptile Ape",
+      "count": 128
+    },
+    {
+      "value": "Tiger Ape",
+      "count": 128
+    },
+    {
+      "value": "Leopard Ape",
+      "count": 125
+    },
+    {
+      "value": "Robot Ape",
+      "count": 125
+    },
+    {
+      "value": "Snow Ape",
+      "count": 116
+    },
+    {
+      "value": "Rainbow Ape",
+      "count": 113
+    },
+    {
+      "value": "Og Ape",
+      "count": 112
+    },
+    {
+      "value": "Disease Ape",
+      "count": 111
+    },
+    {
+      "value": "Flame Ape",
+      "count": 102
+    },
+    {
+      "value": "Dragon Ape",
+      "count": 94
+    },
+    {
+      "value": "Slime Ape",
+      "count": 68
+    },
+    {
+      "value": "Yeti Ape",
+      "count": 66
+    },
+    {
+      "value": "Candy Ape",
+      "count": 51
+    },
+    {
+      "value": "Frankenstein Ape",
+      "count": 47
+    },
+    {
+      "value": "Galaxy Ape",
+      "count": 44
+    },
+    {
+      "value": "Sky Ape",
+      "count": 43
+    },
+    {
+      "value": "Gold Ape",
+      "count": 41
+    },
+    {
+      "value": "Volcanic Ape",
+      "count": 39
+    },
+    {
+      "value": "X Ray Ape",
+      "count": 36
+    },
+    {
+      "value": "Zombie Ape",
+      "count": 32
+    },
+    {
+      "value": "Jake Mutant Tetra",
+      "count": 14
+    },
+    {
+      "value": "Panda Ape",
+      "count": 7
+    },
+    {
+      "value": "Kraken",
+      "count": 6
+    },
+    {
+      "value": "Tusk",
+      "count": 4
+    },
+    {
+      "value": "XMB Black Bear",
+      "count": 3
+    },
+    {
+      "value": "XMB Candy Bear",
+      "count": 2
+    },
+    {
+      "value": "XMB Zombie Bear",
+      "count": 2
+    },
+    {
+      "value": "Great White",
+      "count": 1
+    },
+    {
+      "value": "Steve",
+      "count": 1
+    },
+    {
+      "value": "XMB Andean Bear",
+      "count": 1
+    },
+    {
+      "value": "XMB Frankenstein Bear",
+      "count": 1
+    },
+    {
+      "value": "XMB Galaxy Bear",
+      "count": 1
+    },
+    {
+      "value": "XMB Gold Bear",
+      "count": 1
+    },
+    {
+      "value": "XMB Slime Bear",
+      "count": 1
+    }
+  ],
+  "head": [
+    {
+      "trait_type": "Head",
+      "value": "Orange Joker",
+      "count": 141
+    },
+    {
+      "trait_type": "Head",
+      "value": "Gentleman",
+      "count": 134
+    },
+    {
+      "trait_type": "Head",
+      "value": "Robo Dreads",
+      "count": 130
+    },
+    {
+      "trait_type": "Head",
+      "value": "Banana Style",
+      "count": 129
+    },
+    {
+      "trait_type": "Head",
+      "value": "Mutant Cowboy",
+      "count": 117
+    },
+    {
+      "trait_type": "Head",
+      "value": "Mutant Joker",
+      "count": 112
+    },
+    {
+      "trait_type": "Head",
+      "value": "Retro Punk",
+      "count": 108
+    },
+    {
+      "trait_type": "Head",
+      "value": "Game Time",
+      "count": 89
+    },
+    {
+      "trait_type": "Head",
+      "value": "Alien Experiment",
+      "count": 85
+    },
+    {
+      "trait_type": "Head",
+      "value": "Cold War",
+      "count": 84
+    },
+    {
+      "trait_type": "Head",
+      "value": "Taco Tuesday",
+      "count": 84
+    },
+    {
+      "trait_type": "Head",
+      "value": "Demon Horns",
+      "count": 73
+    },
+    {
+      "trait_type": "Head",
+      "value": "Mutant Oni",
+      "count": 67
+    },
+    {
+      "trait_type": "Head",
+      "value": "Chef Hat",
+      "count": 64
+    },
+    {
+      "trait_type": "Head",
+      "value": "Halo",
+      "count": 59
+    },
+    {
+      "trait_type": "Head",
+      "value": "Shocker",
+      "count": 53
+    },
+    {
+      "trait_type": "Head",
+      "value": "Xma Beanie",
+      "count": 52
+    },
+    {
+      "trait_type": "Head",
+      "value": "Mutated Crown",
+      "count": 48
+    },
+    {
+      "trait_type": "Head",
+      "value": "Mutant Headphones",
+      "count": 46
+    },
+    {
+      "trait_type": "Head",
+      "value": "Hidden Mutant",
+      "count": 44
+    },
+    {
+      "trait_type": "Head",
+      "value": "Steve",
+      "count": 35
+    },
+    {
+      "trait_type": "Head",
+      "value": "Giants Helmet",
+      "count": 28
+    },
+    {
+      "trait_type": "Head",
+      "value": "Naked Head",
+      "count": 14
+    },
+    {
+      "trait_type": "Head",
+      "value": "Super Rare",
+      "count": 1
+    },
+    {
+      "trait_type": "Head",
+      "value": "XMB Oni Fox Mask",
+      "count": 1
+    },
+    {
+      "trait_type": "Head",
+      "value": "ZMB Red Oni",
+      "count": 1
+    }
+  ]
+}

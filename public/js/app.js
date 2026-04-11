@@ -235,11 +235,24 @@
     if (typeof syncVerifyModalState === 'function') syncVerifyModalState();
   }
 
+  function postHolderLinkWallet() {
+    if (!document.body.classList.contains('discord-connected')) return;
+    var w = getWalletPublicKey();
+    if (!w) return;
+    fetch(window.location.origin + '/api/holder-link-wallet', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ walletAddress: w }),
+    }).catch(function () {});
+  }
+
   function connectWithProvider(provider) {
     return provider.connect({ onlyIfTrusted: false })
       .then(function () {
         setWalletConnected(true);
         hideHoldings();
+        postHolderLinkWallet();
       })
       .catch(function (err) {
         if (err.code !== 4001) console.warn('Wallet connect error', err);
@@ -304,8 +317,10 @@
     getDetectedWallets().forEach(function (w) {
       if (w.provider && typeof w.provider.on === 'function') {
         w.provider.on('accountChanged', function (pk) {
-          if (pk) setWalletConnected(true);
-          else setWalletConnected(false);
+          if (pk) {
+            setWalletConnected(true);
+            postHolderLinkWallet();
+          } else setWalletConnected(false);
           hideHoldings();
         });
       }
@@ -382,22 +397,90 @@
     return document.body.classList.contains('discord-connected');
   }
 
-  function doVerify(onSuccess) {
+  function verifyWithRoles(walletAddress) {
+    return fetch(window.location.origin + '/api/holder-verify', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ walletAddress: walletAddress }),
+    }).then(function (res) {
+      return res.json().then(function (body) {
+        return { ok: res.ok, status: res.status, body: body };
+      });
+    });
+  }
+
+  /** Fallback labels if API omits rolesAddedNamed (matches seed_discord_roles_xapes.sql). */
+  var DISCORD_ROLE_ID_LABELS = {
+    '1377593419723046952': 'Xape Holder',
+    '1380162518072164383': 'Xape God',
+    '1388338739297648640': 'Mutant',
+    '1456871093351747604': 'Royal Family',
+    '1463993881392709693': 'Cowboy DAO',
+    '1491281476367552642': 'Burn Squad',
+    '1457517122581168252': '$XMA holder',
+    '1457516956985852017': '$XMA whale',
+  };
+
+  function roleLabelForDiscordId(id) {
+    var s = String(id);
+    return DISCORD_ROLE_ID_LABELS[s] || 'Discord role';
+  }
+
+  function doVerify(onComplete) {
     var wallet = getWalletPublicKey();
     if (!wallet) return;
     setVerifyLoading(true);
-    function done(data) {
+
+    function finish(dataForHoldings, modalPayload, sessionVerified) {
       setVerifyLoading(false);
-      showHoldings(data || {});
-      if (typeof onSuccess === 'function') onSuccess();
+      showHoldings(dataForHoldings || {});
+      if (sessionVerified) setVerifySuccessInModal();
+      if (typeof onComplete === 'function') onComplete(modalPayload || {});
     }
-    function fail(err) {
-      setVerifyLoading(false);
-      console.warn('Verify failed', err);
-      showHoldings({});
-      alert('Could not load holdings. Check console or try again.');
-    }
-    fetchVerifyHoldings(wallet).then(done).catch(fail);
+
+    verifyWithRoles(wallet)
+      .then(function (result) {
+        if (result.ok && result.body && !result.body.error) {
+          finish(result.body, result.body, true);
+          return;
+        }
+        if (result.body && result.body.error && result.status === 401) {
+          finish(
+            {},
+            { error: true, message: result.body.error || 'Discord login required.', rolesSynced: false },
+            false
+          );
+          return;
+        }
+        return fetchVerifyHoldings(wallet).then(function (data) {
+          finish(
+            data || {},
+            Object.assign(
+              { rolesSynced: false, message: 'Verify service returned an error. Holdings were updated if possible.' },
+              data || {}
+            ),
+            false
+          );
+        });
+      })
+      .catch(function (err) {
+        console.warn('Verify failed', err);
+        return fetchVerifyHoldings(wallet)
+          .then(function (data) {
+            finish(
+              data || {},
+              Object.assign(
+                { rolesSynced: false, message: 'Network error. Holdings were updated if possible.' },
+                data || {}
+              ),
+              false
+            );
+          })
+          .catch(function () {
+            finish({}, { rolesSynced: false, message: 'Could not load holdings. Try again.' }, false);
+          });
+      });
   }
 
   // ----- Verify modal (3 steps) -----
@@ -415,6 +498,126 @@
   var verifyModalSuccess = document.getElementById('verify-modal-success');
   var heroVerifyActions = document.getElementById('hero-verify-actions');
   var hasVerifiedThisSession = false;
+
+  var verifyResultModal = document.getElementById('verify-result-modal');
+  var verifyResultModalBackdrop = document.getElementById('verify-result-modal-backdrop');
+  var verifyResultModalClose = document.getElementById('verify-result-modal-close');
+  var verifyResultModalOk = document.getElementById('verify-result-modal-ok');
+
+  function closeVerifyResultModal() {
+    if (verifyResultModal) verifyResultModal.setAttribute('aria-hidden', 'true');
+  }
+
+  function showVerifyResultModal(d) {
+    if (!verifyResultModal) return;
+    var titleEl = document.getElementById('verify-result-modal-title');
+    var statusEl = document.getElementById('verify-result-modal-status');
+    var msgEl = document.getElementById('verify-result-modal-message');
+    var rolesBlock = document.getElementById('verify-result-roles-block');
+    var addedWrap = document.getElementById('verify-result-added-wrap');
+    var removedWrap = document.getElementById('verify-result-removed-wrap');
+    var addedList = document.getElementById('verify-result-added-list');
+    var removedList = document.getElementById('verify-result-removed-list');
+
+    var authErr = !!(d && d.error);
+    var notInGuild = !!(d && d.notInGuild);
+    var msg = d && d.message ? String(d.message) : '';
+    var discordFail = msg.indexOf('Could not reach Discord') >= 0;
+    var skipRoles =
+      msg.indexOf('not configured') >= 0 ||
+      msg.indexOf('No active role') >= 0 ||
+      msg.indexOf('Could not load role rules') >= 0;
+    var rolesSynced = !!(d && d.rolesSynced);
+
+    var addedNamed = (d && d.rolesAddedNamed) || [];
+    var removedNamed = (d && d.rolesRemovedNamed) || [];
+    if ((!addedNamed || !addedNamed.length) && d && d.rolesAdded && d.rolesAdded.length) {
+      addedNamed = d.rolesAdded.map(function (id) {
+        return { id: id, name: roleLabelForDiscordId(id) };
+      });
+    }
+    if ((!removedNamed || !removedNamed.length) && d && d.rolesRemoved && d.rolesRemoved.length) {
+      removedNamed = d.rolesRemoved.map(function (id) {
+        return { id: id, name: roleLabelForDiscordId(id) };
+      });
+    }
+
+    var hasDelta = addedNamed.length > 0 || removedNamed.length > 0;
+
+    if (titleEl) {
+      if (authErr) titleEl.textContent = 'Sign in required';
+      else if (notInGuild || discordFail) titleEl.textContent = 'Verification incomplete';
+      else if (skipRoles) titleEl.textContent = 'Holdings updated';
+      else if (rolesSynced) titleEl.textContent = 'Verification successful';
+      else titleEl.textContent = 'Verification';
+    }
+
+    if (statusEl) {
+      statusEl.className = 'verify-result-modal__status';
+      if (authErr) {
+        statusEl.classList.add('verify-result-modal__status--error');
+        statusEl.textContent = 'Discord is not connected.';
+      } else if (notInGuild) {
+        statusEl.classList.add('verify-result-modal__status--warning');
+        statusEl.textContent = 'Join the Discord server to sync roles.';
+      } else if (discordFail) {
+        statusEl.classList.add('verify-result-modal__status--warning');
+        statusEl.textContent = 'Could not reach Discord to update roles.';
+      } else if (skipRoles) {
+        statusEl.classList.add('verify-result-modal__status--info');
+        statusEl.textContent = 'Wallet linked; role sync was skipped.';
+      } else if (rolesSynced) {
+        statusEl.classList.add('verify-result-modal__status--success');
+        statusEl.textContent = hasDelta ? 'Your Discord roles were updated.' : 'Your Discord roles are already up to date.';
+      } else {
+        statusEl.classList.add('verify-result-modal__status--info');
+        statusEl.textContent = msg || 'Verification finished.';
+      }
+    }
+
+    if (msgEl) {
+      if (authErr) {
+        msgEl.hidden = false;
+        msgEl.textContent = d.message || 'Connect Discord first, then verify again.';
+      } else if (msg && (notInGuild || discordFail || skipRoles)) {
+        msgEl.hidden = false;
+        msgEl.textContent = msg;
+      } else if (msg && !rolesSynced && !hasDelta) {
+        msgEl.hidden = false;
+        msgEl.textContent = msg;
+      } else {
+        msgEl.hidden = true;
+        msgEl.textContent = '';
+      }
+    }
+
+    var showRoles = rolesSynced && !notInGuild && !discordFail && !authErr && hasDelta;
+    if (rolesBlock) rolesBlock.hidden = !showRoles;
+    if (addedWrap && addedList) {
+      var showAdded = showRoles && addedNamed.length > 0;
+      addedWrap.hidden = !showAdded;
+      addedList.innerHTML = showAdded
+        ? addedNamed
+            .map(function (x) {
+              return '<li>' + escapeHtml(x.name || roleLabelForDiscordId(x.id)) + '</li>';
+            })
+            .join('')
+        : '';
+    }
+    if (removedWrap && removedList) {
+      var showRemoved = showRoles && removedNamed.length > 0;
+      removedWrap.hidden = !showRemoved;
+      removedList.innerHTML = showRemoved
+        ? removedNamed
+            .map(function (x) {
+              return '<li>' + escapeHtml(x.name || roleLabelForDiscordId(x.id)) + '</li>';
+            })
+            .join('')
+        : '';
+    }
+
+    verifyResultModal.setAttribute('aria-hidden', 'false');
+  }
 
   function openVerifyModal() {
     if (!verifyModal) return;
@@ -516,11 +719,15 @@
   if (verifyModalBtnVerify) {
     verifyModalBtnVerify.addEventListener('click', function () {
       if (verifyModalBtnVerify.disabled) return;
-      doVerify(function () {
-        setVerifySuccessInModal();
+      doVerify(function (d) {
+        showVerifyResultModal(d);
       });
     });
   }
+
+  if (verifyResultModalBackdrop) verifyResultModalBackdrop.addEventListener('click', closeVerifyResultModal);
+  if (verifyResultModalClose) verifyResultModalClose.addEventListener('click', closeVerifyResultModal);
+  if (verifyResultModalOk) verifyResultModalOk.addEventListener('click', closeVerifyResultModal);
 
   // ----- Discord login -----
   var discordUser = null;
@@ -588,6 +795,7 @@
       .then(function (data) {
         if (data && data.connected && data.user) {
           setDiscordUI(true, data.user);
+          postHolderLinkWallet();
           return data.user;
         }
         setDiscordUI(false);

@@ -3,6 +3,8 @@
   {"source":"/api/discord/:path*","destination":"/api/dashboard?__path=discord/:path*"},
   {"source":"/api/verify","destination":"/api/dashboard?__path=verify"},
   {"source":"/api/verify/:path*","destination":"/api/dashboard?__path=verify/:path*"},
+  {"source":"/api/holder-link-wallet","destination":"/api/dashboard?__path=holder-link-wallet"},
+  {"source":"/api/holder-verify","destination":"/api/dashboard?__path=holder-verify"},
   {"source":"/api/collections","destination":"/api/dashboard?__path=collections"},
   {"source":"/api/holders","destination":"/api/dashboard?__path=holders"},
   {"source":"/api/prices","destination":"/api/dashboard?__path=prices"},
