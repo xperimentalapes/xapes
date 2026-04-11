@@ -621,6 +621,7 @@
 
   function openVerifyModal() {
     if (!verifyModal) return;
+    closeVerifyResultModal();
     verifyModal.setAttribute('aria-hidden', 'false');
     syncVerifyModalState();
   }

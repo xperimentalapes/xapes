@@ -847,18 +847,14 @@ body {
 .verify-result-modal {
   position: fixed;
   inset: 0;
-  z-index: 220;
-  display: flex;
+  z-index: 230;
+  display: none;
   align-items: center;
   justify-content: center;
   padding: 1rem;
-  visibility: hidden;
-  opacity: 0;
-  transition: visibility 0.2s, opacity 0.2s;
 }
 .verify-result-modal[aria-hidden="false"] {
-  visibility: visible;
-  opacity: 1;
+  display: flex;
 }
 .verify-result-modal__backdrop {
   position: absolute;
