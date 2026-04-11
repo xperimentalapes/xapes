@@ -1,0 +1,14 @@
+# Default for `docker build -f Dockerfile.gateway .` (Discord worker only).
+node_modules
+.git
+.github
+.env
+.env.*
+.DS_Store
+public
+apps
+api
+images
+database
+coverage
+*.md

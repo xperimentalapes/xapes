@@ -1,4 +1,4 @@
--- Engagement events from discord-engagement-bot (Gateway). Service role inserts; RLS optional.
+-- Engagement events from royal-bot-gateway (Discord Gateway). Service role inserts; RLS optional.
 -- Run in Supabase SQL editor after review.
 
 CREATE TABLE IF NOT EXISTS discord_engagement_events (
