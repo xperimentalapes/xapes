@@ -32,7 +32,7 @@ window.XAPES_CONFIG = {
    * Tuned loosely vs ~$0.00000327/XMA and ~$0.50 max day at 250 msgs — no fiat shown to users.
    */
   xmaDiscordRewards: {
-    claimThresholdXma: 50,
+    claimThresholdXma: 1000000,
     /** Max messages that can earn per rolling 15 minutes */
     maxQualifyingMessagesPer15m: 5,
     minMessageChars: 10,

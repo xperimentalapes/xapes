@@ -12,6 +12,18 @@
   const PORTAL_URL = (CONFIG.holderPortalUrl || '').replace(/\/$/, '');
   const HOLDINGS_ENDPOINT = PORTAL_URL && CONFIG.endpoints?.holdings ? PORTAL_URL + CONFIG.endpoints.holdings : '';
 
+  function updateXmaClaimButtonState() {
+    var rewardsCfg = CONFIG.xmaDiscordRewards || {};
+    var threshold = Number(rewardsCfg.claimThresholdXma);
+    if (!isFinite(threshold) || threshold < 0) threshold = 0;
+    var balEl = document.getElementById('xma-unclaimed-balance');
+    var btn = document.getElementById('xma-claim-btn');
+    if (!btn || !balEl) return;
+    var bal = parseFloat(String(balEl.textContent).replace(/,/g, '').trim(), 10);
+    if (!isFinite(bal)) bal = 0;
+    btn.disabled = bal < threshold;
+  }
+
   // ----- Apply project config to DOM (template: brand, hero, token, footer, etc.) -----
   function applyProjectConfig() {
     var c = CONFIG;
@@ -79,7 +91,7 @@
     var rewardsCfg = c.xmaDiscordRewards || {};
     var threshEl = document.getElementById('xma-claim-threshold');
     if (threshEl && rewardsCfg.claimThresholdXma != null) {
-      threshEl.textContent = String(rewardsCfg.claimThresholdXma);
+      threshEl.textContent = Number(rewardsCfg.claimThresholdXma).toLocaleString('en-US');
     }
     var engNote = document.getElementById('xma-engagement-note');
     if (engNote) {
@@ -160,8 +172,20 @@
     if (thToken && (labels.token || sortOpts.token)) thToken.textContent = labels.token || sortOpts.token;
     var thNfts = document.querySelector('.holders-table th[data-col="nfts"]');
     if (thNfts && (labels.nfts || sortOpts.nfts)) thNfts.textContent = labels.nfts || sortOpts.nfts;
+
+    updateXmaClaimButtonState();
   }
   applyProjectConfig();
+
+  window.XAPES_UI = window.XAPES_UI || {};
+  window.XAPES_UI.setDiscordRewardsUnclaimedXma = function (amount) {
+    var el = document.getElementById('xma-unclaimed-balance');
+    if (!el) return;
+    var n = Number(amount);
+    if (!isFinite(n)) n = 0;
+    el.textContent = n.toLocaleString('en-US', { maximumFractionDigits: 6 });
+    updateXmaClaimButtonState();
+  };
 
   // ----- Section highlighting -----
   const navLinks = document.querySelectorAll('[data-section]');
