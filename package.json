@@ -12,7 +12,8 @@
     "extract-traits": "node scripts/extract-trait-values.js",
     "list-body-head-traits": "node scripts/list-body-head-traits.js",
     "register-discord-commands": "node scripts/register-discord-commands.js",
-    "discord-engagement-bot": "node scripts/discord-engagement-bot.js"
+    "discord-engagement-bot": "node scripts/discord-engagement-bot.js",
+    "accrue-discord-xma-rewards": "node scripts/accrue-discord-xma-rewards.js"
   },
   "dependencies": {
     "discord.js": "^14.16.3",

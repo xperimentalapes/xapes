@@ -271,6 +271,21 @@ app.get('/api/discord/logout', function (req, res) {
   res.redirect('/');
 });
 
+// ——— Discord → XMA rewards (session; Supabase + optional treasury key) ———
+const xmaRewards = require('../../lib/discord/xma-rewards');
+app.get('/api/discord-rewards/status', function (req, res) {
+  xmaRewards.handleStatus(req, res).catch(function (e) {
+    console.error('discord-rewards/status', e);
+    if (!res.headersSent) res.status(500).json({ error: 'Internal error' });
+  });
+});
+app.post('/api/discord-rewards/claim', function (req, res) {
+  xmaRewards.handleClaim(req, res).catch(function (e) {
+    console.error('discord-rewards/claim', e);
+    if (!res.headersSent) res.status(500).json({ error: 'Internal error' });
+  });
+});
+
 // ——— Discord user by ID (for team section; requires bot token) ———
 const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
 if (!DISCORD_BOT_TOKEN) {

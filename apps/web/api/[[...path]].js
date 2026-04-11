@@ -47,12 +47,12 @@ module.exports = (req, res) => {
     const rest = Array.isArray(pathSegments) ? pathSegments.join('/') : String(pathSegments);
     raw = '/api/' + (rest ? rest.replace(/^\/+/, '') : '');
   }
-  if (/^\/(discord|verify|collections|holders|prices|xma-ohlc|blunana-ohlc)(\/|$|\?)/.test(raw)) {
+  if (/^\/(discord|discord-rewards|verify|collections|holders|prices|xma-ohlc|blunana-ohlc)(\/|$|\?)/.test(raw)) {
     raw = '/api' + raw;
   }
   const q = (req.url || '').includes('?') ? '?' + (req.url || '').split('?').slice(1).join('?') : '';
 
-  const isApiRoute = /^\/api\/(discord|verify|collections|holders|prices|xma-ohlc|blunana-ohlc)(\/|$|\?)/.test(raw);
+  const isApiRoute = /^\/api\/(discord|discord-rewards|verify|collections|holders|prices|xma-ohlc|blunana-ohlc)(\/|$|\?)/.test(raw);
   if (isApiRoute) {
     req.url = raw + q;
     return app(req, res);

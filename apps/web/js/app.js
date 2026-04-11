@@ -12,18 +12,34 @@
   const PORTAL_URL = (CONFIG.holderPortalUrl || '').replace(/\/$/, '');
   const HOLDINGS_ENDPOINT = PORTAL_URL && CONFIG.endpoints?.holdings ? PORTAL_URL + CONFIG.endpoints.holdings : '';
 
+  /** From GET /api/discord-rewards/status when logged in; falls back to config. */
+  var serverClaimThresholdXma = null;
+  var rewardsTreasuryConfigured = true;
+  var lastDiscordRewardsStatus = null;
+
   function updateXmaClaimButtonState() {
     var rewardsCfg = CONFIG.xmaDiscordRewards || {};
-    var threshold = Number(rewardsCfg.claimThresholdXma);
-    if (!isFinite(threshold) || threshold < 0) threshold = 0;
+    var thCfg = Number(rewardsCfg.claimThresholdXma);
+    if (!isFinite(thCfg) || thCfg < 0) thCfg = 0;
+    var threshold =
+      serverClaimThresholdXma != null && isFinite(serverClaimThresholdXma) && serverClaimThresholdXma >= 0
+        ? serverClaimThresholdXma
+        : thCfg;
     var balEl = document.getElementById('xma-unclaimed-balance');
     var btn = document.getElementById('xma-claim-btn');
     if (!btn || !balEl) return;
     var bal = parseFloat(String(balEl.textContent).replace(/,/g, '').trim(), 10);
     if (!isFinite(bal)) bal = 0;
-    var canClaim = bal >= threshold;
+    var canClaim = bal >= threshold && rewardsTreasuryConfigured;
     btn.disabled = !canClaim;
     btn.setAttribute('aria-disabled', canClaim ? 'false' : 'true');
+    if (!rewardsTreasuryConfigured) {
+      btn.title = 'Rewards treasury is not configured on the server';
+    } else if (!canClaim && threshold > 0) {
+      btn.title = 'Reach ' + threshold.toLocaleString('en-US') + ' unclaimed XMA to claim';
+    } else {
+      btn.title = '';
+    }
   }
 
   // ----- Apply project config to DOM (template: brand, hero, token, footer, etc.) -----
@@ -108,7 +124,7 @@
       if (per != null && maxDay != null && m15 != null && minC != null) {
         var dailyCap = cap != null ? cap : per * maxDay;
         engNote.textContent =
-          'Accrual is not live until the Discord bot is connected. Planned: messages need at least ' +
+          'Messages need at least ' +
           minC +
           ' characters; up to ' +
           m15 +
@@ -118,7 +134,7 @@
           per +
           ' XMA each, daily cap ' +
           dailyCap +
-          ' XMA.';
+          ' XMA. Unclaimed balance updates after server accrual runs.';
       }
     }
 
@@ -186,9 +202,13 @@
   window.XAPES_UI.setDiscordRewardsUnclaimedXma = function (amount) {
     var el = document.getElementById('xma-unclaimed-balance');
     if (!el) return;
-    var n = Number(amount);
-    if (!isFinite(n)) n = 0;
-    el.textContent = n.toLocaleString('en-US', { maximumFractionDigits: 6 });
+    var s = String(amount != null ? amount : '0').trim().replace(/,/g, '');
+    var n = parseFloat(s, 10);
+    if (isFinite(n)) {
+      el.textContent = n.toLocaleString('en-US', { maximumFractionDigits: 6 });
+    } else {
+      el.textContent = s || '0';
+    }
     updateXmaClaimButtonState();
   };
 
@@ -219,6 +239,9 @@
     window.history.replaceState(null, '', '#' + id);
     setActiveSection(id);
     el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (id === 'xma' && document.body.classList.contains('discord-connected')) {
+      refreshDiscordRewardsPanel();
+    }
     setTimeout(function () {
       navScrollInProgress = false;
       navScrollTargetId = null;
@@ -308,16 +331,121 @@
     if (typeof syncVerifyModalState === 'function') syncVerifyModalState();
   }
 
-  function postHolderLinkWallet() {
+  function resetDiscordRewardsUI() {
+    serverClaimThresholdXma = null;
+    rewardsTreasuryConfigured = true;
+    lastDiscordRewardsStatus = null;
+    var dash = '—';
+    var msgEl = document.getElementById('xma-eng-messages');
+    var rEl = document.getElementById('xma-eng-reactions');
+    var vEl = document.getElementById('xma-eng-voice');
+    if (msgEl) msgEl.textContent = dash;
+    if (rEl) rEl.textContent = dash;
+    if (vEl) vEl.textContent = dash;
+    if (window.XAPES_UI && typeof window.XAPES_UI.setDiscordRewardsUnclaimedXma === 'function') {
+      window.XAPES_UI.setDiscordRewardsUnclaimedXma(0);
+    }
+    updateXmaClaimButtonState();
+  }
+
+  function refreshDiscordRewardsPanel() {
     if (!document.body.classList.contains('discord-connected')) return;
+    fetch(window.location.origin + '/api/discord-rewards/status', { credentials: 'include' })
+      .then(function (res) {
+        if (res.status === 401) {
+          resetDiscordRewardsUI();
+          return null;
+        }
+        if (!res.ok) return null;
+        return res.json();
+      })
+      .then(function (data) {
+        if (!data || typeof data !== 'object') return;
+        lastDiscordRewardsStatus = data;
+        if (typeof data.claimThresholdXma === 'number' && isFinite(data.claimThresholdXma)) {
+          serverClaimThresholdXma = data.claimThresholdXma;
+        }
+        rewardsTreasuryConfigured = data.rewardsTreasuryConfigured !== false;
+        var msgEl = document.getElementById('xma-eng-messages');
+        var rEl = document.getElementById('xma-eng-reactions');
+        var vEl = document.getElementById('xma-eng-voice');
+        if (msgEl) msgEl.textContent = String(data.messages24h != null ? data.messages24h : '—');
+        if (rEl) rEl.textContent = String(data.reactions24h != null ? data.reactions24h : '—');
+        if (vEl) {
+          var vm = data.voiceMinutes24h;
+          vEl.textContent =
+            vm != null && isFinite(Number(vm)) ? String(Number(Number(vm).toFixed(2))) : String(vm != null ? vm : '—');
+        }
+        if (window.XAPES_UI && typeof window.XAPES_UI.setDiscordRewardsUnclaimedXma === 'function') {
+          window.XAPES_UI.setDiscordRewardsUnclaimedXma(data.unclaimedXma);
+        }
+        updateXmaClaimButtonState();
+      })
+      .catch(function () {});
+  }
+
+  function openLinkedWalletPicker(addresses) {
+    return new Promise(function (resolve, reject) {
+      if (!addresses || !addresses.length) {
+        reject(new Error('No linked wallets'));
+        return;
+      }
+      if (addresses.length === 1) {
+        resolve(addresses[0]);
+        return;
+      }
+      var wrap = document.createElement('div');
+      wrap.className = 'wallet-picker';
+      wrap.setAttribute('aria-hidden', 'false');
+      wrap.setAttribute('role', 'dialog');
+      wrap.setAttribute('aria-modal', 'true');
+      wrap.innerHTML =
+        '<div class="wallet-picker__backdrop" data-act="close"></div>' +
+        '<div class="wallet-picker__box">' +
+        '<div class="wallet-picker__head">' +
+        '<h2 class="wallet-picker__title" id="xma-linked-wallet-title">Claim to linked wallet</h2>' +
+        '<button type="button" class="wallet-picker__close" data-act="close" aria-label="Close">&times;</button>' +
+        '</div>' +
+        '<div class="wallet-picker__list" id="xma-linked-wallet-list"></div>' +
+        '</div>';
+      var list = wrap.querySelector('#xma-linked-wallet-list');
+      function cleanup(result) {
+        wrap.remove();
+        if (result) resolve(result);
+        else reject(new Error('Cancelled'));
+      }
+      wrap.addEventListener('click', function (ev) {
+        if (ev.target.getAttribute('data-act') === 'close') cleanup(null);
+      });
+      addresses.forEach(function (addr) {
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'wallet-picker__btn';
+        btn.textContent = addr.length > 12 ? addr.slice(0, 6) + '…' + addr.slice(-6) : addr;
+        btn.title = addr;
+        btn.addEventListener('click', function () {
+          cleanup(addr);
+        });
+        list.appendChild(btn);
+      });
+      document.body.appendChild(wrap);
+    });
+  }
+
+  function postHolderLinkWallet() {
+    if (!document.body.classList.contains('discord-connected')) return Promise.resolve();
     var w = getWalletPublicKey();
-    if (!w) return;
-    fetch(window.location.origin + '/api/holder-link-wallet', {
+    if (!w) return Promise.resolve();
+    return fetch(window.location.origin + '/api/holder-link-wallet', {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ walletAddress: w }),
-    }).catch(function () {});
+    })
+      .then(function () {
+        refreshDiscordRewardsPanel();
+      })
+      .catch(function () {});
   }
 
   function connectWithProvider(provider) {
@@ -815,6 +943,9 @@
   }
 
   function setDiscordUI(connected, userOrUsername) {
+    if (!connected) {
+      resetDiscordRewardsUI();
+    }
     document.body.classList.toggle('discord-connected', !!connected);
     if (connected && userOrUsername != null) {
       discordUser = typeof userOrUsername === 'object' ? userOrUsername : { global_name: userOrUsername, username: userOrUsername };
@@ -871,6 +1002,7 @@
         if (data && data.connected && data.user) {
           setDiscordUI(true, data.user);
           postHolderLinkWallet();
+          refreshDiscordRewardsPanel();
           return data.user;
         }
         setDiscordUI(false);
@@ -921,6 +1053,58 @@
   document.getElementById('btn-discord-logout-mobile')?.addEventListener('click', function (e) {
     e.preventDefault();
     logoutDiscord();
+  });
+
+  document.getElementById('xma-claim-btn')?.addEventListener('click', function () {
+    if (!document.body.classList.contains('discord-connected')) {
+      alert('Connect Discord first.');
+      return;
+    }
+    var st = lastDiscordRewardsStatus;
+    if (!st) {
+      refreshDiscordRewardsPanel();
+      alert('Loading rewards data — try again in a moment.');
+      return;
+    }
+    if (!Array.isArray(st.linkedWallets) || !st.linkedWallets.length) {
+      alert('Link a Solana wallet while Discord is connected, then try again.');
+      return;
+    }
+    if (!st.rewardsTreasuryConfigured) {
+      alert('Claims are not available yet — rewards treasury is not configured.');
+      return;
+    }
+    openLinkedWalletPicker(st.linkedWallets)
+      .then(function (addr) {
+        return fetch(window.location.origin + '/api/discord-rewards/claim', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ walletAddress: addr }),
+        }).then(function (res) {
+          return res.json().catch(function () {
+            return { error: res.statusText || 'Invalid response' };
+          }).then(function (body) {
+            return { ok: res.ok, status: res.status, body: body };
+          });
+        });
+      })
+      .then(function (out) {
+        if (!out || !out.body) return;
+        if (!out.ok) {
+          alert(out.body.error || 'Claim failed (' + out.status + ')');
+          return;
+        }
+        var sig = out.body.signature;
+        var msg = 'XMA sent to your wallet.';
+        if (sig) msg += '\n\nSignature:\n' + sig;
+        alert(msg);
+        refreshDiscordRewardsPanel();
+      })
+      .catch(function (e) {
+        if (e && e.message === 'Cancelled') return;
+        console.warn('Claim error', e);
+      });
   });
 
   // On load: check Discord session and ?discord= query; reopen verify modal when returning from Discord

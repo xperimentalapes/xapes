@@ -1,6 +1,8 @@
 {"cleanUrls":true,"rewrites":[
   {"source":"/api/discord","destination":"/api/dashboard?__path=discord"},
   {"source":"/api/discord/:path*","destination":"/api/dashboard?__path=discord/:path*"},
+  {"source":"/api/discord-rewards","destination":"/api/dashboard?__path=discord-rewards"},
+  {"source":"/api/discord-rewards/:path*","destination":"/api/dashboard?__path=discord-rewards/:path*"},
   {"source":"/api/verify","destination":"/api/dashboard?__path=verify"},
   {"source":"/api/verify/:path*","destination":"/api/dashboard?__path=verify/:path*"},
   {"source":"/api/holder-link-wallet","destination":"/api/dashboard?__path=holder-link-wallet"},
