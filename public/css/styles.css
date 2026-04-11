@@ -1854,7 +1854,109 @@ body {
   font-size: 0.85em;
 }
 
-/* Tokenomics — DEXTools-style price + 15m chart */
+/* Tokenomics — DEXTools-style price + optional 15m chart + Discord rewards column */
+.card--tokenomics .tokenomics__grid {
+  align-items: start;
+}
+.tokenomics__column--rewards {
+  padding: 0.5rem 0 0;
+  border-top: 1px solid var(--border);
+}
+@media (min-width: 769px) {
+  .tokenomics__column--rewards {
+    padding: 0 0 0 1.25rem;
+    border-top: none;
+    border-left: 1px solid var(--border);
+  }
+}
+.tokenomics__rewards-title {
+  margin: 0 0 0.5rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text);
+}
+.tokenomics__rewards-lead {
+  margin: 0 0 1rem;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+.tokenomics__engagement {
+  margin-bottom: 1.25rem;
+  padding: 0.75rem;
+  background: var(--bg-elevated);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+.tokenomics__engagement-head {
+  margin: 0 0 0.5rem;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+.tokenomics__engagement-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.tokenomics__engagement-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  padding: 0.35rem 0;
+  font-size: 0.9rem;
+  border-bottom: 1px solid var(--border);
+}
+.tokenomics__engagement-list li:last-child {
+  border-bottom: none;
+}
+.tokenomics__engagement-label {
+  color: var(--text-muted);
+}
+.tokenomics__engagement-value {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--text);
+}
+.tokenomics__engagement-note {
+  margin: 0.75rem 0 0;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+.tokenomics__rewards-balance {
+  margin-bottom: 1rem;
+}
+.tokenomics__rewards-row {
+  margin: 0 0 0.35rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.95rem;
+  color: var(--text-muted);
+}
+.tokenomics__rewards-row strong {
+  font-family: var(--font-mono);
+  color: var(--success);
+  font-size: 1.1rem;
+}
+.tokenomics__rewards-hint {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+.tokenomics__claim-btn {
+  width: 100%;
+  justify-content: center;
+}
+.tokenomics__chart-wrap--hidden {
+  display: none !important;
+}
 .card--tokenomics .tokenomics__head {
   margin-bottom: 1rem;
 }

@@ -258,34 +258,56 @@
         <h2 class="section__title"><img src="" alt="" class="section__thumb" width="32" height="32"> <span data-config="token-label">Token</span></h2>
         <p class="section__lead">Project token on Solana.</p>
         <div class="card card--tokenomics">
-          <div class="tokenomics__head">
-            <div class="tokenomics__price-block">
-              <p class="tokenomics__price-label" id="tokenomics-price-label">Token (SYMBOL / USD)</p>
-              <p class="tokenomics__price-main" id="tokenomics-price-usd">—</p>
-              <p class="tokenomics__meta" id="tokenomics-meta">
-                <span class="tokenomics__change" id="tokenomics-change-24h">— 24H</span>
-                <span class="tokenomics__price-sol" id="tokenomics-price-sol">— SOL</span>
-              </p>
+          <div class="tokenomics__grid grid grid--2">
+            <div class="tokenomics__column">
+              <div class="tokenomics__head">
+                <div class="tokenomics__price-block">
+                  <p class="tokenomics__price-label" id="tokenomics-price-label">Token (SYMBOL / USD)</p>
+                  <p class="tokenomics__price-main" id="tokenomics-price-usd">—</p>
+                  <p class="tokenomics__meta" id="tokenomics-meta">
+                    <span class="tokenomics__change" id="tokenomics-change-24h">— 24H</span>
+                    <span class="tokenomics__price-sol" id="tokenomics-price-sol">— SOL</span>
+                  </p>
+                </div>
+              </div>
+              <div class="tokenomics__metrics" id="tokenomics-metrics">
+                <div class="tokenomics__metric"><span class="tokenomics__metric-label">Market cap</span><span class="tokenomics__metric-value" id="tokenomics-mcap">—</span></div>
+                <div class="tokenomics__metric"><span class="tokenomics__metric-label">Liquidity</span><span class="tokenomics__metric-value" id="tokenomics-liq">—</span></div>
+                <div class="tokenomics__metric"><span class="tokenomics__metric-label">24H volume</span><span class="tokenomics__metric-value" id="tokenomics-vol">—</span></div>
+              </div>
+              <div class="tokenomics__chart-wrap tokenomics__chart-wrap--hidden" id="xma-chart-wrap">
+                <p class="tokenomics__chart-label" id="tokenomics-chart-label">TOKEN / USD — 15m</p>
+                <div class="tokenomics__chart" id="xma-chart"></div>
+                <p class="tokenomics__chart-hint" id="xma-chart-hint"></p>
+              </div>
+              <div class="tokenomics__summary">
+                <p><strong>Network:</strong> Solana</p>
+                <p><strong>TOKEN ADDRESS:</strong> <code class="tokenomics__contract" id="tokenomics-contract">HVSruatutKcgpZJXYyeRCWAnyT7mzYq1io9YoJ6F4yMP</code></p>
+              </div>
+              <p class="card__text" id="tokenomics-summary-text">Project token. Verify holdings in the dashboard.</p>
+              <div class="tokenomics__actions">
+                <a href="https://www.dextools.io/app/solana/pair-explorer/HVSruatutKcgpZJXYyeRCWAnyT7mzYq1io9YoJ6F4yMP" class="btn btn--outline" id="tokenomics-link-dextools" target="_blank" rel="noopener">DEXTools →</a>
+                <a href="https://solscan.io/token/HVSruatutKcgpZJXYyeRCWAnyT7mzYq1io9YoJ6F4yMP" class="btn btn--outline" id="tokenomics-link-solscan" target="_blank" rel="noopener">Solscan →</a>
+              </div>
             </div>
-          </div>
-          <div class="tokenomics__metrics" id="tokenomics-metrics">
-            <div class="tokenomics__metric"><span class="tokenomics__metric-label">Market cap</span><span class="tokenomics__metric-value" id="tokenomics-mcap">—</span></div>
-            <div class="tokenomics__metric"><span class="tokenomics__metric-label">Liquidity</span><span class="tokenomics__metric-value" id="tokenomics-liq">—</span></div>
-            <div class="tokenomics__metric"><span class="tokenomics__metric-label">24H volume</span><span class="tokenomics__metric-value" id="tokenomics-vol">—</span></div>
-          </div>
-          <div class="tokenomics__chart-wrap">
-            <p class="tokenomics__chart-label" id="tokenomics-chart-label">TOKEN / USD — 15m</p>
-            <div class="tokenomics__chart" id="xma-chart"></div>
-            <p class="tokenomics__chart-hint" id="xma-chart-hint"></p>
-          </div>
-          <div class="tokenomics__summary">
-            <p><strong>Network:</strong> Solana</p>
-            <p><strong>Token contract:</strong> <code class="tokenomics__contract">HVSruatutKcgpZJXYyeRCWAnyT7mzYq1io9YoJ6F4yMP</code></p>
-          </div>
-          <p class="card__text" id="tokenomics-summary-text">Project token. Verify holdings in the dashboard.</p>
-          <div class="tokenomics__actions">
-            <a href="https://www.dextools.io/app/solana/pair-explorer/HVSruatutKcgpZJXYyeRCWAnyT7mzYq1io9YoJ6F4yMP" class="btn btn--outline" target="_blank" rel="noopener">DEXTools →</a>
-            <a href="https://solscan.io/token/HVSruatutKcgpZJXYyeRCWAnyT7mzYq1io9YoJ6F4yMP" class="btn btn--outline" target="_blank" rel="noopener">Solscan →</a>
+            <div class="tokenomics__column tokenomics__column--rewards">
+              <h3 class="tokenomics__rewards-title">Discord engagement rewards</h3>
+              <p class="tokenomics__rewards-lead">Earn XMA for helping the server stay active. Connect Discord to see your activity and balances.</p>
+              <div class="tokenomics__engagement" id="xma-engagement-panel" aria-live="polite">
+                <p class="tokenomics__engagement-head">Last 24 hours</p>
+                <ul class="tokenomics__engagement-list" id="xma-engagement-list">
+                  <li><span class="tokenomics__engagement-label">Messages</span> <span class="tokenomics__engagement-value" id="xma-eng-messages">—</span></li>
+                  <li><span class="tokenomics__engagement-label">Reactions</span> <span class="tokenomics__engagement-value" id="xma-eng-reactions">—</span></li>
+                  <li><span class="tokenomics__engagement-label">Voice (minutes)</span> <span class="tokenomics__engagement-value" id="xma-eng-voice">—</span></li>
+                </ul>
+                <p class="tokenomics__engagement-note" id="xma-engagement-note"></p>
+              </div>
+              <div class="tokenomics__rewards-balance">
+                <p class="tokenomics__rewards-row"><span>Unclaimed XMA</span> <strong id="xma-unclaimed-balance">0</strong></p>
+                <p class="tokenomics__rewards-hint">Claim unlocks when unclaimed balance reaches <span id="xma-claim-threshold">50</span> XMA (threshold is configurable).</p>
+              </div>
+              <button type="button" class="btn btn--primary tokenomics__claim-btn" id="xma-claim-btn" disabled>Claim XMA</button>
+            </div>
           </div>
         </div>
       </div>

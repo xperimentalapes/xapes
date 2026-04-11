@@ -14,14 +14,34 @@ window.XAPES_CONFIG = {
   shopUrl: '',
 
   token: {
-    name: 'Your Token',
+    name: 'XMA',
     symbol: 'XMA',
     menuLabel: '$XMA token',
     logoUrl: 'assets/logo.png',
     menuIconUrl: 'assets/coins-svgrepo-com.svg',
-    priceLabel: 'Your Token (TKN / USD)',
-    chartLabel: 'TKN / USD — 15m',
+    priceLabel: '$XMA (XMA / USD)',
+    chartLabel: 'XMA / USD — 15m',
     summaryText: 'Your project token. Verify holdings in the dashboard.',
+    /** Shown in $XMA section; also used for Solscan link when set */
+    tokenMint: 'HVSruatutKcgpZJXYyeRCWAnyT7mzYq1io9YoJ6F4yMP',
+    dextoolsUrl: 'https://www.dextools.io/app/solana/pair-explorer/HVSruatutKcgpZJXYyeRCWAnyT7mzYq1io9YoJ6F4yMP',
+  },
+
+  /**
+   * Discord → XMA rewards (amounts are XMA-only in the UI).
+   * Tuned loosely vs ~$0.00000327/XMA and ~$0.50 max day at 250 msgs — no fiat shown to users.
+   */
+  xmaDiscordRewards: {
+    claimThresholdXma: 50,
+    /** Max messages that can earn per rolling 15 minutes */
+    maxQualifyingMessagesPer15m: 5,
+    minMessageChars: 10,
+    /** Max paying messages per 24h */
+    maxQualifyingMessagesPer24h: 250,
+    /** XMA credited per qualifying message (backend should enforce caps) */
+    xmaPerQualifyingMessage: 600,
+    /** Hard daily accrual cap in XMA (should match rate × max msgs) */
+    maxXmaAccrualPer24h: 150000,
   },
 
   hero: {
@@ -53,7 +73,6 @@ window.XAPES_CONFIG = {
   holderPortalUrl: '',
   endpoints: { holdings: '/api/holdings', discordAuth: '/api/discord/auth' },
   discordConnectUrl: '',
-  tokenMint: '',
   collections: {},
 
   team: [

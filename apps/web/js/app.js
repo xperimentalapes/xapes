@@ -66,6 +66,44 @@
     if (tokenChartLabel && token.chartLabel) tokenChartLabel.textContent = token.chartLabel;
     var tokenSummary = document.getElementById('tokenomics-summary-text');
     if (tokenSummary && token.summaryText) tokenSummary.textContent = token.summaryText;
+    var mint = (token.tokenMint || '').trim();
+    if (mint) {
+      var contractEl = document.getElementById('tokenomics-contract');
+      if (contractEl) contractEl.textContent = mint;
+      var solscan = document.getElementById('tokenomics-link-solscan');
+      if (solscan) solscan.href = 'https://solscan.io/token/' + encodeURIComponent(mint);
+      var dex = document.getElementById('tokenomics-link-dextools');
+      var dexUrl = (token.dextoolsUrl || '').trim();
+      if (dex && dexUrl) dex.href = dexUrl;
+    }
+    var rewardsCfg = c.xmaDiscordRewards || {};
+    var threshEl = document.getElementById('xma-claim-threshold');
+    if (threshEl && rewardsCfg.claimThresholdXma != null) {
+      threshEl.textContent = String(rewardsCfg.claimThresholdXma);
+    }
+    var engNote = document.getElementById('xma-engagement-note');
+    if (engNote) {
+      var per = rewardsCfg.xmaPerQualifyingMessage;
+      var maxDay = rewardsCfg.maxQualifyingMessagesPer24h;
+      var m15 = rewardsCfg.maxQualifyingMessagesPer15m;
+      var minC = rewardsCfg.minMessageChars;
+      var cap = rewardsCfg.maxXmaAccrualPer24h;
+      if (per != null && maxDay != null && m15 != null && minC != null) {
+        var dailyCap = cap != null ? cap : per * maxDay;
+        engNote.textContent =
+          'Accrual is not live until the Discord bot is connected. Planned: messages need at least ' +
+          minC +
+          ' characters; up to ' +
+          m15 +
+          ' qualifying per 15 minutes and ' +
+          maxDay +
+          ' per 24 hours; ' +
+          per +
+          ' XMA each, daily cap ' +
+          dailyCap +
+          ' XMA.';
+      }
+    }
 
     // Optional shop link (sidebar)
     var shopUrl = c.shopUrl;
@@ -1186,6 +1224,7 @@
   var volEl = document.getElementById('tokenomics-vol');
   var chartEl = document.getElementById('xma-chart');
   var chartHintEl = document.getElementById('xma-chart-hint');
+  var chartWrapEl = document.getElementById('xma-chart-wrap');
 
   function formatUsd(val) {
     if (val == null || isNaN(val)) return '—';
@@ -1228,11 +1267,14 @@
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (data) {
         var items = (data && data.data && data.data.items) ? data.data.items : [];
-        if (chartHintEl) chartHintEl.textContent = data && data.message ? data.message : '';
-        if (items.length === 0) {
-          if (chartHintEl && !chartHintEl.textContent) chartHintEl.textContent = 'Add BIRDEYE_API_KEY in server .env to show 15m chart.';
+        var noChart = items.length === 0;
+        if (noChart) {
+          if (chartWrapEl) chartWrapEl.classList.add('tokenomics__chart-wrap--hidden');
+          if (chartHintEl) chartHintEl.textContent = '';
           return;
         }
+        if (chartWrapEl) chartWrapEl.classList.remove('tokenomics__chart-wrap--hidden');
+        if (chartHintEl) chartHintEl.textContent = '';
         var candlestickData = items.map(function (c) {
           return {
             time: c.unix_time,
@@ -1262,6 +1304,10 @@
         window.addEventListener('resize', function () {
           chart.applyOptions({ width: chartEl.clientWidth });
         });
+      })
+      .catch(function () {
+        if (chartWrapEl) chartWrapEl.classList.add('tokenomics__chart-wrap--hidden');
+        if (chartHintEl) chartHintEl.textContent = '';
       });
   }
 })();
