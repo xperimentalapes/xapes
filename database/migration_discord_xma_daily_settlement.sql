@@ -168,6 +168,10 @@ BEGIN
   WHERE guild_id = p_guild_id
     AND accrual_date = p_accrual_date;
 
+  DELETE FROM discord_engagement_events
+  WHERE guild_id = p_guild_id
+    AND to_char((created_at AT TIME ZONE 'America/New_York'), 'YYYY-MM-DD') = p_accrual_date;
+
   RETURN jsonb_build_object(
     'settled_users', n,
     'pending_moved_xma', total,
@@ -178,4 +182,4 @@ END;
 $$;
 
 COMMENT ON FUNCTION settle_discord_xma_daily_pending IS
-  'Move all pending XMA for p_accrual_date into unclaimed_xma, then delete pending and daily_accrual rows for that date/guild. Idempotent if already empty.';
+  'Move pending XMA for p_accrual_date to unclaimed; delete pending, daily_accrual, and that day''s engagement rows for the guild (America/New_York date). Idempotent if already empty.';

@@ -58,6 +58,9 @@ async function main() {
     });
     if (error) {
       console.error('RPC process_discord_engagement_accrual_batch failed:', error.message || error);
+      if (error.details) console.error('details:', error.details);
+      if (error.hint) console.error('hint:', error.hint);
+      if (error.code) console.error('code:', error.code);
       process.exit(1);
     }
     let marked = 0;

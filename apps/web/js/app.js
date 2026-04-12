@@ -141,7 +141,7 @@
         reaction: r.xmaPerReaction,
         voiceMinute: r.xmaPerVoiceMinute,
       },
-      nextResetLabel: 'Daily cap resets (ET)',
+      nextResetLabel: 'Next daily reset (ET)',
       nextDailyResetAt: null,
     });
   }
@@ -513,9 +513,18 @@
       if (!isFinite(cap) || cap <= 0) cap = 100000;
     }
     if (isFinite(rm) && isFinite(rr) && isFinite(rv)) {
-      var msgs = Math.max(0, Number(data.messages24h) || 0);
-      var reacts = Math.max(0, Number(data.reactions24h) || 0);
-      var vm = Math.max(0, Number(data.voiceMinutes24h) || 0);
+      var msgs = Math.max(
+        0,
+        Number(data.messagesToday != null ? data.messagesToday : data.messages24h) || 0
+      );
+      var reacts = Math.max(
+        0,
+        Number(data.reactionsToday != null ? data.reactionsToday : data.reactions24h) || 0
+      );
+      var vm = Math.max(
+        0,
+        Number(data.voiceMinutesToday != null ? data.voiceMinutesToday : data.voiceMinutes24h) || 0
+      );
       var raw = rm * msgs + rr * reacts + rv * vm;
       if (!isFinite(raw) || raw < 0) raw = 0;
       var capped = Math.min(raw, cap);
@@ -547,10 +556,16 @@
         var msgEl = document.getElementById('xma-eng-messages');
         var rEl = document.getElementById('xma-eng-reactions');
         var vEl = document.getElementById('xma-eng-voice');
-        if (msgEl) msgEl.textContent = String(data.messages24h != null ? data.messages24h : '—');
-        if (rEl) rEl.textContent = String(data.reactions24h != null ? data.reactions24h : '—');
+        if (msgEl) {
+          var mToday = data.messagesToday != null ? data.messagesToday : data.messages24h;
+          msgEl.textContent = String(mToday != null ? mToday : '—');
+        }
+        if (rEl) {
+          var rToday = data.reactionsToday != null ? data.reactionsToday : data.reactions24h;
+          rEl.textContent = String(rToday != null ? rToday : '—');
+        }
         if (vEl) {
-          var vm = data.voiceMinutes24h;
+          var vm = data.voiceMinutesToday != null ? data.voiceMinutesToday : data.voiceMinutes24h;
           vEl.textContent =
             vm != null && isFinite(Number(vm)) ? String(Number(Number(vm).toFixed(2))) : String(vm != null ? vm : '—');
         }
