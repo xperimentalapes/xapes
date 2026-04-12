@@ -518,10 +518,22 @@
     if (msgEl) msgEl.textContent = dash;
     if (rEl) rEl.textContent = dash;
     if (vEl) vEl.textContent = dash;
+    var claimedEl = document.getElementById('xma-claimed-today');
+    if (claimedEl) claimedEl.textContent = dash;
     if (window.XAPES_UI && typeof window.XAPES_UI.setDiscordRewardsUnclaimedXma === 'function') {
       window.XAPES_UI.setDiscordRewardsUnclaimedXma(0);
     }
     updateXmaClaimButtonState();
+  }
+
+  function formatXmaDisplayAmount(raw) {
+    if (raw == null || raw === '') return '0';
+    var s = String(raw).trim().replace(/,/g, '');
+    var n = parseFloat(s, 10);
+    if (isFinite(n)) {
+      return n.toLocaleString('en-US', { maximumFractionDigits: 6 });
+    }
+    return String(raw);
   }
 
   function refreshDiscordRewardsPanel() {
@@ -551,6 +563,11 @@
           var vm = data.voiceMinutes24h;
           vEl.textContent =
             vm != null && isFinite(Number(vm)) ? String(Number(Number(vm).toFixed(2))) : String(vm != null ? vm : '—');
+        }
+        var claimedTodayEl = document.getElementById('xma-claimed-today');
+        if (claimedTodayEl) {
+          claimedTodayEl.textContent =
+            data.claimedXmaToday != null ? formatXmaDisplayAmount(data.claimedXmaToday) : '0';
         }
         applyDiscordRewardsMetaFields(data);
         if (window.XAPES_UI && typeof window.XAPES_UI.setDiscordRewardsUnclaimedXma === 'function') {

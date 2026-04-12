@@ -1986,6 +1986,13 @@ body {
   font-size: 0.95rem;
   color: var(--text-muted);
 }
+.tokenomics__claimed-today-row {
+  margin-top: 0.65rem;
+}
+.tokenomics__claimed-today-amount {
+  color: var(--text);
+  font-weight: 600;
+}
 .tokenomics__daily-grant-amount {
   font-family: var(--font-mono);
   font-size: 1.05rem;
