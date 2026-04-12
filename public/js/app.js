@@ -489,9 +489,12 @@
     return String(raw);
   }
 
-  /** Prefer server todaysClaimXma; else derive from last-24h counts × rates (matches live deploys without new API fields). */
+  /** Prefer server todaysClaimXma (DB pending or estimate); else derive from last-24h counts × rates. */
   function computeTodaysClaimDisplay(data) {
     if (!data || typeof data !== 'object') return '0';
+    if (data.todaysClaimXma != null && String(data.todaysClaimXma).trim() !== '') {
+      return formatXmaDisplayAmount(data.todaysClaimXma);
+    }
     var r = data.accrualRates;
     if (!r || typeof r !== 'object') {
       var cfg = CONFIG.xmaDiscordRewards || {};

@@ -15,6 +15,7 @@
     "royal-bot-gateway": "node scripts/royal-bot-gateway.js",
     "discord-engagement-bot": "node scripts/discord-engagement-bot.js",
     "accrue-discord-xma-rewards": "node scripts/accrue-discord-xma-rewards.js",
+    "settle-discord-xma-daily": "node scripts/settle-discord-xma-daily.js",
     "daily-xma-grant": "node scripts/apply-daily-xma-grant.js",
     "railway": "npx --yes @railway/cli",
     "railway:login": "npx --yes @railway/cli login",

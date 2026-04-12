@@ -9,6 +9,7 @@
  *   DISCORD_XMA_PER_REACTION (default 200)
  *   DISCORD_XMA_PER_VOICE_MINUTE (default 100)
  *
+ * Credits go into discord_xma_daily_pending until settle_discord_xma_daily_pending runs (see settle-discord-xma-daily.js).
  * Run on a schedule (e.g. GitHub Actions) until a batch marks zero events.
  */
 require('dotenv').config();
