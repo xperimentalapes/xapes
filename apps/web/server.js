@@ -279,6 +279,12 @@ app.get('/api/discord-rewards/status', function (req, res) {
     if (!res.headersSent) res.status(500).json({ error: 'Internal error' });
   });
 });
+app.get('/api/discord-rewards/meta', function (req, res) {
+  xmaRewards.handlePublicMeta(req, res).catch(function (e) {
+    console.error('discord-rewards/meta', e);
+    if (!res.headersSent) res.status(500).json({ error: 'Internal error' });
+  });
+});
 app.post('/api/discord-rewards/claim', function (req, res) {
   xmaRewards.handleClaim(req, res).catch(function (e) {
     console.error('discord-rewards/claim', e);

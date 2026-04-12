@@ -12,18 +12,189 @@
   const PORTAL_URL = (CONFIG.holderPortalUrl || '').replace(/\/$/, '');
   const HOLDINGS_ENDPOINT = PORTAL_URL && CONFIG.endpoints?.holdings ? PORTAL_URL + CONFIG.endpoints.holdings : '';
 
+  /** From GET /api/discord-rewards/status when logged in; falls back to config. */
+  var serverClaimThresholdXma = null;
+  var rewardsTreasuryConfigured = true;
+  var lastDiscordRewardsStatus = null;
+  var grantCountdownTimer = null;
+
+  function pad2(n) {
+    return (n < 10 ? '0' : '') + n;
+  }
+
+  /** Match server `nextMidnightIsoInTimeZone` for offline countdown fallback. */
+  function nextMidnightMsInTimeZone(timeZone) {
+    var now = Date.now();
+    var t = Math.floor(now / 1000) * 1000 + 1000;
+    var end = t + 26 * 3600 * 1000;
+    while (t <= end) {
+      var d = new Date(t);
+      var parts = new Intl.DateTimeFormat('en-GB', {
+        timeZone: timeZone,
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+      }).formatToParts(d);
+      var h = parts.find(function (p) {
+        return p.type === 'hour';
+      }).value;
+      var m = parts.find(function (p) {
+        return p.type === 'minute';
+      }).value;
+      var s = parts.find(function (p) {
+        return p.type === 'second';
+      }).value;
+      if (h === '00' && m === '00' && s === '00') return t;
+      t += 1000;
+    }
+    return now + 24 * 3600 * 1000;
+  }
+
+  function scheduleGrantCountdown(isoOrNull) {
+    var el = document.getElementById('xma-grant-countdown');
+    if (!el) return;
+    if (grantCountdownTimer != null) {
+      clearInterval(grantCountdownTimer);
+      grantCountdownTimer = null;
+    }
+    var targetMs;
+    if (isoOrNull) {
+      targetMs = new Date(isoOrNull).getTime();
+      if (!isFinite(targetMs)) isoOrNull = null;
+    }
+    if (!isoOrNull) {
+      targetMs = nextMidnightMsInTimeZone('America/New_York');
+    }
+    function tick() {
+      var left = targetMs - Date.now();
+      if (left <= 0) {
+        el.textContent = '00:00:00';
+        if (grantCountdownTimer != null) {
+          clearInterval(grantCountdownTimer);
+          grantCountdownTimer = null;
+        }
+        loadDiscordRewardsMetaPublic();
+        return;
+      }
+      var totalSec = Math.floor(left / 1000);
+      var h = Math.floor(totalSec / 3600);
+      var m = Math.floor((totalSec % 3600) / 60);
+      var sec = totalSec % 60;
+      el.textContent = pad2(h) + ':' + pad2(m) + ':' + pad2(sec);
+    }
+    tick();
+    grantCountdownTimer = setInterval(tick, 1000);
+  }
+
+  function applyDiscordRewardsMetaFields(meta) {
+    if (!meta || typeof meta !== 'object') return;
+    var rates = meta.accrualRates;
+    if (rates && typeof rates === 'object') {
+      var cm = document.getElementById('xma-cap-messages');
+      var cr = document.getElementById('xma-cap-reactions');
+      var cv = document.getElementById('xma-cap-voice');
+      if (cm != null && rates.message != null && rates.message !== '') {
+        cm.textContent = '(' + rates.message + ' XMA)';
+      }
+      if (cr != null && rates.reaction != null && rates.reaction !== '') {
+        cr.textContent = '(' + rates.reaction + ' XMA)';
+      }
+      if (cv != null && rates.voiceMinute != null && rates.voiceMinute !== '') {
+        cv.textContent = '(' + rates.voiceMinute + ' XMA/min)';
+      }
+    } else {
+      var caps = meta.displayCaps;
+      if (caps && typeof caps === 'object') {
+        var cm2 = document.getElementById('xma-cap-messages');
+        var cr2 = document.getElementById('xma-cap-reactions');
+        var cv2 = document.getElementById('xma-cap-voice');
+        if (cm2 != null && caps.messages != null && caps.messages !== '') {
+          cm2.textContent = '(' + caps.messages + ')';
+        }
+        if (cr2 != null && caps.reactions != null && caps.reactions !== '') {
+          cr2.textContent = '(' + caps.reactions + ')';
+        }
+        if (cv2 != null && caps.voiceMinutes != null && caps.voiceMinutes !== '') {
+          cv2.textContent = '(' + caps.voiceMinutes + ')';
+        }
+      }
+    }
+    if (meta.dailyAccrualCapXma != null) {
+      var capEl = document.getElementById('xma-daily-accrual-cap');
+      if (capEl) {
+        var dc = Number(meta.dailyAccrualCapXma);
+        capEl.textContent =
+          (isFinite(dc) ? dc.toLocaleString('en-US') : String(meta.dailyAccrualCapXma)) + ' $XMA';
+      }
+    }
+    var lbl = document.getElementById('xma-grant-countdown-label');
+    var resetLbl = meta.nextResetLabel || meta.nextGrantLabel;
+    if (lbl != null && resetLbl) {
+      lbl.textContent = resetLbl;
+    }
+    var nextReset = meta.nextDailyResetAt || meta.nextDailyGrantAt;
+    if (nextReset) {
+      scheduleGrantCountdown(nextReset);
+    } else {
+      scheduleGrantCountdown(null);
+    }
+  }
+
+  function applyDiscordRewardsMetaFromConfigFallback() {
+    var r = CONFIG.xmaDiscordRewards || {};
+    applyDiscordRewardsMetaFields({
+      accrualRates: {
+        message: r.xmaPerQualifyingMessage,
+        reaction: r.xmaPerReaction,
+        voiceMinute: r.xmaPerVoiceMinute,
+      },
+      dailyAccrualCapXma: r.maxXmaAccrualPer24h,
+      nextResetLabel: 'Daily cap resets (ET)',
+      nextDailyResetAt: null,
+    });
+  }
+
+  function loadDiscordRewardsMetaPublic() {
+    fetch(window.location.origin + '/api/discord-rewards/meta', { credentials: 'omit' })
+      .then(function (res) {
+        return res.ok ? res.json() : null;
+      })
+      .then(function (data) {
+        if (data && typeof data === 'object') {
+          applyDiscordRewardsMetaFields(data);
+        } else {
+          applyDiscordRewardsMetaFromConfigFallback();
+        }
+      })
+      .catch(function () {
+        applyDiscordRewardsMetaFromConfigFallback();
+      });
+  }
+
   function updateXmaClaimButtonState() {
     var rewardsCfg = CONFIG.xmaDiscordRewards || {};
-    var threshold = Number(rewardsCfg.claimThresholdXma);
-    if (!isFinite(threshold) || threshold < 0) threshold = 0;
+    var thCfg = Number(rewardsCfg.claimThresholdXma);
+    if (!isFinite(thCfg) || thCfg < 0) thCfg = 0;
+    var threshold =
+      serverClaimThresholdXma != null && isFinite(serverClaimThresholdXma) && serverClaimThresholdXma >= 0
+        ? serverClaimThresholdXma
+        : thCfg;
     var balEl = document.getElementById('xma-unclaimed-balance');
     var btn = document.getElementById('xma-claim-btn');
     if (!btn || !balEl) return;
     var bal = parseFloat(String(balEl.textContent).replace(/,/g, '').trim(), 10);
     if (!isFinite(bal)) bal = 0;
-    var canClaim = bal >= threshold;
+    var canClaim = bal >= threshold && rewardsTreasuryConfigured;
     btn.disabled = !canClaim;
     btn.setAttribute('aria-disabled', canClaim ? 'false' : 'true');
+    if (!rewardsTreasuryConfigured) {
+      btn.title = 'Rewards treasury is not configured on the server';
+    } else if (!canClaim && threshold > 0) {
+      btn.title = 'Reach ' + threshold.toLocaleString('en-US') + ' unclaimed XMA to claim';
+    } else {
+      btn.title = '';
+    }
   }
 
   // ----- Apply project config to DOM (template: brand, hero, token, footer, etc.) -----
@@ -101,24 +272,44 @@
     var engNote = document.getElementById('xma-engagement-note');
     if (engNote) {
       var per = rewardsCfg.xmaPerQualifyingMessage;
+      var perR = rewardsCfg.xmaPerReaction;
+      var perV = rewardsCfg.xmaPerVoiceMinute;
       var maxDay = rewardsCfg.maxQualifyingMessagesPer24h;
       var m15 = rewardsCfg.maxQualifyingMessagesPer15m;
       var minC = rewardsCfg.minMessageChars;
-      var cap = rewardsCfg.maxXmaAccrualPer24h;
+      var dailyCap = rewardsCfg.maxXmaAccrualPer24h;
+      var tzL = rewardsCfg.dailyAccrualTimezoneLabel || 'America/New_York (ET)';
+      var parts = [];
+      if (per != null && perR != null && perV != null && dailyCap != null) {
+        var capN = Number(dailyCap);
+        var capStr = isFinite(capN) ? capN.toLocaleString('en-US') : String(dailyCap);
+        parts.push(
+          'Accrual: ' +
+            per +
+            ' XMA per qualifying message, ' +
+            perR +
+            ' XMA per reaction, ' +
+            perV +
+            ' XMA per voice minute (pro-rated). Per-user engagement XMA is capped at ' +
+            capStr +
+            ' XMA per calendar day in ' +
+            tzL +
+            ' (countdown).'
+        );
+      }
       if (per != null && maxDay != null && m15 != null && minC != null) {
-        var dailyCap = cap != null ? cap : per * maxDay;
-        engNote.textContent =
-          'Accrual is not live until the Discord bot is connected. Planned: messages need at least ' +
-          minC +
-          ' characters; up to ' +
-          m15 +
-          ' qualifying per 15 minutes and ' +
-          maxDay +
-          ' per 24 hours; ' +
-          per +
-          ' XMA each, daily cap ' +
-          dailyCap +
-          ' XMA.';
+        parts.push(
+          'Messages need at least ' +
+            minC +
+            ' characters; up to ' +
+            m15 +
+            ' qualifying per 15 minutes and ' +
+            maxDay +
+            ' per 24 hours.'
+        );
+      }
+      if (parts.length) {
+        engNote.textContent = parts.join(' ');
       }
     }
 
@@ -181,14 +372,19 @@
     updateXmaClaimButtonState();
   }
   applyProjectConfig();
+  loadDiscordRewardsMetaPublic();
 
   window.XAPES_UI = window.XAPES_UI || {};
   window.XAPES_UI.setDiscordRewardsUnclaimedXma = function (amount) {
     var el = document.getElementById('xma-unclaimed-balance');
     if (!el) return;
-    var n = Number(amount);
-    if (!isFinite(n)) n = 0;
-    el.textContent = n.toLocaleString('en-US', { maximumFractionDigits: 6 });
+    var s = String(amount != null ? amount : '0').trim().replace(/,/g, '');
+    var n = parseFloat(s, 10);
+    if (isFinite(n)) {
+      el.textContent = n.toLocaleString('en-US', { maximumFractionDigits: 6 });
+    } else {
+      el.textContent = s || '0';
+    }
     updateXmaClaimButtonState();
   };
 
@@ -219,6 +415,9 @@
     window.history.replaceState(null, '', '#' + id);
     setActiveSection(id);
     el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (id === 'xma' && document.body.classList.contains('discord-connected')) {
+      refreshDiscordRewardsPanel();
+    }
     setTimeout(function () {
       navScrollInProgress = false;
       navScrollTargetId = null;
@@ -308,16 +507,122 @@
     if (typeof syncVerifyModalState === 'function') syncVerifyModalState();
   }
 
-  function postHolderLinkWallet() {
+  function resetDiscordRewardsUI() {
+    serverClaimThresholdXma = null;
+    rewardsTreasuryConfigured = true;
+    lastDiscordRewardsStatus = null;
+    var dash = '—';
+    var msgEl = document.getElementById('xma-eng-messages');
+    var rEl = document.getElementById('xma-eng-reactions');
+    var vEl = document.getElementById('xma-eng-voice');
+    if (msgEl) msgEl.textContent = dash;
+    if (rEl) rEl.textContent = dash;
+    if (vEl) vEl.textContent = dash;
+    if (window.XAPES_UI && typeof window.XAPES_UI.setDiscordRewardsUnclaimedXma === 'function') {
+      window.XAPES_UI.setDiscordRewardsUnclaimedXma(0);
+    }
+    updateXmaClaimButtonState();
+  }
+
+  function refreshDiscordRewardsPanel() {
     if (!document.body.classList.contains('discord-connected')) return;
+    fetch(window.location.origin + '/api/discord-rewards/status', { credentials: 'include' })
+      .then(function (res) {
+        if (res.status === 401) {
+          resetDiscordRewardsUI();
+          return null;
+        }
+        if (!res.ok) return null;
+        return res.json();
+      })
+      .then(function (data) {
+        if (!data || typeof data !== 'object') return;
+        lastDiscordRewardsStatus = data;
+        if (typeof data.claimThresholdXma === 'number' && isFinite(data.claimThresholdXma)) {
+          serverClaimThresholdXma = data.claimThresholdXma;
+        }
+        rewardsTreasuryConfigured = data.rewardsTreasuryConfigured !== false;
+        var msgEl = document.getElementById('xma-eng-messages');
+        var rEl = document.getElementById('xma-eng-reactions');
+        var vEl = document.getElementById('xma-eng-voice');
+        if (msgEl) msgEl.textContent = String(data.messages24h != null ? data.messages24h : '—');
+        if (rEl) rEl.textContent = String(data.reactions24h != null ? data.reactions24h : '—');
+        if (vEl) {
+          var vm = data.voiceMinutes24h;
+          vEl.textContent =
+            vm != null && isFinite(Number(vm)) ? String(Number(Number(vm).toFixed(2))) : String(vm != null ? vm : '—');
+        }
+        applyDiscordRewardsMetaFields(data);
+        if (window.XAPES_UI && typeof window.XAPES_UI.setDiscordRewardsUnclaimedXma === 'function') {
+          window.XAPES_UI.setDiscordRewardsUnclaimedXma(data.unclaimedXma);
+        }
+        updateXmaClaimButtonState();
+      })
+      .catch(function () {});
+  }
+
+  function openLinkedWalletPicker(addresses) {
+    return new Promise(function (resolve, reject) {
+      if (!addresses || !addresses.length) {
+        reject(new Error('No linked wallets'));
+        return;
+      }
+      if (addresses.length === 1) {
+        resolve(addresses[0]);
+        return;
+      }
+      var wrap = document.createElement('div');
+      wrap.className = 'wallet-picker';
+      wrap.setAttribute('aria-hidden', 'false');
+      wrap.setAttribute('role', 'dialog');
+      wrap.setAttribute('aria-modal', 'true');
+      wrap.innerHTML =
+        '<div class="wallet-picker__backdrop" data-act="close"></div>' +
+        '<div class="wallet-picker__box">' +
+        '<div class="wallet-picker__head">' +
+        '<h2 class="wallet-picker__title" id="xma-linked-wallet-title">Claim to linked wallet</h2>' +
+        '<button type="button" class="wallet-picker__close" data-act="close" aria-label="Close">&times;</button>' +
+        '</div>' +
+        '<div class="wallet-picker__list" id="xma-linked-wallet-list"></div>' +
+        '</div>';
+      var list = wrap.querySelector('#xma-linked-wallet-list');
+      function cleanup(result) {
+        wrap.remove();
+        if (result) resolve(result);
+        else reject(new Error('Cancelled'));
+      }
+      wrap.addEventListener('click', function (ev) {
+        if (ev.target.getAttribute('data-act') === 'close') cleanup(null);
+      });
+      addresses.forEach(function (addr) {
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'wallet-picker__btn';
+        btn.textContent = addr.length > 12 ? addr.slice(0, 6) + '…' + addr.slice(-6) : addr;
+        btn.title = addr;
+        btn.addEventListener('click', function () {
+          cleanup(addr);
+        });
+        list.appendChild(btn);
+      });
+      document.body.appendChild(wrap);
+    });
+  }
+
+  function postHolderLinkWallet() {
+    if (!document.body.classList.contains('discord-connected')) return Promise.resolve();
     var w = getWalletPublicKey();
-    if (!w) return;
-    fetch(window.location.origin + '/api/holder-link-wallet', {
+    if (!w) return Promise.resolve();
+    return fetch(window.location.origin + '/api/holder-link-wallet', {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ walletAddress: w }),
-    }).catch(function () {});
+    })
+      .then(function () {
+        refreshDiscordRewardsPanel();
+      })
+      .catch(function () {});
   }
 
   function connectWithProvider(provider) {
@@ -815,6 +1120,9 @@
   }
 
   function setDiscordUI(connected, userOrUsername) {
+    if (!connected) {
+      resetDiscordRewardsUI();
+    }
     document.body.classList.toggle('discord-connected', !!connected);
     if (connected && userOrUsername != null) {
       discordUser = typeof userOrUsername === 'object' ? userOrUsername : { global_name: userOrUsername, username: userOrUsername };
@@ -871,6 +1179,7 @@
         if (data && data.connected && data.user) {
           setDiscordUI(true, data.user);
           postHolderLinkWallet();
+          refreshDiscordRewardsPanel();
           return data.user;
         }
         setDiscordUI(false);
@@ -921,6 +1230,58 @@
   document.getElementById('btn-discord-logout-mobile')?.addEventListener('click', function (e) {
     e.preventDefault();
     logoutDiscord();
+  });
+
+  document.getElementById('xma-claim-btn')?.addEventListener('click', function () {
+    if (!document.body.classList.contains('discord-connected')) {
+      alert('Connect Discord first.');
+      return;
+    }
+    var st = lastDiscordRewardsStatus;
+    if (!st) {
+      refreshDiscordRewardsPanel();
+      alert('Loading rewards data — try again in a moment.');
+      return;
+    }
+    if (!Array.isArray(st.linkedWallets) || !st.linkedWallets.length) {
+      alert('Link a Solana wallet while Discord is connected, then try again.');
+      return;
+    }
+    if (!st.rewardsTreasuryConfigured) {
+      alert('Claims are not available yet — rewards treasury is not configured.');
+      return;
+    }
+    openLinkedWalletPicker(st.linkedWallets)
+      .then(function (addr) {
+        return fetch(window.location.origin + '/api/discord-rewards/claim', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ walletAddress: addr }),
+        }).then(function (res) {
+          return res.json().catch(function () {
+            return { error: res.statusText || 'Invalid response' };
+          }).then(function (body) {
+            return { ok: res.ok, status: res.status, body: body };
+          });
+        });
+      })
+      .then(function (out) {
+        if (!out || !out.body) return;
+        if (!out.ok) {
+          alert(out.body.error || 'Claim failed (' + out.status + ')');
+          return;
+        }
+        var sig = out.body.signature;
+        var msg = 'XMA sent to your wallet.';
+        if (sig) msg += '\n\nSignature:\n' + sig;
+        alert(msg);
+        refreshDiscordRewardsPanel();
+      })
+      .catch(function (e) {
+        if (e && e.message === 'Cancelled') return;
+        console.warn('Claim error', e);
+      });
   });
 
   // On load: check Discord session and ?discord= query; reopen verify modal when returning from Discord

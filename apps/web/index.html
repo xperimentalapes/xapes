@@ -296,10 +296,27 @@
               <div class="tokenomics__engagement" id="xma-engagement-panel" aria-live="polite">
                 <p class="tokenomics__engagement-head">Last 24 hours</p>
                 <ul class="tokenomics__engagement-list" id="xma-engagement-list">
-                  <li><span class="tokenomics__engagement-label">Messages</span> <span class="tokenomics__engagement-value" id="xma-eng-messages">—</span></li>
-                  <li><span class="tokenomics__engagement-label">Reactions</span> <span class="tokenomics__engagement-value" id="xma-eng-reactions">—</span></li>
-                  <li><span class="tokenomics__engagement-label">Voice (minutes)</span> <span class="tokenomics__engagement-value" id="xma-eng-voice">—</span></li>
+                  <li>
+                    <span class="tokenomics__engagement-label">Messages <span class="tokenomics__engagement-cap" id="xma-cap-messages">(300 XMA)</span></span>
+                    <span class="tokenomics__engagement-value" id="xma-eng-messages">—</span>
+                  </li>
+                  <li>
+                    <span class="tokenomics__engagement-label">Reactions <span class="tokenomics__engagement-cap" id="xma-cap-reactions">(200 XMA)</span></span>
+                    <span class="tokenomics__engagement-value" id="xma-eng-reactions">—</span>
+                  </li>
+                  <li>
+                    <span class="tokenomics__engagement-label">Voice (mins) <span class="tokenomics__engagement-cap" id="xma-cap-voice">(100 XMA/min)</span></span>
+                    <span class="tokenomics__engagement-value" id="xma-eng-voice">—</span>
+                  </li>
                 </ul>
+                <div class="tokenomics__daily-grant-row">
+                  <span class="tokenomics__daily-grant-label">Daily accrual cap</span>
+                  <strong class="tokenomics__daily-grant-amount" id="xma-daily-accrual-cap">100,000 $XMA</strong>
+                </div>
+                <div class="tokenomics__grant-countdown" aria-live="polite">
+                  <span class="tokenomics__grant-countdown-label" id="xma-grant-countdown-label">Next credit (ET)</span>
+                  <span class="tokenomics__countdown-digits" id="xma-grant-countdown">--:--:--</span>
+                </div>
                 <p class="tokenomics__engagement-note" id="xma-engagement-note"></p>
               </div>
               <div class="tokenomics__rewards-balance">

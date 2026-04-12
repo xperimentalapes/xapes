@@ -16,6 +16,161 @@
   var serverClaimThresholdXma = null;
   var rewardsTreasuryConfigured = true;
   var lastDiscordRewardsStatus = null;
+  var grantCountdownTimer = null;
+
+  function pad2(n) {
+    return (n < 10 ? '0' : '') + n;
+  }
+
+  /** Match server `nextMidnightIsoInTimeZone` for offline countdown fallback. */
+  function nextMidnightMsInTimeZone(timeZone) {
+    var now = Date.now();
+    var t = Math.floor(now / 1000) * 1000 + 1000;
+    var end = t + 26 * 3600 * 1000;
+    while (t <= end) {
+      var d = new Date(t);
+      var parts = new Intl.DateTimeFormat('en-GB', {
+        timeZone: timeZone,
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+      }).formatToParts(d);
+      var h = parts.find(function (p) {
+        return p.type === 'hour';
+      }).value;
+      var m = parts.find(function (p) {
+        return p.type === 'minute';
+      }).value;
+      var s = parts.find(function (p) {
+        return p.type === 'second';
+      }).value;
+      if (h === '00' && m === '00' && s === '00') return t;
+      t += 1000;
+    }
+    return now + 24 * 3600 * 1000;
+  }
+
+  function scheduleGrantCountdown(isoOrNull) {
+    var el = document.getElementById('xma-grant-countdown');
+    if (!el) return;
+    if (grantCountdownTimer != null) {
+      clearInterval(grantCountdownTimer);
+      grantCountdownTimer = null;
+    }
+    var targetMs;
+    if (isoOrNull) {
+      targetMs = new Date(isoOrNull).getTime();
+      if (!isFinite(targetMs)) isoOrNull = null;
+    }
+    if (!isoOrNull) {
+      targetMs = nextMidnightMsInTimeZone('America/New_York');
+    }
+    function tick() {
+      var left = targetMs - Date.now();
+      if (left <= 0) {
+        el.textContent = '00:00:00';
+        if (grantCountdownTimer != null) {
+          clearInterval(grantCountdownTimer);
+          grantCountdownTimer = null;
+        }
+        loadDiscordRewardsMetaPublic();
+        return;
+      }
+      var totalSec = Math.floor(left / 1000);
+      var h = Math.floor(totalSec / 3600);
+      var m = Math.floor((totalSec % 3600) / 60);
+      var sec = totalSec % 60;
+      el.textContent = pad2(h) + ':' + pad2(m) + ':' + pad2(sec);
+    }
+    tick();
+    grantCountdownTimer = setInterval(tick, 1000);
+  }
+
+  function applyDiscordRewardsMetaFields(meta) {
+    if (!meta || typeof meta !== 'object') return;
+    var rates = meta.accrualRates;
+    if (rates && typeof rates === 'object') {
+      var cm = document.getElementById('xma-cap-messages');
+      var cr = document.getElementById('xma-cap-reactions');
+      var cv = document.getElementById('xma-cap-voice');
+      if (cm != null && rates.message != null && rates.message !== '') {
+        cm.textContent = '(' + rates.message + ' XMA)';
+      }
+      if (cr != null && rates.reaction != null && rates.reaction !== '') {
+        cr.textContent = '(' + rates.reaction + ' XMA)';
+      }
+      if (cv != null && rates.voiceMinute != null && rates.voiceMinute !== '') {
+        cv.textContent = '(' + rates.voiceMinute + ' XMA/min)';
+      }
+    } else {
+      var caps = meta.displayCaps;
+      if (caps && typeof caps === 'object') {
+        var cm2 = document.getElementById('xma-cap-messages');
+        var cr2 = document.getElementById('xma-cap-reactions');
+        var cv2 = document.getElementById('xma-cap-voice');
+        if (cm2 != null && caps.messages != null && caps.messages !== '') {
+          cm2.textContent = '(' + caps.messages + ')';
+        }
+        if (cr2 != null && caps.reactions != null && caps.reactions !== '') {
+          cr2.textContent = '(' + caps.reactions + ')';
+        }
+        if (cv2 != null && caps.voiceMinutes != null && caps.voiceMinutes !== '') {
+          cv2.textContent = '(' + caps.voiceMinutes + ')';
+        }
+      }
+    }
+    if (meta.dailyAccrualCapXma != null) {
+      var capEl = document.getElementById('xma-daily-accrual-cap');
+      if (capEl) {
+        var dc = Number(meta.dailyAccrualCapXma);
+        capEl.textContent =
+          (isFinite(dc) ? dc.toLocaleString('en-US') : String(meta.dailyAccrualCapXma)) + ' $XMA';
+      }
+    }
+    var lbl = document.getElementById('xma-grant-countdown-label');
+    var resetLbl = meta.nextResetLabel || meta.nextGrantLabel;
+    if (lbl != null && resetLbl) {
+      lbl.textContent = resetLbl;
+    }
+    var nextReset = meta.nextDailyResetAt || meta.nextDailyGrantAt;
+    if (nextReset) {
+      scheduleGrantCountdown(nextReset);
+    } else {
+      scheduleGrantCountdown(null);
+    }
+  }
+
+  function applyDiscordRewardsMetaFromConfigFallback() {
+    var r = CONFIG.xmaDiscordRewards || {};
+    applyDiscordRewardsMetaFields({
+      accrualRates: {
+        message: r.xmaPerQualifyingMessage,
+        reaction: r.xmaPerReaction,
+        voiceMinute: r.xmaPerVoiceMinute,
+      },
+      dailyAccrualCapXma: r.maxXmaAccrualPer24h,
+      nextResetLabel: 'Daily cap resets (ET)',
+      nextDailyResetAt: null,
+    });
+  }
+
+  function loadDiscordRewardsMetaPublic() {
+    fetch(window.location.origin + '/api/discord-rewards/meta', { credentials: 'omit' })
+      .then(function (res) {
+        return res.ok ? res.json() : null;
+      })
+      .then(function (data) {
+        if (data && typeof data === 'object') {
+          applyDiscordRewardsMetaFields(data);
+        } else {
+          applyDiscordRewardsMetaFromConfigFallback();
+        }
+      })
+      .catch(function () {
+        applyDiscordRewardsMetaFromConfigFallback();
+      });
+  }
 
   function updateXmaClaimButtonState() {
     var rewardsCfg = CONFIG.xmaDiscordRewards || {};
@@ -117,24 +272,44 @@
     var engNote = document.getElementById('xma-engagement-note');
     if (engNote) {
       var per = rewardsCfg.xmaPerQualifyingMessage;
+      var perR = rewardsCfg.xmaPerReaction;
+      var perV = rewardsCfg.xmaPerVoiceMinute;
       var maxDay = rewardsCfg.maxQualifyingMessagesPer24h;
       var m15 = rewardsCfg.maxQualifyingMessagesPer15m;
       var minC = rewardsCfg.minMessageChars;
-      var cap = rewardsCfg.maxXmaAccrualPer24h;
+      var dailyCap = rewardsCfg.maxXmaAccrualPer24h;
+      var tzL = rewardsCfg.dailyAccrualTimezoneLabel || 'America/New_York (ET)';
+      var parts = [];
+      if (per != null && perR != null && perV != null && dailyCap != null) {
+        var capN = Number(dailyCap);
+        var capStr = isFinite(capN) ? capN.toLocaleString('en-US') : String(dailyCap);
+        parts.push(
+          'Accrual: ' +
+            per +
+            ' XMA per qualifying message, ' +
+            perR +
+            ' XMA per reaction, ' +
+            perV +
+            ' XMA per voice minute (pro-rated). Per-user engagement XMA is capped at ' +
+            capStr +
+            ' XMA per calendar day in ' +
+            tzL +
+            ' (countdown).'
+        );
+      }
       if (per != null && maxDay != null && m15 != null && minC != null) {
-        var dailyCap = cap != null ? cap : per * maxDay;
-        engNote.textContent =
+        parts.push(
           'Messages need at least ' +
-          minC +
-          ' characters; up to ' +
-          m15 +
-          ' qualifying per 15 minutes and ' +
-          maxDay +
-          ' per 24 hours; ' +
-          per +
-          ' XMA each, daily cap ' +
-          dailyCap +
-          ' XMA. Unclaimed balance updates after server accrual runs.';
+            minC +
+            ' characters; up to ' +
+            m15 +
+            ' qualifying per 15 minutes and ' +
+            maxDay +
+            ' per 24 hours.'
+        );
+      }
+      if (parts.length) {
+        engNote.textContent = parts.join(' ');
       }
     }
 
@@ -197,6 +372,7 @@
     updateXmaClaimButtonState();
   }
   applyProjectConfig();
+  loadDiscordRewardsMetaPublic();
 
   window.XAPES_UI = window.XAPES_UI || {};
   window.XAPES_UI.setDiscordRewardsUnclaimedXma = function (amount) {
@@ -376,6 +552,7 @@
           vEl.textContent =
             vm != null && isFinite(Number(vm)) ? String(Number(Number(vm).toFixed(2))) : String(vm != null ? vm : '—');
         }
+        applyDiscordRewardsMetaFields(data);
         if (window.XAPES_UI && typeof window.XAPES_UI.setDiscordRewardsUnclaimedXma === 'function') {
           window.XAPES_UI.setDiscordRewardsUnclaimedXma(data.unclaimedXma);
         }

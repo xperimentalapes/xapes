@@ -29,19 +29,18 @@ window.XAPES_CONFIG = {
 
   /**
    * Discord → XMA rewards (amounts are XMA-only in the UI).
-   * Tuned loosely vs ~$0.00000327/XMA and ~$0.50 max day at 250 msgs — no fiat shown to users.
+   * Server env overrides via /api/discord-rewards/meta (accrualRates, dailyAccrualCapXma).
    */
   xmaDiscordRewards: {
     claimThresholdXma: 1000000,
-    /** Max messages that can earn per rolling 15 minutes */
     maxQualifyingMessagesPer15m: 5,
     minMessageChars: 10,
-    /** Max paying messages per 24h */
     maxQualifyingMessagesPer24h: 250,
-    /** XMA credited per qualifying message (backend should enforce caps) */
-    xmaPerQualifyingMessage: 600,
-    /** Hard daily accrual cap in XMA (should match rate × max msgs) */
-    maxXmaAccrualPer24h: 150000,
+    xmaPerQualifyingMessage: 300,
+    xmaPerReaction: 200,
+    xmaPerVoiceMinute: 100,
+    maxXmaAccrualPer24h: 100000,
+    dailyAccrualTimezoneLabel: 'America/New_York (ET)',
   },
 
   hero: {
