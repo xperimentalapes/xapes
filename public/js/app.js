@@ -262,24 +262,8 @@
     }
     var engNote = document.getElementById('xma-engagement-note');
     if (engNote) {
-      var maxDay = rewardsCfg.maxQualifyingMessagesPer24h;
-      var m15 = rewardsCfg.maxQualifyingMessagesPer15m;
-      var minC = rewardsCfg.minMessageChars;
-      var dailyCap = rewardsCfg.maxXmaAccrualPer24h;
-      if (dailyCap != null && minC != null && m15 != null && maxDay != null) {
-        var capN = Number(dailyCap);
-        var capStr = isFinite(capN) ? capN.toLocaleString('en-US') : String(dailyCap);
-        engNote.textContent =
-          'Per-user engagement XMA is capped at ' +
-          capStr +
-          ' XMA per calendar day. Messages need at least ' +
-          minC +
-          ' characters; up to ' +
-          m15 +
-          ' qualifying per 15 minutes and ' +
-          maxDay +
-          ' per 24 hours.';
-      }
+      engNote.textContent =
+        'Per-user engagement XMA is capped at 100,000 XMA per calendar day. Messages need at least 10 characters; up to 5 qualifying per 15 minutes and 250 per 24 hours.';
     }
 
     // Optional shop link (sidebar)
@@ -505,6 +489,40 @@
     return String(raw);
   }
 
+  /** Prefer server todaysClaimXma; else derive from last-24h counts × rates (matches live deploys without new API fields). */
+  function computeTodaysClaimDisplay(data) {
+    if (!data || typeof data !== 'object') return '0';
+    var r = data.accrualRates;
+    if (!r || typeof r !== 'object') {
+      var cfg = CONFIG.xmaDiscordRewards || {};
+      r = {
+        message: cfg.xmaPerQualifyingMessage,
+        reaction: cfg.xmaPerReaction,
+        voiceMinute: cfg.xmaPerVoiceMinute,
+      };
+    }
+    var rm = Number(r.message);
+    var rr = Number(r.reaction);
+    var rv = Number(r.voiceMinute);
+    var cap = Number(data.dailyAccrualCapXma);
+    if (!isFinite(cap) || cap <= 0) {
+      cap = Number((CONFIG.xmaDiscordRewards || {}).maxXmaAccrualPer24h);
+      if (!isFinite(cap) || cap <= 0) cap = 100000;
+    }
+    if (isFinite(rm) && isFinite(rr) && isFinite(rv)) {
+      var msgs = Math.max(0, Number(data.messages24h) || 0);
+      var reacts = Math.max(0, Number(data.reactions24h) || 0);
+      var vm = Math.max(0, Number(data.voiceMinutes24h) || 0);
+      var raw = rm * msgs + rr * reacts + rv * vm;
+      if (!isFinite(raw) || raw < 0) raw = 0;
+      var capped = Math.min(raw, cap);
+      var trimmed = capped.toFixed(6).replace(/\.?0+$/, '');
+      return formatXmaDisplayAmount(trimmed || '0');
+    }
+    var fallback = data.todaysClaimXma != null ? data.todaysClaimXma : data.claimedXmaToday;
+    return fallback != null ? formatXmaDisplayAmount(fallback) : '0';
+  }
+
   function refreshDiscordRewardsPanel() {
     if (!document.body.classList.contains('discord-connected')) return;
     fetch(window.location.origin + '/api/discord-rewards/status', { credentials: 'include' })
@@ -533,13 +551,16 @@
           vEl.textContent =
             vm != null && isFinite(Number(vm)) ? String(Number(Number(vm).toFixed(2))) : String(vm != null ? vm : '—');
         }
+        applyDiscordRewardsMetaFields(data);
         var claimedTodayEl = document.getElementById('xma-claimed-today');
         if (claimedTodayEl) {
-          var tclaim = data.todaysClaimXma != null ? data.todaysClaimXma : data.claimedXmaToday;
-          claimedTodayEl.textContent =
-            tclaim != null ? formatXmaDisplayAmount(tclaim) : '0';
+          claimedTodayEl.textContent = computeTodaysClaimDisplay(data);
         }
-        applyDiscordRewardsMetaFields(data);
+        var engNoteEl = document.getElementById('xma-engagement-note');
+        if (engNoteEl) {
+          engNoteEl.textContent =
+            'Per-user engagement XMA is capped at 100,000 XMA per calendar day. Messages need at least 10 characters; up to 5 qualifying per 15 minutes and 250 per 24 hours.';
+        }
         if (window.XAPES_UI && typeof window.XAPES_UI.setDiscordRewardsUnclaimedXma === 'function') {
           window.XAPES_UI.setDiscordRewardsUnclaimedXma(data.unclaimedXma);
         }
