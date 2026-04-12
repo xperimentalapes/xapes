@@ -1905,7 +1905,15 @@ body {
 
 /* Tokenomics — DEXTools-style price + optional 15m chart + Discord rewards column */
 .card--tokenomics .tokenomics__grid {
-  align-items: start;
+  align-items: stretch;
+}
+.card--tokenomics .tokenomics__column {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+.card--tokenomics .tokenomics__column:not(.tokenomics__column--rewards) .tokenomics__actions {
+  margin-top: auto;
 }
 .tokenomics__column--rewards {
   padding: 0.5rem 0 0;
@@ -1931,7 +1939,7 @@ body {
   line-height: 1.45;
 }
 .tokenomics__engagement {
-  margin-bottom: 1.25rem;
+  margin-bottom: 0.85rem;
   padding: 0.75rem;
   background: var(--bg-elevated);
   border-radius: var(--radius-sm);
@@ -1990,7 +1998,7 @@ body {
   margin-top: 0.65rem;
 }
 .tokenomics__claimed-today-amount {
-  color: var(--text);
+  color: var(--success);
   font-weight: 600;
 }
 .tokenomics__daily-grant-amount {

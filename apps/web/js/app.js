@@ -120,14 +120,6 @@
         }
       }
     }
-    if (meta.dailyAccrualCapXma != null) {
-      var capEl = document.getElementById('xma-daily-accrual-cap');
-      if (capEl) {
-        var dc = Number(meta.dailyAccrualCapXma);
-        capEl.textContent =
-          (isFinite(dc) ? dc.toLocaleString('en-US') : String(meta.dailyAccrualCapXma)) + ' $XMA';
-      }
-    }
     var lbl = document.getElementById('xma-grant-countdown-label');
     var resetLbl = meta.nextResetLabel || meta.nextGrantLabel;
     if (lbl != null && resetLbl) {
@@ -149,7 +141,6 @@
         reaction: r.xmaPerReaction,
         voiceMinute: r.xmaPerVoiceMinute,
       },
-      dailyAccrualCapXma: r.maxXmaAccrualPer24h,
       nextResetLabel: 'Daily cap resets (ET)',
       nextDailyResetAt: null,
     });
@@ -271,45 +262,23 @@
     }
     var engNote = document.getElementById('xma-engagement-note');
     if (engNote) {
-      var per = rewardsCfg.xmaPerQualifyingMessage;
-      var perR = rewardsCfg.xmaPerReaction;
-      var perV = rewardsCfg.xmaPerVoiceMinute;
       var maxDay = rewardsCfg.maxQualifyingMessagesPer24h;
       var m15 = rewardsCfg.maxQualifyingMessagesPer15m;
       var minC = rewardsCfg.minMessageChars;
       var dailyCap = rewardsCfg.maxXmaAccrualPer24h;
-      var tzL = rewardsCfg.dailyAccrualTimezoneLabel || 'America/New_York (ET)';
-      var parts = [];
-      if (per != null && perR != null && perV != null && dailyCap != null) {
+      if (dailyCap != null && minC != null && m15 != null && maxDay != null) {
         var capN = Number(dailyCap);
         var capStr = isFinite(capN) ? capN.toLocaleString('en-US') : String(dailyCap);
-        parts.push(
-          'Accrual: ' +
-            per +
-            ' XMA per qualifying message, ' +
-            perR +
-            ' XMA per reaction, ' +
-            perV +
-            ' XMA per voice minute (pro-rated). Per-user engagement XMA is capped at ' +
-            capStr +
-            ' XMA per calendar day in ' +
-            tzL +
-            ' (countdown).'
-        );
-      }
-      if (per != null && maxDay != null && m15 != null && minC != null) {
-        parts.push(
-          'Messages need at least ' +
-            minC +
-            ' characters; up to ' +
-            m15 +
-            ' qualifying per 15 minutes and ' +
-            maxDay +
-            ' per 24 hours.'
-        );
-      }
-      if (parts.length) {
-        engNote.textContent = parts.join(' ');
+        engNote.textContent =
+          'Per-user engagement XMA is capped at ' +
+          capStr +
+          ' XMA per calendar day. Messages need at least ' +
+          minC +
+          ' characters; up to ' +
+          m15 +
+          ' qualifying per 15 minutes and ' +
+          maxDay +
+          ' per 24 hours.';
       }
     }
 
@@ -566,8 +535,9 @@
         }
         var claimedTodayEl = document.getElementById('xma-claimed-today');
         if (claimedTodayEl) {
+          var tclaim = data.todaysClaimXma != null ? data.todaysClaimXma : data.claimedXmaToday;
           claimedTodayEl.textContent =
-            data.claimedXmaToday != null ? formatXmaDisplayAmount(data.claimedXmaToday) : '0';
+            tclaim != null ? formatXmaDisplayAmount(tclaim) : '0';
         }
         applyDiscordRewardsMetaFields(data);
         if (window.XAPES_UI && typeof window.XAPES_UI.setDiscordRewardsUnclaimedXma === 'function') {
