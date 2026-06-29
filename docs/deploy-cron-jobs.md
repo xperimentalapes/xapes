@@ -64,7 +64,7 @@ Create a free account → **Cronjobs** → **Create cronjob** for each job.
 
 | Field | Value |
 |-------|-------|
-| URL | `https://https://www.xapelabz.com/api/cron/accrue-xma` |
+| URL | `https://www.xapelabz.com/api/cron/accrue-xma` |
 | Schedule | Every 5 minutes (`*/5 * * * *`) |
 | Request method | GET |
 | Headers | `Authorization: Bearer YOUR_CRON_SECRET` |
@@ -75,7 +75,7 @@ Settles **yesterday** in America/New_York.
 
 | Field | Value |
 |-------|-------|
-| URL | `https://https://www.xapelabz.com/api/cron/settle-xma` |
+| URL | `https://www.xapelabz.com/api/cron/settle-xma` |
 | Schedule | `35 0 * * *` and `35 12 * * *` |
 | Timezone | **America/New_York** (00:35 and 12:35 ET) |
 | Headers | `Authorization: Bearer YOUR_CRON_SECRET` |
@@ -86,7 +86,7 @@ Create **two** cron jobs (or one job + duplicate with second schedule if your pl
 
 | Field | Value |
 |-------|-------|
-| URL | `https://https://www.xapelabz.com/api/cron/sync-nfts` |
+| URL | `https://www.xapelabz.com/api/cron/sync-nfts` |
 | Schedule | Every 15 minutes (`*/15 * * * *`) |
 | Headers | `Authorization: Bearer YOUR_CRON_SECRET` |
 
