@@ -84,13 +84,27 @@ Create **two** cron jobs (or one job + duplicate with second schedule if your pl
 
 ### NFT + Discord roles sync (every 15 minutes)
 
+Roles-only is the default (`?mode=roles`) — fast on Vercel Hobby. Run full Helius NFT index less often.
+
 | Field | Value |
 |-------|-------|
 | URL | `https://www.xapelabz.com/api/cron/sync-nfts` |
 | Schedule | Every 15 minutes (`*/15 * * * *`) |
 | Headers | `Authorization: Bearer YOUR_CRON_SECRET` |
 
-**Note:** `sync-nfts` can run up to 5 minutes on Vercel Pro (`maxDuration: 300`). Hobby plan may time out on large collections.
+**Optional second job — full NFT index from Helius (every 6 hours):**
+
+| Field | Value |
+|-------|-------|
+| URL | `https://www.xapelabz.com/api/cron/sync-nfts?mode=nfts` |
+| Schedule | Every 6 hours |
+
+**Vercel env required for sync:**
+
+- `HELIUS_API_KEY` — required for `mode=nfts` or `mode=full`
+- `MUTANT_APES_COLLECTION_MINT` — required
+- `DISCORD_BOT_TOKEN`, `DISCORD_GUILD_ID` — for role reconciliation
+- `COLLECTION_NAME` — optional display name
 
 ## 4. Local CLI (optional)
 
