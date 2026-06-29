@@ -27,13 +27,15 @@ openssl rand -hex 32
 
 ## 2. Endpoints
 
-Replace `https://YOUR_DOMAIN` with your live site (e.g. `https://www.xapelabz.com` or `https://xapes.vercel.app`).
+Replace `https://www.xapelabz.com` with your live site if different.
 
 | Job | URL | Method |
 |-----|-----|--------|
-| XMA accrual | `/api/cron/accrue-xma` | GET or POST |
+| XMA accrual | `/api/cron/accrue-xma` (rewrites to `api/cron-accrue-xma.js`) | GET or POST |
 | XMA settlement | `/api/cron/settle-xma` | GET or POST |
 | NFT + roles sync | `/api/cron/sync-nfts` | GET or POST |
+
+Handlers live as flat files under `api/` (Vercel static output does not deploy nested `api/cron/*.js`).
 
 **Auth header** (required):
 
@@ -51,7 +53,7 @@ Example test:
 
 ```bash
 curl -sS -H "Authorization: Bearer $CRON_SECRET" \
-  "https://YOUR_DOMAIN/api/cron/accrue-xma"
+  "https://www.xapelabz.com/api/cron/accrue-xma"
 ```
 
 ## 3. cron-job.org setup
@@ -62,7 +64,7 @@ Create a free account → **Cronjobs** → **Create cronjob** for each job.
 
 | Field | Value |
 |-------|-------|
-| URL | `https://YOUR_DOMAIN/api/cron/accrue-xma` |
+| URL | `https://https://www.xapelabz.com/api/cron/accrue-xma` |
 | Schedule | Every 5 minutes (`*/5 * * * *`) |
 | Request method | GET |
 | Headers | `Authorization: Bearer YOUR_CRON_SECRET` |
@@ -73,7 +75,7 @@ Settles **yesterday** in America/New_York.
 
 | Field | Value |
 |-------|-------|
-| URL | `https://YOUR_DOMAIN/api/cron/settle-xma` |
+| URL | `https://https://www.xapelabz.com/api/cron/settle-xma` |
 | Schedule | `35 0 * * *` and `35 12 * * *` |
 | Timezone | **America/New_York** (00:35 and 12:35 ET) |
 | Headers | `Authorization: Bearer YOUR_CRON_SECRET` |
@@ -84,7 +86,7 @@ Create **two** cron jobs (or one job + duplicate with second schedule if your pl
 
 | Field | Value |
 |-------|-------|
-| URL | `https://YOUR_DOMAIN/api/cron/sync-nfts` |
+| URL | `https://https://www.xapelabz.com/api/cron/sync-nfts` |
 | Schedule | Every 15 minutes (`*/15 * * * *`) |
 | Headers | `Authorization: Bearer YOUR_CRON_SECRET` |
 

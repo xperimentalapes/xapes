@@ -1,9 +1,9 @@
 const path = require('path');
-const root = path.resolve(path.join(__dirname, '..', '..'));
+const root = path.resolve(path.join(__dirname, '..'));
 require('dotenv').config({ path: path.join(root, '.env') });
 
-const { createCronHandler } = require('../../lib/cron/http-handler');
-const { runAccrueDiscordXmaRewards } = require('../../lib/cron/accrue-discord-xma');
+const { createCronHandler } = require('../lib/cron/http-handler');
+const { runAccrueDiscordXmaRewards } = require('../lib/cron/accrue-discord-xma');
 
 module.exports = createCronHandler('accrue-xma', async function (req) {
   const q = req.query || {};
