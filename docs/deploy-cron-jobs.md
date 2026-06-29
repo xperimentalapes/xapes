@@ -35,7 +35,7 @@ Replace `https://www.xapelabz.com` with your live site if different.
 | XMA settlement | `/api/cron/settle-xma` | GET or POST |
 | NFT + roles sync | `/api/cron/sync-nfts` | GET or POST |
 
-Handlers live as flat files under `api/` (Vercel static output does not deploy nested `api/cron/*.js`).
+Cron routes are served through `api/dashboard.js` (same as `/api/prices`), via `vercel.json` rewrites.
 
 **Auth header** (required):
 

@@ -1,7 +1,7 @@
 {"cleanUrls":true,"rewrites":[
-  {"source":"/api/cron/accrue-xma","destination":"/api/cron-accrue-xma"},
-  {"source":"/api/cron/settle-xma","destination":"/api/cron-settle-xma"},
-  {"source":"/api/cron/sync-nfts","destination":"/api/cron-sync-nfts"},
+  {"source":"/api/cron/accrue-xma","destination":"/api/dashboard?__path=cron/accrue-xma"},
+  {"source":"/api/cron/settle-xma","destination":"/api/dashboard?__path=cron/settle-xma"},
+  {"source":"/api/cron/sync-nfts","destination":"/api/dashboard?__path=cron/sync-nfts"},
   {"source":"/api/discord","destination":"/api/dashboard?__path=discord"},
   {"source":"/api/discord/:path*","destination":"/api/dashboard?__path=discord/:path*"},
   {"source":"/api/discord-rewards","destination":"/api/dashboard?__path=discord-rewards"},
@@ -26,4 +26,4 @@
   {"source":"/roulette","destination":"/roulette.html"},
   {"source":"/coinflip","destination":"/coinflip.html"},
   {"source":"/casino","destination":"/casino.html"}
-],"functions":{"api/cron-accrue-xma.js":{"maxDuration":300},"api/cron-settle-xma.js":{"maxDuration":60},"api/cron-sync-nfts.js":{"maxDuration":300}},"buildCommand":"npm run build","outputDirectory":"public","framework":null}
+],"buildCommand":"npm run build","outputDirectory":"public","framework":null}

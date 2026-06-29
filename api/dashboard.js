@@ -24,7 +24,7 @@ function readRawBodyBuffer(req) {
   });
 }
 
-const DASHBOARD_API = /^\/api\/(discord|discord-rewards|verify|collections|holders|prices|xma-ohlc|blunana-ohlc|coinflip-state|coinflip-stats|coinflip-flip|coinflip-purchase|coinflip-collect|coinflip-confirm-collect|holder-link-wallet|holder-verify)(\/|$|\?)/;
+const DASHBOARD_API = /^\/api\/(discord|discord-rewards|verify|collections|holders|prices|xma-ohlc|blunana-ohlc|coinflip-state|coinflip-stats|coinflip-flip|coinflip-purchase|coinflip-collect|coinflip-confirm-collect|holder-link-wallet|holder-verify|cron\/accrue-xma|cron\/settle-xma|cron\/sync-nfts)(\/|$|\?)/;
 
 function getPathAndQuery(req) {
   const __path = req.query && req.query.__path;
@@ -78,5 +78,6 @@ module.exports = async function dashboardApi(req, res) {
 module.exports.config = {
   api: {
     bodyParser: false,
+    maxDuration: 300,
   },
 };
