@@ -21,7 +21,7 @@ Open [http://localhost:3000](http://localhost:3000). The live site is produced f
 | Dashboard (hero, collections, `#xma` token section, holders, team, Discord connect) | `apps/web/` → copied to `public/` by build |
 | Express API (Discord OAuth, prices, holders, Birdeye OHLC, games, holder verify) | `apps/web/server.js`; Vercel entry `api/dashboard.js` |
 | Discord slash commands | `lib/discord/*`, `POST /api/discord/interactions` |
-| Holder sync + roles | `lib/holder/*`, `scripts/sync-nfts-roles.js`, GitHub Action `.github/workflows/sync-nfts-roles.yml` |
+| Holder sync + roles | `lib/holder/*`, `scripts/sync-nfts-roles.js`, cron `GET /api/cron/sync-nfts` ([cron-job.org](docs/deploy-cron-jobs.md)) |
 | Casino game pages (HTML, JS, CSS) | `apps/web/games/` → copied into `public/` by `scripts/inject-env.js` |
 | On-chain slot program (Anchor) | `slot-machine/` |
 
@@ -47,7 +47,10 @@ Set in **Vercel → Project → Settings → Environment Variables** (and locall
 - `XMA_TOKEN_MINT` (and optional `BLUNA_TOKEN_MINT` / `TOKEN_MINT` aliases)
 - `BIRDEYE_API_KEY` — optional; token OHLC chart (`/api/xma-ohlc`)
 
-**GitHub Action** (`sync-nfts-roles`): same Supabase, Helius, collection mint, `DISCORD_BOT_TOKEN`, `DISCORD_GUILD_ID`, `COLLECTION_NAME` as secrets.
+**Scheduled jobs (cron-job.org → Vercel `/api/cron/*`)**
+
+- `CRON_SECRET` — bearer token for cron HTTP endpoints ([setup guide](docs/deploy-cron-jobs.md))
+- Accrual / settlement / NFT sync use existing Supabase, Helius, Discord env vars above
 
 ## NPM scripts
 
@@ -84,6 +87,7 @@ Front-end copy, links, team Discord IDs, and token labels live in **`apps/web/js
 - **`HOMEPAGE_SETUP.md`** — how the dashboard template is wired
 - **`DATABASE_SETUP.md`** / **`database/`** — Supabase schema and migrations
 - **`DEPLOYMENT.md`** — Vercel-focused notes
+- **`docs/deploy-cron-jobs.md`** — cron-job.org schedules for XMA accrual, settlement, NFT sync
 - **`SECURITY.md`** — operational security reminders
 
 ## License / usage

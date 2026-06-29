@@ -2,7 +2,7 @@
 /**
  * Sync collection NFTs from Helius into Supabase, then reconcile Discord roles for all linked users.
  * Run locally: node scripts/sync-nfts-roles.js (loads ../.env if present)
- * GitHub Actions: set env secrets (no .env in repo).
+ * Schedule via cron-job.org → GET /api/cron/sync-nfts (see docs/deploy-cron-jobs.md).
  */
 const path = require('path');
 const fs = require('fs');

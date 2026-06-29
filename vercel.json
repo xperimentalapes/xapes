@@ -23,4 +23,4 @@
   {"source":"/roulette","destination":"/roulette.html"},
   {"source":"/coinflip","destination":"/coinflip.html"},
   {"source":"/casino","destination":"/casino.html"}
-],"buildCommand":"npm run build","outputDirectory":"public","framework":null}
+],"functions":{"api/cron/accrue-xma.js":{"maxDuration":300},"api/cron/settle-xma.js":{"maxDuration":60},"api/cron/sync-nfts.js":{"maxDuration":300}},"buildCommand":"npm run build","outputDirectory":"public","framework":null}
