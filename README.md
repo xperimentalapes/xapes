@@ -9,6 +9,7 @@ npm install
 # Create a root `.env` with the variables listed below (never commit secrets).
 npm run build          # copies `apps/web/` (dashboard + `games/`) into `public/` and injects env into HTML where needed
 npm start              # Express: `apps/web/server.js` on PORT (default 3000)
+# or: npm run dev      # build + start in one step
 ```
 
 Open [http://localhost:3000](http://localhost:3000). The live site is produced from **`public/`** after `npm run build`; local `npm start` also serves game assets from `public/`.

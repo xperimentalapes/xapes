@@ -67,6 +67,7 @@ const gameFiles = [
   'chests.js',
   'casino.html',
   'roulette.html',
+  'roulette.js',
   'coinflip.html',
   'coinflip.js',
   'styles.css',

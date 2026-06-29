@@ -11,7 +11,7 @@ The marketing/dashboard site and casino page sources live under **`apps/web/`**.
 | **`apps/web/css/styles.css`** | Dashboard styles. |
 | **`apps/web/js/app.js`** | Applies config, wallet/Discord, verify modal, chart, holders table. |
 | **`apps/web/server.js`** | Express: static files, Discord OAuth, game/holder/prices APIs used in development. |
-| **`apps/web/api/[[...path]].js`** | Optional Vercel-style static + API routing (see `api/dashboard.js` for production rewrites). |
+| **`api/dashboard.js`** | Vercel serverless adapter for dashboard + Discord OAuth routes (see `vercel.json` rewrites). |
 | **`apps/web/assets/`** | Dashboard assets (logo, hero, token art). Build can overwrite `public/assets/logo.png` from `images/logo.png`. |
 | **`apps/web/games/`** | Casino hub + games: HTML, JS, and shared/per-game CSS copied flat into `public/`. |
 

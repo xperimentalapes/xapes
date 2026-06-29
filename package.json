@@ -4,6 +4,7 @@
   "description": "Xperimental Mutant Apes website",
   "scripts": {
     "build": "node scripts/inject-env.js",
+    "dev": "npm run build && npm start",
     "start": "NODE_PATH=. node apps/web/server.js",
     "sync-nfts": "node scripts/sync-nfts-roles.js",
     "populate-nfts": "node scripts/populate-nfts.js",
@@ -13,10 +14,10 @@
     "list-body-head-traits": "node scripts/list-body-head-traits.js",
     "register-discord-commands": "node scripts/register-discord-commands.js",
     "royal-bot-gateway": "node scripts/royal-bot-gateway.js",
-    "discord-engagement-bot": "node scripts/discord-engagement-bot.js",
     "accrue-discord-xma-rewards": "node scripts/accrue-discord-xma-rewards.js",
     "settle-discord-xma-daily": "node scripts/settle-discord-xma-daily.js",
     "daily-xma-grant": "node scripts/apply-daily-xma-grant.js",
+    "verify-discord-xma": "node scripts/verify-discord-xma-migrations.js",
     "railway": "npx --yes @railway/cli",
     "railway:login": "npx --yes @railway/cli login",
     "railway:init": "npx --yes @railway/cli init",
@@ -26,7 +27,6 @@
     "deploy:gateway:railway": "npx --yes @railway/cli up"
   },
   "dependencies": {
-    "discord.js": "^14.16.3",
     "@solana/spl-token": "^0.3.9",
     "@solana/web3.js": "^1.87.6",
     "@supabase/supabase-js": "^2.39.0",
@@ -35,6 +35,7 @@
     "bs58": "^5.0.0",
     "cookie-parser": "^1.4.6",
     "cookie-session": "^2.1.1",
+    "discord.js": "^14.16.3",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
     "express-session": "^1.17.3",
