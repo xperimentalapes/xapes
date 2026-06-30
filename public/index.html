@@ -39,29 +39,38 @@
   <!-- Desktop/Tablet: side dashboard -->
   <aside class="dashboard dashboard--side" id="dashboard-side" aria-label="Dashboard">
     <div class="dashboard__brand">
-      <span class="dashboard__logo-wrap" aria-hidden="true"><img src="assets/logo.png" alt="" class="dashboard__logo-img" width="36" height="36" /></span>
-      <span class="dashboard__title"></span>
+      <span class="dashboard__logo-wrap" aria-hidden="true"><img src="assets/logo.png" alt="" class="dashboard__logo-img" width="40" height="40" /></span>
+      <div class="dashboard__brand-text">
+        <span class="dashboard__title"></span>
+        <span class="dashboard__tagline">OG Solana NFT</span>
+      </div>
     </div>
     <nav class="dashboard__nav" aria-label="Main">
+      <p class="dashboard__nav-label">Explore</p>
       <a href="#home" class="dashboard__link dashboard__link--active" data-section="home"><span class="dashboard__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>Home</a>
       <a href="#collections" class="dashboard__link" data-section="collections"><span class="dashboard__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M22,3a1,1,0,0,0-1-1H3A1,1,0,0,0,2,3V21a1,1,0,0,0,1,1H21a1,1,0,0,0,1-1ZM20,20H4V17.481L7.926,14.34l2.367,2.367a1,1,0,0,0,1.414,0l4.367-4.367L20,15.481Zm0-7.081-3.375-2.7a1,1,0,0,0-1.332.074L11,14.586,8.707,12.293a1,1,0,0,0-1.332-.074L4,14.919V4H20ZM6,8a2,2,0,1,1,2,2A2,2,0,0,1,6,8Z"/></svg></span>Collectibles</a>
-      <a href="#xma" class="dashboard__link" data-section="xma"><span class="dashboard__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" clip-rule="evenodd" d="M8 1C11.866 1 15 2.56689 15 4.5V6C15 6.55228 14.5523 7 14 7H13C11.7295 7.64819 9.95868 8 8 8C6.04132 8 4.27051 7.64819 3 7V8.5C3 9.22569 4.71803 9.83109 7.00053 9.97002C7.55179 10.0036 8 10.4477 8 11C8 11.5523 7.55166 12.0038 7.0005 11.9686C5.44274 11.8692 4.05039 11.5359 3 11V12.5C3 13.2257 4.71803 13.8311 7.00053 13.97C7.55179 14.0036 8 14.4477 8 15C8 15.5523 7.55132 16.004 7.00044 15.9646C3.60793 15.7221 1 14.2634 1 12.5V4.5C1 2.56689 4.134 1 8 1ZM3 4.5C3 3.67163 5.23859 3 8 3C10.7614 3 13 3.67163 13 4.5C13 5.32837 10.7614 6 8 6C5.23859 6 3 5.32837 3 4.5Z"/><path fill-rule="evenodd" clip-rule="evenodd" d="M23 11.5C23 9.567 19.866 8 16 8C12.134 8 9 9.567 9 11.5V19.5C9 21.433 12.134 23 16 23C19.866 23 23 21.433 23 19.5V11.5ZM11 19.5C11 20.3284 13.2386 21 16 21C18.7614 21 21 20.3284 21 19.5V18C19.7295 18.6483 17.9587 19 16 19C14.0413 19 12.2705 18.6483 11 18V19.5ZM16 17C13.2386 17 11 16.3284 11 15.5V14C12.2705 14.6483 14.0413 15 16 15C17.9587 15 19.7295 14.6483 21 14V15.5C21 16.3284 18.7614 17 16 17ZM16 10C13.2386 10 11 10.6716 11 11.5C11 12.3284 13.2386 13 16 13C18.7614 13 21 12.3284 21 11.5C21 10.6716 18.7614 10 16 10Z"/></svg></span><span data-config="token-label">Token</span></a>
+      <a href="#xma" class="dashboard__link" data-section="xma"><span class="dashboard__icon dashboard__icon--logo" aria-hidden="true"><img src="assets/logo.png" alt="" class="dashboard__icon-img" width="20" height="20" /></span><span data-config="token-label">Token</span></a>
       <a href="#holders" class="dashboard__link" data-section="holders"><span class="dashboard__icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="currentColor"><path d="M28 27.7H4v-28a4 4 0 0 0-4 4v24a4 4 0 0 0 4 4h24a4 4 0 0 0 4-4Z"/><path d="M8 24V12h4v12H8zm8 0V8h4v16h-4zm8 0V4h4v20h-4z"/></svg></span>Holders</a>
       <a href="#utilities" class="dashboard__link" data-section="utilities"><span class="dashboard__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5,20.5h0a2,2,0,0,1-2.83,0l-5.21-5.21A6.59,6.59,0,0,1,8,15.84a6.5,6.5,0,0,1-5-5.76,6.42,6.42,0,0,1,.65-3.47L8,11l2.5-.5L11,8,6.61,3.68A6.42,6.42,0,0,1,10.08,3a6.5,6.5,0,0,1,5.76,5,6.59,6.59,0,0,1-.55,4.42l5.21,5.21A2,2,0,0,1,20.5,20.5Z"/></svg></span>Utilities</a>
       <a href="#team" class="dashboard__link" data-section="team"><span class="dashboard__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>Team</a>
-      <a href="#" class="dashboard__link dashboard__link--external" id="dashboard-link-royal-casino" target="_blank" rel="noopener" aria-label="Royal Casino" data-config="royal-casino"><span class="dashboard__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 17l3-7 3 4 4-6 4 6 3-4 3 7H2z"/><path d="M4 17h16v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2z"/></svg></span>Royal Casino</a>
+      <p class="dashboard__nav-label">Play</p>
+      <a href="#" class="dashboard__link dashboard__link--external dashboard__link--casino" id="dashboard-link-royal-casino" target="_blank" rel="noopener" aria-label="Royal Casino" data-config="royal-casino"><span class="dashboard__icon dashboard__icon--gold" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 17l3-7 3 4 4-6 4 6 3-4 3 7H2z"/><path d="M4 17h16v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2z"/></svg></span>Royal Casino</a>
       <a href="#" class="dashboard__link dashboard__link--shop" target="_blank" rel="noopener" style="display:none;" data-config="shop-link"><span class="dashboard__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1.5"/><circle cx="19" cy="21" r="1.5"/><path d="M3 4h2l2.4 12h11.2l1.4-8H7.3"/></svg></span>Shop</a>
     </nav>
-    <div class="dashboard__verify">
-      <button type="button" class="btn btn--primary btn--full" id="btn-verify" aria-label="Verify holdings">
-        Verify
+    <div class="dashboard__account">
+      <p class="dashboard__nav-label">Your account</p>
+      <button type="button" class="btn btn--primary btn--full btn--with-icon" id="btn-verify" aria-label="Verify holdings" data-label="Verify">
+        <span class="btn__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></span>
+        <span class="btn__text">Verify</span>
       </button>
-      <button type="button" class="btn btn--outline btn--full btn-connect" id="btn-connect-wallet" aria-label="Connect wallet">
-        Connect wallet
+      <button type="button" class="btn btn--outline btn--full btn--with-icon btn--wallet" id="btn-connect-wallet" aria-label="Connect wallet">
+        <span class="btn__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></svg></span>
+        <span class="btn__text">Connect wallet</span>
       </button>
       <div class="dashboard__discord-wrap">
-        <button type="button" class="btn btn--outline btn--full btn-connect" id="btn-connect-discord" aria-label="Connect Discord">
-          Connect Discord
+        <button type="button" class="btn btn--outline btn--full btn--with-icon btn--discord" id="btn-connect-discord" aria-label="Connect Discord">
+          <span class="btn__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg></span>
+          <span class="btn__text">Connect Discord</span>
         </button>
         <div class="dashboard__discord-connected" id="discord-connected-sidebar" hidden>
           <img class="dashboard__discord-avatar" id="discord-avatar-sidebar" src="" alt="" width="28" height="28" />
@@ -70,13 +79,16 @@
         </div>
       </div>
       <div class="holdings holdings--hidden" id="holdings-panel">
-        <p class="holdings__label">Your holdings</p>
+        <div class="holdings__head">
+          <span class="holdings__head-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
+          <p class="holdings__label">Your holdings</p>
+        </div>
         <div class="holdings__row">
-          <span class="holdings__key" data-holdings-key="token">$XMA</span>
+          <span class="holdings__key"><img src="assets/logo.png" alt="" class="holdings__key-icon" width="16" height="16" /><span data-holdings-key="token">$XMA</span></span>
           <span class="holdings__value" id="holdings-xma">—</span>
         </div>
         <div class="holdings__row">
-          <span class="holdings__key" data-holdings-key="totalNfts">NFTs</span>
+          <span class="holdings__key"><span class="holdings__key-icon holdings__key-icon--svg" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M22,3a1,1,0,0,0-1-1H3A1,1,0,0,0,2,3V21a1,1,0,0,0,1,1H21a1,1,0,0,0,1-1ZM20,20H4V17.481L7.926,14.34l2.367,2.367a1,1,0,0,0,1.414,0l4.367-4.367L20,15.481Zm0-7.081-3.375-2.7a1,1,0,0,0-1.332.074L11,14.586,8.707,12.293a1,1,0,0,0-1.332-.074L4,14.919V4H20ZM6,8a2,2,0,1,1,2,2A2,2,0,0,1,6,8Z"/></svg></span><span data-holdings-key="totalNfts">NFTs</span></span>
           <span class="holdings__value" id="holdings-total-nfts">—</span>
         </div>
       </div>
@@ -94,7 +106,7 @@
       <span class="dashboard-bottom__label">Collectibles</span>
     </a>
     <a href="#xma" class="dashboard-bottom__item" data-section="xma" aria-label="$XMA token">
-      <span class="dashboard-bottom__icon"><svg class="dashboard-bottom__svg" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" clip-rule="evenodd" d="M8 1C11.866 1 15 2.56689 15 4.5V6C15 6.55228 14.5523 7 14 7H13C11.7295 7.64819 9.95868 8 8 8C6.04132 8 4.27051 7.64819 3 7V8.5C3 9.22569 4.71803 9.83109 7.00053 9.97002C7.55179 10.0036 8 10.4477 8 11C8 11.5523 7.55166 12.0038 7.0005 11.9686C5.44274 11.8692 4.05039 11.5359 3 11V12.5C3 13.2257 4.71803 13.8311 7.00053 13.97C7.55179 14.0036 8 14.4477 8 15C8 15.5523 7.55132 16.004 7.00044 15.9646C3.60793 15.7221 1 14.2634 1 12.5V4.5C1 2.56689 4.134 1 8 1ZM3 4.5C3 3.67163 5.23859 3 8 3C10.7614 3 13 3.67163 13 4.5C13 5.32837 10.7614 6 8 6C5.23859 6 3 5.32837 3 4.5Z"/><path fill-rule="evenodd" clip-rule="evenodd" d="M23 11.5C23 9.567 19.866 8 16 8C12.134 8 9 9.567 9 11.5V19.5C9 21.433 12.134 23 16 23C19.866 23 23 21.433 23 19.5V11.5ZM11 19.5C11 20.3284 13.2386 21 16 21C18.7614 21 21 20.3284 21 19.5V18C19.7295 18.6483 17.9587 19 16 19C14.0413 19 12.2705 18.6483 11 18V19.5ZM16 17C13.2386 17 11 16.3284 11 15.5V14C12.2705 14.6483 14.0413 15 16 15C17.9587 15 19.7295 14.6483 21 14V15.5C21 16.3284 18.7614 17 16 17ZM16 10C13.2386 10 11 10.6716 11 11.5C11 12.3284 13.2386 13 16 13C18.7614 13 21 12.3284 21 11.5C21 10.6716 18.7614 10 16 10Z"/></svg></span>
+      <span class="dashboard-bottom__icon dashboard-bottom__icon--logo"><img src="assets/logo.png" alt="" class="dashboard-bottom__icon-img" width="22" height="22" /></span>
       <span class="dashboard-bottom__label" data-config="token-label">Token</span>
     </a>
     <a href="#holders" class="dashboard-bottom__item" data-section="holders" aria-label="Holders">
@@ -112,16 +124,16 @@
     <div class="panel__handle" id="panel-handle" aria-label="Drag to resize"></div>
     <div class="panel__inner">
       <h3 class="panel__title">More</h3>
-      <nav class="panel__nav">
-        <a href="#" class="panel__link panel__link--external" id="panel-link-royal-casino" target="_blank" rel="noopener" data-config="royal-casino">Royal Casino</a>
-        <a href="#utilities" class="panel__link" data-section="utilities">Utilities</a>
-        <a href="#team" class="panel__link" data-section="team">Team</a>
+      <nav class="panel__nav panel__nav--detailed">
+        <a href="#" class="panel__nav-link panel__nav-link--casino panel__link--external" id="panel-link-royal-casino" target="_blank" rel="noopener" data-config="royal-casino"><span class="panel__nav-icon panel__nav-icon--gold" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 17l3-7 3 4 4-6 4 6 3-4 3 7H2z"/><path d="M4 17h16v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2z"/></svg></span><span>Royal Casino</span></a>
+        <a href="#utilities" class="panel__nav-link" data-section="utilities"><span class="panel__nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.5,20.5h0a2,2,0,0,1-2.83,0l-5.21-5.21A6.59,6.59,0,0,1,8,15.84a6.5,6.5,0,0,1-5-5.76,6.42,6.42,0,0,1,.65-3.47L8,11l2.5-.5L11,8,6.61,3.68A6.42,6.42,0,0,1,10.08,3a6.5,6.5,0,0,1,5.76,5,6.59,6.59,0,0,1-.55,4.42l5.21,5.21A2,2,0,0,1,20.5,20.5Z"/></svg></span><span>Utilities</span></a>
+        <a href="#team" class="panel__nav-link" data-section="team"><span class="panel__nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><span>Team</span></a>
       </nav>
       <div class="panel__actions">
-        <button type="button" class="btn btn--primary btn--full" id="btn-verify-panel">Verify</button>
-        <button type="button" class="btn btn--outline btn--full" id="btn-connect-wallet-mobile">Connect wallet</button>
+        <button type="button" class="btn btn--primary btn--full btn--with-icon" id="btn-verify-panel" data-label="Verify"><span class="btn__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></span><span class="btn__text">Verify</span></button>
+        <button type="button" class="btn btn--outline btn--full btn--with-icon btn--wallet" id="btn-connect-wallet-mobile"><span class="btn__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></svg></span><span class="btn__text">Connect wallet</span></button>
         <div class="dashboard__discord-wrap dashboard__discord-wrap--panel">
-          <button type="button" class="btn btn--outline btn--full" id="btn-connect-discord-mobile">Connect Discord</button>
+          <button type="button" class="btn btn--outline btn--full btn--with-icon btn--discord" id="btn-connect-discord-mobile"><span class="btn__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg></span><span class="btn__text">Connect Discord</span></button>
           <div class="dashboard__discord-connected" id="discord-connected-mobile" hidden>
             <img class="dashboard__discord-avatar" id="discord-avatar-mobile" src="" alt="" width="28" height="28" />
             <span class="dashboard__discord-username" id="discord-username-mobile"></span>
@@ -155,7 +167,7 @@
         <div class="verify-modal__step">
           <p class="verify-modal__step-label">1. Connect Discord</p>
           <div class="verify-modal__discord" id="verify-modal-discord">
-            <button type="button" class="btn btn--outline btn--full" id="verify-modal-btn-discord">Connect Discord</button>
+            <button type="button" class="btn btn--outline btn--full btn--with-icon btn--discord" id="verify-modal-btn-discord"><span class="btn__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg></span><span class="btn__text">Connect Discord</span></button>
             <div class="verify-modal__discord-connected" id="verify-modal-discord-connected" hidden>
               <img class="verify-modal__avatar" id="verify-modal-discord-avatar" src="" alt="" width="40" height="40" />
               <span class="verify-modal__username" id="verify-modal-discord-username"></span>
@@ -165,7 +177,7 @@
         <div class="verify-modal__step">
           <p class="verify-modal__step-label">2. Connect wallet</p>
           <div class="verify-modal__wallet" id="verify-modal-wallet">
-            <button type="button" class="btn btn--outline btn--full" id="verify-modal-btn-wallet" disabled>Connect wallet</button>
+            <button type="button" class="btn btn--outline btn--full btn--with-icon btn--wallet" id="verify-modal-btn-wallet" disabled><span class="btn__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></svg></span><span class="btn__text">Connect wallet</span></button>
             <div class="verify-modal__wallet-connected" id="verify-modal-wallet-connected" hidden>
               <span class="verify-modal__address" id="verify-modal-wallet-address"></span>
             </div>
@@ -173,7 +185,7 @@
         </div>
         <div class="verify-modal__step">
           <p class="verify-modal__step-label">3. Verify</p>
-          <button type="button" class="btn btn--primary btn--full" id="verify-modal-btn-verify" disabled>Verify holdings</button>
+          <button type="button" class="btn btn--primary btn--full btn--with-icon" id="verify-modal-btn-verify" disabled data-label="Verify holdings"><span class="btn__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></span><span class="btn__text">Verify holdings</span></button>
           <div class="verify-modal__success" id="verify-modal-success" hidden>
             <p class="verify-modal__success-msg">Holdings verified!</p>
           </div>
@@ -228,13 +240,21 @@
     <section class="section section--hero hero-home" id="home">
       <div class="hero-home__bg" aria-hidden="true"></div>
       <div class="hero-home__content">
-        <h1 class="hero-home__title" id="hero-title"></h1>
-        <p class="hero-home__tagline" id="hero-tagline"></p>
-        <p class="hero-home__sub" id="hero-subtitle"></p>
-        <p class="hero-home__description" id="hero-description"></p>
-        <div class="hero-home__actions" id="hero-verify-actions">
-          <button type="button" class="btn btn--hero-verify" id="hero-verify-cta">Verify holdings</button>
-          <a href="#" class="btn btn--hero-casino" id="hero-casino-cta" target="_blank" rel="noopener"><span class="btn__icon btn__icon--crown" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 17l3-7 3 4 4-6 4 6 3-4 3 7H2z"/><path d="M4 17h16v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2z"/></svg></span>Play ROYAL CASINO</a>
+        <div class="hero-home__card">
+          <span class="hero-home__badge"><img src="assets/logo.png" alt="" class="hero-home__badge-logo" width="18" height="18" />OG Solana NFT Community</span>
+          <h1 class="hero-home__title" id="hero-title"></h1>
+          <p class="hero-home__tagline" id="hero-tagline"></p>
+          <p class="hero-home__sub" id="hero-subtitle"></p>
+          <p class="hero-home__description" id="hero-description"></p>
+          <ul class="hero-home__pills" aria-label="Highlights">
+            <li class="hero-home__pill"><img src="assets/logo.png" alt="" width="16" height="16" />$XMA Token</li>
+            <li class="hero-home__pill"><span class="hero-home__pill-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M22,3a1,1,0,0,0-1-1H3A1,1,0,0,0,2,3V21a1,1,0,0,0,1,1H21a1,1,0,0,0,1-1ZM20,20H4V17.481L7.926,14.34l2.367,2.367a1,1,0,0,0,1.414,0l4.367-4.367L20,15.481Zm0-7.081-3.375-2.7a1,1,0,0,0-1.332.074L11,14.586,8.707,12.293a1,1,0,0,0-1.332-.074L4,14.919V4H20ZM6,8a2,2,0,1,1,2,2A2,2,0,0,1,6,8Z"/></svg></span>Collectibles</li>
+            <li class="hero-home__pill hero-home__pill--gold"><span class="hero-home__pill-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 17l3-7 3 4 4-6 4 6 3-4 3 7H2z"/><path d="M4 17h16v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2z"/></svg></span>Royal Casino</li>
+          </ul>
+          <div class="hero-home__actions" id="hero-verify-actions">
+            <button type="button" class="btn btn--hero-verify btn--with-icon" id="hero-verify-cta" data-label="Verify holdings"><span class="btn__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></span><span class="btn__text">Verify holdings</span></button>
+            <a href="#" class="btn btn--hero-casino" id="hero-casino-cta" target="_blank" rel="noopener"><span class="btn__icon btn__icon--crown" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 17l3-7 3 4 4-6 4 6 3-4 3 7H2z"/><path d="M4 17h16v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2z"/></svg></span><span class="btn__text">Play ROYAL CASINO</span></a>
+          </div>
         </div>
       </div>
       <div class="hero-home__slotto">

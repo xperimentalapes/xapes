@@ -419,6 +419,24 @@
   if (fromLegacyBlunanaHash) scrollToSection('xma');
 
   // ----- Wallet (Solana) -----
+  function setBtnText(btn, text) {
+    if (!btn) return;
+    var textSpan = btn.querySelector('.btn__text');
+    if (textSpan) textSpan.textContent = text;
+    else btn.textContent = text;
+  }
+
+  function truncateWallet(addr) {
+    if (!addr || addr.length < 10) return addr || 'Connected';
+    return addr.slice(0, 4) + '…' + addr.slice(-4);
+  }
+
+  function walletPickerIconClass(name) {
+    if (name === 'Phantom') return 'wallet-picker__icon--phantom';
+    if (name === 'Solflare') return 'wallet-picker__icon--solflare';
+    return 'wallet-picker__icon--generic';
+  }
+
   function getDetectedWallets() {
     var list = [];
     if (window.phantom?.solana?.isPhantom) {
@@ -453,9 +471,10 @@
 
   function setWalletConnected(connected) {
     document.body.classList.toggle('wallet-connected', connected);
-    var label = connected ? 'Connected' : 'Connect wallet';
+    var pk = getWalletPublicKey();
+    var label = connected && pk ? truncateWallet(pk) : 'Connect wallet';
     document.querySelectorAll('#btn-connect-wallet, #btn-connect-wallet-mobile').forEach(function (btn) {
-      if (btn) btn.textContent = label;
+      setBtnText(btn, label);
     });
     if (typeof syncVerifyModalState === 'function') syncVerifyModalState();
   }
@@ -736,7 +755,9 @@
           var btn = document.createElement('button');
           btn.type = 'button';
           btn.className = 'wallet-picker__btn';
-          btn.textContent = w.name;
+          btn.innerHTML =
+            '<span class="wallet-picker__icon ' + walletPickerIconClass(w.name) + '" aria-hidden="true"></span>' +
+            '<span class="wallet-picker__name">' + w.name + '</span>';
           btn.addEventListener('click', function () {
             closeWalletPicker();
             connectWithProvider(w.provider)
@@ -822,7 +843,8 @@
     btns.forEach(function (btn) {
       if (!btn) return;
       btn.disabled = loading;
-      btn.textContent = loading ? 'Checking…' : 'Verify holdings';
+      var defaultLabel = btn.dataset.label || 'Verify holdings';
+      setBtnText(btn, loading ? 'Checking…' : defaultLabel);
     });
   }
 
@@ -1215,13 +1237,13 @@
     var wrapMobile = document.getElementById('discord-connected-mobile');
     if (btnSidebar) {
       btnSidebar.hidden = !!connected;
-      btnSidebar.textContent = 'Connect Discord';
+      setBtnText(btnSidebar, 'Connect Discord');
       btnSidebar.title = 'Sign in with Discord';
       btnSidebar.dataset.discordConnected = connected ? '1' : '0';
     }
     if (btnMobile) {
       btnMobile.hidden = !!connected;
-      btnMobile.textContent = 'Connect Discord';
+      setBtnText(btnMobile, 'Connect Discord');
       btnMobile.title = 'Sign in with Discord';
       btnMobile.dataset.discordConnected = connected ? '1' : '0';
     }
