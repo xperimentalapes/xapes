@@ -16,8 +16,6 @@ const express = require('express');
 const cookieSession = require('cookie-session');
 const cookieParser = require('cookie-parser');
 const axios = require('axios');
-const bs58 = require('bs58');
-const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
 app.set('trust proxy', 1);
@@ -42,23 +40,10 @@ const DISCORD_TOKEN_URL = 'https://discord.com/api/oauth2/token';
 const DISCORD_USER_URL = 'https://discord.com/api/users/@me';
 const SCOPES = 'identify';
 
-const HELIUS_API_KEY = process.env.HELIUS_API_KEY;
-const HELIUS_RPC = 'https://mainnet.helius-rpc.com';
-const ME_BASE = 'https://api-mainnet.magiceden.dev/v2';
+const { getCollectionsMarketData } = require('../../lib/marketplace/collections');
+const { buildHoldersLeaderboard } = require('../../lib/holder/holders-leaderboard');
 
-// Single collectible: Magic Eden slug (for stats/marketplace link) + on-chain collection mint (for supply/metadata via Helius)
-const COLLECTION_ME_SLUG = process.env.COLLECTION_ME_SLUG || 'mutant_apes';
-const COLLECTIONS = [
-  {
-    slug: COLLECTION_ME_SLUG,
-    name: process.env.COLLECTION_NAME || 'Xperimental Mutant Apes',
-    collectionMint: process.env.MUTANT_APES_COLLECTION_MINT || '',
-  },
-];
-
-const LAMPORTS_PER_SOL = 1e9;
 const BLUNA_TOKEN_MINT = process.env.XMA_TOKEN_MINT || process.env.BLUNA_TOKEN_MINT || process.env.TOKEN_MINT || 'HVSruatutKcgpZJXYyeRCWAnyT7mzYq1io9YoJ6F4yMP';
-const TOKEN_PROGRAM_ID = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
 const BLUNA_DECIMALS = parseInt(process.env.BLUNA_DECIMALS || '6', 10);
 
 if (!DISCORD_CLIENT_ID || !DISCORD_CLIENT_SECRET) {
@@ -514,303 +499,30 @@ app.get('/api/verify', async function (req, res) {
   }
 });
 
-// ——— Collections (Magic Eden stats + optional Helius DAS) ———
+// ——— Collections (Magic Eden + Helius/Supabase fallbacks) ———
 app.get('/api/collections', async function (req, res) {
-  const results = [];
-  for (const col of COLLECTIONS) {
-    const out = {
-      symbol: col.slug,
-      name: col.name,
-      description: null,
-      image: null,
-      animationUrl: null,
-      supply: null,
-      listedCount: null,
-      floorPrice: null,
-      floorPriceSol: null,
-      volumeAll: null,
-      volumeAllSol: null,
-      avgPrice24hr: null,
-      avgPrice24hrSol: null,
-      marketplaceUrl: `https://magiceden.io/marketplace/${col.slug}`,
-    };
-
-    try {
-      const statsRes = await axios.get(`${ME_BASE}/collections/${col.slug}/stats`, {
-        timeout: 8000,
-        validateStatus: () => true,
-      });
-      if (statsRes.status === 200 && statsRes.data) {
-        const s = statsRes.data;
-        out.listedCount = s.listedCount != null ? s.listedCount : null;
-        out.floorPrice = s.floorPrice != null ? s.floorPrice : null;
-        // ME returns floor in lamports (large integer). If we get a small number, it may already be in SOL.
-        const fp = out.floorPrice;
-        const floorSol = fp != null
-          ? (fp >= 1000 ? fp / LAMPORTS_PER_SOL : Number(fp))
-          : null;
-        out.floorPriceSol = floorSol != null && !isNaN(floorSol) ? floorSol.toFixed(4) : null;
-        out.volumeAll = s.volumeAll != null ? s.volumeAll : null;
-        out.volumeAllSol = out.volumeAll != null ? (out.volumeAll / LAMPORTS_PER_SOL).toFixed(2) : null;
-        out.avgPrice24hr = s.avgPrice24hr != null ? s.avgPrice24hr : null;
-        out.avgPrice24hrSol = out.avgPrice24hr != null ? (out.avgPrice24hr / LAMPORTS_PER_SOL).toFixed(4) : null;
-      }
-    } catch (e) {
-      console.warn('ME stats failed for', col.slug, e.message);
-    }
-
-    // Magic Eden: collection metadata (name, description, image) if available
-    try {
-      const metaRes = await axios.get(`${ME_BASE}/collections/${col.slug}`, {
-        timeout: 5000,
-        validateStatus: () => true,
-      });
-      if (metaRes.status === 200 && metaRes.data) {
-        const m = metaRes.data;
-        if (m.name) out.name = m.name;
-        if (m.description) out.description = m.description;
-        if (m.image || m.imageURI) out.image = m.image || m.imageURI;
-        if (m.animation_url || m.animationUrl) out.animationUrl = m.animation_url || m.animationUrl;
-        if (m.totalSupply != null) out.supply = m.totalSupply;
-      }
-    } catch (e) {
-      // ignore
-    }
-
-    // Helius DAS: derive supply by counting all NFTs in the collection when we have collection mint
-    if (HELIUS_API_KEY && col.collectionMint) {
-      try {
-        let page = 1;
-        let totalItems = 0;
-        let hasMore = true;
-        while (hasMore) {
-          const heliusRes = await axios.post(
-            `${HELIUS_RPC}/?api-key=${HELIUS_API_KEY}`,
-            {
-              jsonrpc: '2.0',
-              id: '1',
-              method: 'getAssetsByGroup',
-              params: {
-                groupKey: 'collection',
-                groupValue: col.collectionMint,
-                page,
-                limit: 1000,
-                options: {
-                  showCollectionMetadata: page === 1,
-                },
-              },
-            },
-            { timeout: 10000, validateStatus: () => true }
-          );
-          const data = heliusRes.data?.result;
-          const items = data?.items || [];
-          totalItems += items.length;
-          if (page === 1) {
-            const meta = items[0]?.grouping?.find((g) => g.group_key === 'collection')?.collection_metadata;
-            if (meta) {
-              if (meta.name) out.name = meta.name;
-              if (meta.description) out.description = meta.description;
-              if (meta.image) out.image = meta.image;
-            }
-          }
-          hasMore = items.length === 1000;
-          page += 1;
-          if (page > 50) break;
-        }
-        if (totalItems > 0) out.supply = totalItems;
-      } catch (e) {
-        console.warn('Helius DAS failed for', col.slug, e.message);
-      }
-    }
-
-    results.push(out);
+  try {
+    const payload = await getCollectionsMarketData();
+    res.setHeader('Cache-Control', 'public, max-age=120, stale-while-revalidate=300');
+    res.json(payload);
+  } catch (e) {
+    console.warn('/api/collections failed', e.message);
+    res.status(500).json({ collections: [], error: 'Failed to load collections' });
   }
-  res.json({ collections: results });
 });
 
-// ——— Holders table (token + NFT by collection index 0/1), sort by total | token | nfts ———
-// Decode owner (32 bytes) + amount (8 bytes LE) from getProgramAccounts dataSlice(32, 40)
-function decodeTokenAccountOwnerAndAmount(dataBase64) {
-  if (!dataBase64) return null;
-  try {
-    const buf = Buffer.from(dataBase64, 'base64');
-    if (buf.length < 40) return null;
-    const owner = bs58.encode(buf.slice(0, 32));
-    const amount = buf.readBigUInt64LE(32);
-    return { owner, amount: Number(amount) };
-  } catch (e) {
-    return null;
-  }
-}
-
-/** Load wallet -> Discord display name for holders leaderboard (paginated). */
-async function loadDiscordDisplayNamesByWallet() {
-  const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_KEY;
-  if (!url || !key) return new Map();
-  const supabase = createClient(url, key);
-  const map = new Map();
-  const pageSize = 1000;
-  let from = 0;
-  try {
-    while (true) {
-      const { data, error } = await supabase
-        .from('discord_wallet_links')
-        .select('wallet_address, discord_display_name')
-        .order('wallet_address')
-        .range(from, from + pageSize - 1);
-      if (error) {
-        console.warn('Holders: discord_wallet_links fetch', error.message);
-        break;
-      }
-      const rows = data || [];
-      for (const row of rows) {
-        if (row.wallet_address && row.discord_display_name) {
-          map.set(row.wallet_address, String(row.discord_display_name));
-        }
-      }
-      if (rows.length < pageSize) break;
-      from += pageSize;
-    }
-  } catch (e) {
-    console.warn('Holders: Supabase display names', e.message);
-  }
-  return map;
-}
-
+// ——— Holders table (token + NFT), sort by total | token | nfts ———
 app.get('/api/holders', async function (req, res) {
-  const sortBy = (req.query.sort || 'total').toLowerCase();
-  const validSort = ['total', 'token', 'nfts'].includes(sortBy) ? sortBy : 'total';
-
-  const discordByWallet = await loadDiscordDisplayNamesByWallet();
-
-  const holderMap = new Map(); // wallet -> { tokenBalance, tokenBalanceFormatted, mnk3ysCount, zmb3ysCount }
-
-  function getOrCreate(wallet) {
-    if (!holderMap.has(wallet)) {
-      holderMap.set(wallet, {
-        wallet,
-        tokenBalance: 0,
-        tokenBalanceFormatted: '0',
-        mnk3ysCount: 0,
-        zmb3ysCount: 0,
-      });
-    }
-    return holderMap.get(wallet);
+  try {
+    const sortBy = (req.query.sort || 'total').toLowerCase();
+    const payload = await buildHoldersLeaderboard({ sort: sortBy });
+    res.setHeader('Cache-Control', 'public, max-age=60, stale-while-revalidate=180');
+    res.json(payload);
+  } catch (e) {
+    console.warn('/api/holders failed', e.message);
+    res.status(500).json({ holders: [], sort: 'total', error: 'Failed to load holders' });
   }
-
-  // 1) Token holders (Blunana) via getProgramAccounts — all SPL token accounts for this mint
-  if (HELIUS_API_KEY) {
-    try {
-      const gpaRes = await axios.post(
-        `${HELIUS_RPC}/?api-key=${HELIUS_API_KEY}`,
-        {
-          jsonrpc: '2.0',
-          id: '1',
-          method: 'getProgramAccounts',
-          params: [
-            TOKEN_PROGRAM_ID,
-            {
-              encoding: 'base64',
-              commitment: 'confirmed',
-              filters: [
-                { dataSize: 165 },
-                { memcmp: { offset: 0, bytes: BLUNA_TOKEN_MINT } },
-              ],
-              dataSlice: { offset: 32, length: 40 },
-            },
-          ],
-        },
-        { timeout: 30000, validateStatus: () => true }
-      );
-      const accounts = gpaRes.data?.result || [];
-      const decimals = BLUNA_DECIMALS;
-      for (const item of accounts) {
-        const data = item.account?.data;
-        if (!data) continue;
-        const decoded = decodeTokenAccountOwnerAndAmount(Array.isArray(data) ? data[0] : data);
-        if (!decoded || decoded.amount === 0) continue;
-        const raw = decoded.amount / Math.pow(10, decimals);
-        const h = getOrCreate(decoded.owner);
-        h.tokenBalance += raw;
-        h.tokenBalanceFormatted = formatTokenAmount(h.tokenBalance);
-      }
-    } catch (e) {
-      console.warn('Holders token fetch failed', e.message);
-    }
-
-    // 2) NFT owner counts per collection (getAssetsByGroup paginate, aggregate by owner)
-    for (let c = 0; c < COLLECTIONS.length; c++) {
-      const col = COLLECTIONS[c];
-      const key = c === 0 ? 'mnk3ysCount' : c === 1 ? 'zmb3ysCount' : null;
-      if (!key || !col.collectionMint) continue;
-      let page = 1;
-      let hasMore = true;
-      while (hasMore) {
-        try {
-          const dasRes = await axios.post(
-            `${HELIUS_RPC}/?api-key=${HELIUS_API_KEY}`,
-            {
-              jsonrpc: '2.0',
-              id: '1',
-              method: 'getAssetsByGroup',
-              params: {
-                groupKey: 'collection',
-                groupValue: col.collectionMint,
-                page,
-                limit: 1000,
-              },
-            },
-            { timeout: 15000, validateStatus: () => true }
-          );
-          const items = dasRes.data?.result?.items || [];
-          for (const item of items) {
-            const owner = item.ownership?.owner;
-            if (owner) {
-              const h = getOrCreate(owner);
-              h[key] = (h[key] || 0) + 1;
-            }
-          }
-          hasMore = items.length === 1000;
-          page++;
-          if (page > 50) break;
-        } catch (e) {
-          console.warn('Holders NFT fetch failed for', col.slug, e.message);
-          hasMore = false;
-        }
-      }
-    }
-  }
-
-  let list = Array.from(holderMap.values()).map(function (h) {
-    const totalNfts = (h.mnk3ysCount || 0) + (h.zmb3ysCount || 0);
-    const discordDisplayName = discordByWallet.get(h.wallet) || null;
-    return {
-      wallet: h.wallet,
-      discordDisplayName,
-      tokenBalance: h.tokenBalance,
-      tokenBalanceFormatted: h.tokenBalanceFormatted,
-      mnk3ysCount: h.mnk3ysCount || 0,
-      zmb3ysCount: h.zmb3ysCount || 0,
-      totalNfts,
-      totalScore: (h.tokenBalance || 0) / 1e6 + totalNfts * 10,
-    };
-  });
-
-  if (validSort === 'token') list.sort((a, b) => b.tokenBalance - a.tokenBalance);
-  else if (validSort === 'nfts') list.sort((a, b) => b.totalNfts - a.totalNfts);
-  else list.sort((a, b) => b.totalScore - a.totalScore);
-
-  res.json({ holders: list, sort: validSort });
 });
-
-function formatTokenAmount(n) {
-  if (n >= 1e9) return (n / 1e9).toFixed(2) + 'B';
-  if (n >= 1e6) return (n / 1e6).toFixed(2) + 'M';
-  if (n >= 1e3) return (n / 1e3).toFixed(2) + 'K';
-  if (n >= 1) return n.toFixed(2);
-  return n.toFixed(4);
-}
 
 // On Vercel, do not listen; the app is used by api/[[...path]].js
 if (process.env.VERCEL !== '1') {
