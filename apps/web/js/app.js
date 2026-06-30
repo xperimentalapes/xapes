@@ -1443,11 +1443,21 @@
     link.addEventListener('click', closeMobilePanel);
   });
 
+  // ----- Collections API (shared cache for grid + holders) -----
+  var collectionsDataPromise = null;
+  function fetchCollectionsData() {
+    if (!collectionsDataPromise) {
+      collectionsDataPromise = fetch(window.location.origin + '/api/collections', { credentials: 'include' })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .catch(function () { return null; });
+    }
+    return collectionsDataPromise;
+  }
+
   // ----- Collections embeds (from /api/collections) -----
   var grid = document.getElementById('collections-grid');
   if (grid) {
-    fetch(window.location.origin + '/api/collections', { credentials: 'include' })
-      .then(function (r) { return r.ok ? r.json() : null; })
+    fetchCollectionsData()
       .then(function (data) {
         if (!data || !data.collections || !data.collections.length) return;
         grid.innerHTML = '';
@@ -1458,13 +1468,15 @@
           var mediaSrc = c.animationUrl || c.image;
           if (mediaSrc) {
             var isGif = /\.gif(\?|$)/i.test(mediaSrc) || (c.animationUrl && !c.image);
+            var imgFallback = 'assets/logo.png';
+            var imgOnError = ' onerror="this.onerror=null;this.src=\'' + imgFallback + '\'"';
             if (isGif || c.animationUrl) {
-              mediaHtml = '<div class="embed__media embed__media--video"><img src="' + escapeHtml(mediaSrc) + '" alt="" loading="lazy" /></div>';
+              mediaHtml = '<div class="embed__media embed__media--video"><img src="' + escapeHtml(mediaSrc) + '" alt="" loading="lazy"' + imgOnError + ' /></div>';
             } else {
-              mediaHtml = '<div class="embed__media"><img src="' + escapeHtml(mediaSrc) + '" alt="" loading="lazy" /></div>';
+              mediaHtml = '<div class="embed__media"><img src="' + escapeHtml(mediaSrc) + '" alt="" loading="lazy"' + imgOnError + ' /></div>';
             }
           } else {
-            mediaHtml = '<div class="embed__media embed__media--placeholder" aria-hidden="true"></div>';
+            mediaHtml = '<div class="embed__media"><img src="assets/logo.png" alt="" loading="lazy" /></div>';
           }
           var desc = (c.description || '').slice(0, 280);
           if ((c.description || '').length > 280) desc += '…';
@@ -1610,7 +1622,7 @@
       Promise.all([
         fetch(window.location.origin + '/api/holders?sort=' + encodeURIComponent(sort), { credentials: 'include' }).then(function (r) { return r.ok ? r.json() : null; }),
         fetch(window.location.origin + '/api/prices', { credentials: 'include' }).then(function (r) { return r.ok ? r.json() : null; }),
-        fetch(window.location.origin + '/api/collections', { credentials: 'include' }).then(function (r) { return r.ok ? r.json() : null; }),
+        fetchCollectionsData(),
       ]).then(function (arr) {
         var data = arr[0];
         var prices = arr[1] || {};
