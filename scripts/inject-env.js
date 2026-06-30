@@ -26,6 +26,20 @@ if (fs.existsSync(envPath)) {
 const key = (process.env.HELIUS_API_KEY || '').trim().replace(/^["']|["']$/g, '');
 const siteUrl = (process.env.SITE_URL || process.env.BASE_URL || 'https://xapes.vercel.app').replace(/\/$/, '');
 
+// Server-side runtime fallback (bundled with api/dashboard on Vercel)
+const buildEnvPath = path.join(root, 'lib', 'holder', 'build-env.json');
+fs.writeFileSync(
+  buildEnvPath,
+  JSON.stringify(
+    {
+      HELIUS_API_KEY: key || null,
+      XMA_TOKEN_MINT: (process.env.XMA_TOKEN_MINT || 'HVSruatutKcgpZJXYyeRCWAnyT7mzYq1io9YoJ6F4yMP').trim(),
+    },
+    null,
+    0
+  ) + '\n'
+);
+
 if (!fs.existsSync(publicDir)) {
   fs.mkdirSync(publicDir, { recursive: true });
 }

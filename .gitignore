@@ -13,6 +13,9 @@ build/
 .env.*.local
 .env.example
 
+# Generated at build (contains secrets — do not commit)
+lib/holder/build-env.json
+
 # IDE
 .vscode/
 .idea/

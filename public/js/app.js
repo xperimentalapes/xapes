@@ -862,6 +862,7 @@
               if (!d) return null;
               return {
                 blunanaFormatted: d.token != null ? String(d.token) : '0',
+                mutantApesCount: 0,
                 mnk3ysCount: 0,
                 zmb3ysCount: 0,
                 totalNfts: d.nfts != null ? d.nfts : 0,
@@ -1645,7 +1646,7 @@
         }
         var holders = data.holders.map(function (h) {
           var tokenBal = h.tokenBalance != null ? Number(h.tokenBalance) : null;
-          var col0NftCount = Number(h.mnk3ysCount) || 0;
+          var col0NftCount = Number(h.mutantApesCount != null ? h.mutantApesCount : h.mnk3ysCount) || 0;
           var col1NftCount = Number(h.zmb3ysCount) || 0;
           var tokenValueUsd = (blunanaUsdNum != null && !isNaN(blunanaUsdNum) && tokenBal != null && !isNaN(tokenBal)) ? tokenBal * blunanaUsdNum : null;
           var nftValueUsd = null;
