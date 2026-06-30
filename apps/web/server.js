@@ -516,7 +516,7 @@ app.get('/api/holders', async function (req, res) {
   try {
     const sortBy = (req.query.sort || 'total').toLowerCase();
     const payload = await buildHoldersLeaderboard({ sort: sortBy });
-    res.setHeader('Cache-Control', 'public, max-age=60, stale-while-revalidate=180');
+    res.setHeader('Cache-Control', 'private, max-age=30, stale-while-revalidate=60');
     res.json(payload);
   } catch (e) {
     console.warn('/api/holders failed', e.message);
