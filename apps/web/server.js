@@ -294,6 +294,7 @@ app.post('/api/discord-rewards/claim', function (req, res) {
 
 // ——— Cron jobs (cron-job.org → vercel.json rewrite → dashboard → these routes) ———
 require('../../lib/cron/register-routes').registerCronRoutes(app);
+require('../../lib/casino/register-routes').registerCasinoRoutes(app);
 
 // ——— Discord user by ID (for team section; requires bot token) ———
 const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
