@@ -2,6 +2,7 @@ const { applyCors, getSupabase, parseWallet } = require('../lib/casino/http');
 const { verifyCasinoAuth } = require('../lib/casino/wallet-auth');
 const { spinReels, calculateWinAmount } = require('../lib/casino/slots-engine');
 const { TOKEN_DECIMALS } = require('../lib/casino/constants');
+const { enforceRateLimit } = require('../lib/casino/rate-limit');
 
 module.exports = async function handler(req, res) {
   if (applyCors(req, res)) return;
@@ -13,6 +14,7 @@ module.exports = async function handler(req, res) {
   try {
     const walletAddress = parseWallet(req.body);
     verifyCasinoAuth(req, 'spin-slots', walletAddress);
+    enforceRateLimit(walletAddress, 'spin-slots', 60);
 
     const { data: player, error: fetchErr } = await supabase
       .from('slots_players')

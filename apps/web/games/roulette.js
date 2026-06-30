@@ -592,7 +592,9 @@
         }
 
         function initConnection() {
-            var rpcUrl = 'https://mainnet.helius-rpc.com/?api-key=277997e8-09ce-4516-a03e-5b062b51c6ac';
+            var rpcUrl = window.CasinoAuth && window.CasinoAuth.getGameRpcUrl
+                ? window.CasinoAuth.getGameRpcUrl()
+                : 'https://api.mainnet-beta.solana.com';
             if (typeof window.solanaWeb3 !== 'undefined') {
                 connection = new window.solanaWeb3.Connection(rpcUrl, 'confirmed');
             } else if (typeof solanaWeb3 !== 'undefined') {
@@ -765,16 +767,11 @@
                         return connection.confirmTransaction(sig, 'confirmed').then(function () { return sig; });
                     })
                     .then(function (sig) {
-                        return fetch('/api/confirm-collect', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                userWallet: wallet,
-                                signature: sig,
-                                payoutId: payoutId,
-                                amountRaw: amountRaw,
-                                gameType: 'roulette',
-                            }),
+                        return window.CasinoAuth.signedPost('/api/confirm-collect', 'confirm-collect', wallet, {
+                            signature: sig,
+                            payoutId: payoutId,
+                            amountRaw: amountRaw,
+                            gameType: 'roulette',
                         }).then(function (cr) {
                             if (!cr.ok) return cr.json().then(function (d) { throw new Error(d.error || 'Confirm failed'); });
                         });

@@ -18,6 +18,7 @@
     "settle-discord-xma-daily": "node scripts/settle-discord-xma-daily.js",
     "daily-xma-grant": "node scripts/apply-daily-xma-grant.js",
     "verify-discord-xma": "node scripts/verify-discord-xma-migrations.js",
+    "verify-casino": "node scripts/verify-casino-migrations.js",
     "railway": "npx --yes @railway/cli",
     "railway:login": "npx --yes @railway/cli login",
     "railway:init": "npx --yes @railway/cli init",

@@ -622,10 +622,9 @@ async function buyChest() {
             if (signature) {
                 await connection.confirmTransaction(signature, 'confirmed');
                 try {
-                    var recRes = await fetch('/api/record-chest-purchase', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ userWallet: walletAddress, txSignature: signature })
+                    var recRes = await window.CasinoAuth.casinoFetch('/api/record-chest-purchase', 'purchase-chest', walletAddress, {
+                        userWallet: walletAddress,
+                        txSignature: signature,
                     });
                     var recData = await recRes.json().catch(function () { return {}; });
                     if (!recRes.ok || !recData.ok) {
@@ -946,24 +945,34 @@ async function collectChestPrize() {
         body.reservationId = currentReservationId;
     }
     resultCollectBtn.disabled = true;
+    var reservationId = currentReservationId;
+    var mintAddress = currentOutcome.kind === 'nft' ? currentOutcome.mint : currentOutcome.tokenMint;
+    var amountRaw = currentOutcome.kind === 'nft'
+        ? '1'
+        : String(BigInt(Math.floor(Number(currentOutcome.amount) * Math.pow(10, (currentOutcome.decimals != null ? currentOutcome.decimals : 6)))));
     try {
-        var res = await fetch('/api/collect-chest', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body)
-        });
+        var res = await window.CasinoAuth.casinoFetch('/api/collect-chest', 'collect-chest', walletAddress, body);
         var data = await res.json().catch(function () { return {}; });
         if (!res.ok) {
             throw new Error(data.error || data.message || 'Collect failed');
         }
         var txBase64 = data.transaction;
         if (!txBase64) throw new Error('No transaction returned');
+        reservationId = data.reservationId || reservationId;
+        mintAddress = data.mintAddress || mintAddress;
+        amountRaw = data.amountRaw || amountRaw;
         var Transaction = (window.solanaWeb3 || solanaWeb3).Transaction;
         var raw = Uint8Array.from(atob(txBase64), function (c) { return c.charCodeAt(0); });
         var tx = Transaction.from(raw);
         var connection = getChestConnection();
         var sig = await connection.sendRawTransaction(tx.serialize(), { skipPreflight: false, maxRetries: 3 });
         await connection.confirmTransaction(sig, 'confirmed');
+        await window.CasinoAuth.signedPost('/api/confirm-chest-collect', 'confirm-chest-collect', walletAddress, {
+            reservationId: reservationId,
+            signature: sig,
+            mintAddress: mintAddress,
+            amountRaw: amountRaw,
+        });
         canOpenChest = false;
         currentOutcome = null;
         updateChestButton();
@@ -971,6 +980,14 @@ async function collectChestPrize() {
         if (resultModal) resultModal.setAttribute('aria-hidden', 'true');
     } catch (err) {
         console.error('Collect chest error:', err);
+        if (reservationId && window.CasinoAuth) {
+            try {
+                await window.CasinoAuth.signedPost('/api/confirm-chest-collect', 'collect-chest-restore', walletAddress, {
+                    reservationId: reservationId,
+                    failed: true,
+                });
+            } catch (_) {}
+        }
         alert('Collect failed: ' + (err.message || String(err)));
     } finally {
         resultCollectBtn.disabled = false;

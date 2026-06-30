@@ -31,6 +31,26 @@ Messages expire after 5 minutes (`AUTH_MAX_AGE_SEC`).
 | `POST /api/coinflip-purchase` | `purchase-coinflip` | Verified purchase |
 | `POST /api/coinflip-collect` | `collect` | Debit `total_won`, sign payout |
 
+| `POST /api/confirm-chest-collect` | `confirm-chest-collect` / `collect-chest-restore` | Verify chest prize tx on-chain |
+| `POST /api/reserve-chest-prize` | — | **410 deprecated** (use `open-chest`) |
+
+## Follow-up migration
+
+After `migration_casino_security.sql`, run `database/migration_casino_security_followup.sql`:
+
+- `chest_reservations.status` for pending collect flow
+- Drop anon INSERT on game history tables
+- Chest table RLS
+
+Verify: `npm run verify-casino`
+
+## Restore / failed collect
+
+Payout restore requires wallet auth (`collect-restore`) and either:
+
+- A failed on-chain tx signature (`failSignature`), or
+- Payout past `expires_at`
+
 ## Deprecated
 
 - `POST /api/save-game` — returns **410**. Client must not send balances or outcomes.

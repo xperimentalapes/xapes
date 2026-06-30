@@ -4,6 +4,7 @@ const { applyCors, getSupabase, parseWallet } = require('../lib/casino/http');
 const { verifyCasinoAuth } = require('../lib/casino/wallet-auth');
 const { fetchTreasuryInventory, rollChestOutcome } = require('../lib/casino/chest-outcome');
 const { BRONZE_TREASURY_WALLET } = require('../lib/casino/constants');
+const { enforceRateLimit } = require('../lib/casino/rate-limit');
 const { getConnection } = require('../lib/casino/rpc');
 
 async function reservePrize(supabase, userWallet, outcome) {
@@ -39,6 +40,7 @@ async function reservePrize(supabase, userWallet, outcome) {
         amount: 1,
         decimals: 0,
         expires_at: expiresAt,
+        status: 'reserved',
       })
       .select('id')
       .single();
@@ -80,6 +82,7 @@ async function reservePrize(supabase, userWallet, outcome) {
       amount: requestedRaw.toString(),
       decimals: dec,
       expires_at: expiresAt,
+      status: 'reserved',
     })
     .select('id')
     .single();
@@ -97,6 +100,7 @@ module.exports = async function handler(req, res) {
   try {
     const userWallet = parseWallet(req.body, 'userWallet');
     verifyCasinoAuth(req, 'open-chest', userWallet);
+    enforceRateLimit(userWallet, 'open-chest', 10);
 
     const { data: row, error: fetchErr } = await supabase
       .from('chest_opens_available')

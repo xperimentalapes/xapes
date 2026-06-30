@@ -259,7 +259,9 @@ async function setupWalletConnection() {
                     walletInfo.style.display = 'flex';
                     
                     // Initialize connection
-                    const rpcUrl = 'https://mainnet.helius-rpc.com/?api-key=277997e8-09ce-4516-a03e-5b062b51c6ac';
+                    const rpcUrl = window.CasinoAuth && window.CasinoAuth.getGameRpcUrl
+                        ? window.CasinoAuth.getGameRpcUrl()
+                        : 'https://api.mainnet-beta.solana.com';
                     if (typeof window.solanaWeb3 !== 'undefined') {
                         connection = new window.solanaWeb3.Connection(rpcUrl, 'confirmed');
                     } else if (typeof solanaWeb3 !== 'undefined') {
@@ -290,7 +292,9 @@ async function setupWalletConnection() {
                 
                 // Initialize connection using solanaWeb3 from the loaded script
                 // Use Helius RPC endpoint (dedicated service, no rate limits)
-                const rpcUrl = 'https://mainnet.helius-rpc.com/?api-key=277997e8-09ce-4516-a03e-5b062b51c6ac';
+                const rpcUrl = window.CasinoAuth && window.CasinoAuth.getGameRpcUrl
+                    ? window.CasinoAuth.getGameRpcUrl()
+                    : 'https://api.mainnet-beta.solana.com';
                 
                 if (typeof window.solanaWeb3 !== 'undefined') {
                     connection = new window.solanaWeb3.Connection(
@@ -879,6 +883,9 @@ async function withdrawWinnings() {
     
     try {
         const amount = totalWon;
+        let payoutId;
+        let amountRaw;
+        let signature;
         
         // Call backend API to get presigned transaction
         const response = await window.CasinoAuth.casinoFetch('/api/collect', 'collect', wallet, {
@@ -901,7 +908,10 @@ async function withdrawWinnings() {
             throw new Error(errorMessage);
         }
 
-        const { transaction: transactionBase64, actualAmount, payoutId, amountRaw } = await response.json();
+        const collectData = await response.json();
+        const { transaction: transactionBase64, actualAmount } = collectData;
+        payoutId = collectData.payoutId;
+        amountRaw = collectData.amountRaw;
 
         // Deserialize the presigned transaction
         const { Transaction } = window.solanaWeb3 || solanaWeb3;
@@ -912,9 +922,6 @@ async function withdrawWinnings() {
         // Send the transaction with retry logic for rate limits
         // Try with preflight first, then without if it fails (for mobile/Phantom browser compatibility)
         let retries = 3;
-        let signature;
-        let lastError = null;
-        
         while (retries > 0) {
             try {
                 // Send transaction with preflight to ensure it's valid before sending
@@ -1169,19 +1176,12 @@ async function withdrawWinnings() {
         
         while (confirmRetries > 0 && !confirmSuccess) {
             try {
-                const confirmResponse = await fetch('/api/confirm-collect', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        userWallet: wallet,
+                const confirmResponse = await window.CasinoAuth.signedPost('/api/confirm-collect', 'confirm-collect', wallet, {
                         signature: signature,
                         payoutId: payoutId,
                         amountRaw: amountRaw,
                         gameType: 'slots',
-                    })
-                });
+                    });
 
                 if (confirmResponse.ok) {
                     console.log('Successfully confirmed collect in database');
@@ -1245,11 +1245,12 @@ async function withdrawWinnings() {
         
         // Reload player data from database to restore correct totalWon value
         try {
-            if (typeof payoutId !== 'undefined' && payoutId) {
-                await fetch('/api/confirm-collect', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userWallet: wallet, payoutId, failed: true, gameType: 'slots' }),
+            if (typeof payoutId !== 'undefined' && payoutId && typeof signature !== 'undefined' && signature && window.CasinoAuth) {
+                await window.CasinoAuth.signedPost('/api/confirm-collect', 'collect-restore', wallet, {
+                    payoutId: payoutId,
+                    failed: true,
+                    failSignature: signature,
+                    gameType: 'slots',
                 });
             }
             await loadPlayerData();

@@ -82,7 +82,7 @@ gameFiles.forEach((file) => {
   const dest = path.join(publicDir, file);
   if (!fs.existsSync(src)) return;
   let data = fs.readFileSync(src, 'utf8');
-  if (file === 'chests.html' || file === 'coinflip.html') {
+  if (file === 'chests.html' || file === 'coinflip.html' || file === 'slots.html' || file === 'roulette.html') {
     data = data.replace(/__HELIUS_API_KEY__/g, key.replace(/'/g, "\\'"));
   }
   fs.writeFileSync(dest, data);

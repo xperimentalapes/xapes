@@ -2,6 +2,7 @@ const { applyCors, getSupabase, parseWallet } = require('../lib/casino/http');
 const { verifyCasinoAuth } = require('../lib/casino/wallet-auth');
 const { spinResult, calculateWinnings, validateBets } = require('../lib/casino/roulette-engine');
 const { TOKEN_DECIMALS } = require('../lib/casino/constants');
+const { enforceRateLimit } = require('../lib/casino/rate-limit');
 
 module.exports = async function handler(req, res) {
   if (applyCors(req, res)) return;
@@ -13,6 +14,7 @@ module.exports = async function handler(req, res) {
   try {
     const walletAddress = parseWallet(req.body);
     verifyCasinoAuth(req, 'spin-roulette', walletAddress);
+    enforceRateLimit(walletAddress, 'spin-roulette', 30);
     const { bets } = req.body || {};
     if (!bets || typeof bets !== 'object') {
       return res.status(400).json({ error: 'bets object required' });

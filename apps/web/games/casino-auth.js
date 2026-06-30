@@ -50,5 +50,27 @@
   global.CasinoAuth = {
     signCasinoRequest: signCasinoRequest,
     casinoFetch: casinoFetch,
+    getGameRpcUrl: function () {
+      var k = global.HELIUS_API_KEY;
+      if (k && String(k).indexOf('__') === -1) {
+        return 'https://mainnet.helius-rpc.com/?api-key=' + encodeURIComponent(k);
+      }
+      return 'https://api.mainnet-beta.solana.com';
+    },
+    signedPost: async function (url, action, walletAddress, body) {
+      var auth = await signCasinoRequest(action, walletAddress);
+      return fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-wallet-message': auth.walletMessage,
+          'x-wallet-signature': auth.walletSignature,
+        },
+        body: JSON.stringify(Object.assign({}, body || {}, {
+          userWallet: body && body.userWallet ? body.userWallet : walletAddress,
+          walletAddress: body && body.walletAddress ? body.walletAddress : walletAddress,
+        })),
+      });
+    },
   };
 })(typeof window !== 'undefined' ? window : global);

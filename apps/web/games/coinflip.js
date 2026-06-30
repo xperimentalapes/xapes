@@ -399,10 +399,10 @@ async function withdrawWinnings() {
             maxRetries: 3
         });
         await connection.confirmTransaction(signature, 'confirmed');
-        await fetch('/api/coinflip-confirm-collect', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ walletAddress: wallet, signature, payoutId, amountRaw })
+        await window.CasinoAuth.signedPost('/api/coinflip-confirm-collect', 'confirm-collect', wallet, {
+            signature,
+            payoutId,
+            amountRaw,
         });
         totalWon = 0;
         updateDisplay();

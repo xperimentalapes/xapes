@@ -1,4 +1,5 @@
 const { applyCors, getSupabase, parseWallet } = require('../lib/casino/http');
+const { verifyCasinoAuth } = require('../lib/casino/wallet-auth');
 const { confirmCollect, restoreFailedPayout } = require('../lib/casino/secure-collect');
 const { TOKEN_DECIMALS } = require('../lib/casino/constants');
 
@@ -12,16 +13,19 @@ module.exports = async function handler(req, res) {
   try {
     const body = req.body || {};
     const walletAddress = parseWallet(body, 'userWallet');
-    const { signature, payoutId, amountRaw, failed } = body;
+    const { signature, payoutId, amountRaw, failed, failSignature } = body;
     const gameType = body.gameType === 'roulette' ? 'roulette' : 'slots';
     const playersTable = gameType === 'roulette' ? 'roulette_players' : 'slots_players';
 
     if (failed === true && payoutId) {
+      verifyCasinoAuth(req, 'collect-restore', walletAddress);
       await restoreFailedPayout({
         supabase,
         payoutId,
+        walletAddress,
         playersTable,
         rewardsField: 'unclaimed_rewards',
+        failSignature,
       });
       return res.status(200).json({ ok: true, restored: true });
     }
@@ -30,6 +34,7 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({ error: 'signature, payoutId, and amountRaw required' });
     }
 
+    verifyCasinoAuth(req, 'confirm-collect', walletAddress);
     await confirmCollect({
       supabase,
       walletAddress,
