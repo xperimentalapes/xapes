@@ -61,6 +61,7 @@ if (fs.existsSync(repoLogo)) {
 
 // 2) Game pages, scripts, and CSS (flat public/ paths — matches vercel.json rewrites)
 const gameFiles = [
+  'casino-auth.js',
   'slots.html',
   'slots.js',
   'chests.html',

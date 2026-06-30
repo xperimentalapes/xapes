@@ -300,26 +300,21 @@ async function purchaseFlips() {
         const sig = await connection.sendRawTransaction(signed.serialize(), { skipPreflight: true, maxRetries: 5 });
         await connection.confirmTransaction(sig, 'confirmed');
 
-        const saveRes = await fetch('/api/coinflip-purchase', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                walletAddress: wallet,
-                totalAmountXma: totalCost,
-                numFlips: num,
-                costPerFlip: cost
-            })
+        const saveRes = await window.CasinoAuth.casinoFetch('/api/coinflip-purchase', 'purchase-coinflip', wallet, {
+            txSignature: sig,
+            numFlips: num,
+            costPerFlip: cost,
         });
         if (!saveRes.ok) {
             const err = await saveRes.json().catch(() => ({}));
-            console.error('DB save failed:', err);
-        } else {
-            flipsRemaining += num;
-            costPerFlip = cost;
-            updateDisplay();
-            updateButtonStates();
-            showTxModal('Purchase complete', `Purchased ${num} flip(s) for ${totalCost} XMA + ${PURCHASE_FEE_SOL} SOL fee.`, sig);
+            throw new Error(err.error || 'Failed to record purchase');
         }
+        const purchaseData = await saveRes.json();
+        flipsRemaining = purchaseData.flipsRemaining ?? num;
+        costPerFlip = cost;
+        updateDisplay();
+        updateButtonStates();
+        showTxModal('Purchase complete', `Purchased ${num} flip(s) for ${totalCost} XMA + ${PURCHASE_FEE_SOL} SOL fee.`, sig);
         await updateBalance();
     } catch (e) {
         const msg = e.message || String(e);
@@ -354,11 +349,13 @@ async function doFlip() {
     const resultEl = document.getElementById('flip-result');
     if (resultEl) resultEl.style.display = 'none';
 
+    if (!wallet || !window.CasinoAuth) {
+        alert('Connect wallet and approve the sign request to flip');
+        return;
+    }
     try {
-        const res = await fetch('/api/coinflip-flip', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ walletAddress: wallet, prediction: selectedPrediction })
+        const res = await window.CasinoAuth.casinoFetch('/api/coinflip-flip', 'coinflip-flip', wallet, {
+            prediction: selectedPrediction,
         });
         if (!res.ok) {
             const err = await res.json().catch(() => ({}));
@@ -388,16 +385,12 @@ async function withdrawWinnings() {
     isCollecting = true;
     updateButtonStates();
     try {
-        const res = await fetch('/api/coinflip-collect', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ walletAddress: wallet })
-        });
+        const res = await window.CasinoAuth.casinoFetch('/api/coinflip-collect', 'collect', wallet, {});
         if (!res.ok) {
             const err = await res.json().catch(() => ({}));
             throw new Error(err.error || 'Collect failed');
         }
-        const { transaction: transactionBase64, actualAmount } = await res.json();
+        const { transaction: transactionBase64, actualAmount, payoutId, amountRaw } = await res.json();
         const { Transaction } = window.solanaWeb3 || solanaWeb3;
         const transactionBytes = Uint8Array.from(atob(transactionBase64), c => c.charCodeAt(0));
         const transaction = Transaction.from(transactionBytes);
@@ -409,7 +402,7 @@ async function withdrawWinnings() {
         await fetch('/api/coinflip-confirm-collect', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ walletAddress: wallet })
+            body: JSON.stringify({ walletAddress: wallet, signature, payoutId, amountRaw })
         });
         totalWon = 0;
         updateDisplay();

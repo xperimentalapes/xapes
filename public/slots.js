@@ -564,36 +564,30 @@ async function purchaseSpins() {
         }
         
         await connection.confirmTransaction(signature, 'confirmed');
-        
-        // Update spins remaining
-        spinsRemaining += numSpins;
-        
-        // Save purchase to database
+
         try {
-            const saveResponse = await fetch('/api/save-game', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    walletAddress: wallet,
-                    spinCost: costPerSpin,
-                    resultSymbols: [],
-                    wonAmount: 0,
-                    spinsPurchased: numSpins
-                })
-            });
-            
+            const saveResponse = await window.CasinoAuth.casinoFetch(
+                '/api/record-game-purchase',
+                'purchase-slots',
+                wallet,
+                {
+                    gameType: 'slots',
+                    txSignature: signature,
+                    spinsPurchased: numSpins,
+                    costPerSpin: costPerSpin,
+                }
+            );
             if (!saveResponse.ok) {
                 const errorData = await saveResponse.json();
-                console.error('Failed to save purchase to database:', errorData);
-                // Don't fail the purchase if DB save fails, but log it
-            } else {
-                console.log('Purchase saved to database successfully');
+                throw new Error(errorData.error || 'Failed to record purchase');
             }
+            const purchaseData = await saveResponse.json();
+            spinsRemaining = purchaseData.spinsRemaining ?? numSpins;
+            console.log('Purchase recorded successfully');
         } catch (saveError) {
-            console.error('Error saving purchase to database:', saveError);
-            // Don't fail the purchase if DB save fails, but log it
+            console.error('Error recording purchase:', saveError);
+            alert('Payment sent but failed to credit spins: ' + (saveError.message || saveError));
+            return;
         }
         
         // Update balance
@@ -691,104 +685,90 @@ function toggleAutoSpin() {
     }
 }
 
-// Perform a single spin
+// Perform a single spin (server-authoritative outcome)
 async function performSpin() {
     if (isSpinning || spinsRemaining <= 0) {
-        // Stop autospin if no spins remaining
         if (isAutoSpinning && spinsRemaining <= 0) {
             isAutoSpinning = false;
             updateSpinButtonText();
         }
         return;
     }
-    
-    // Stop autospin if user disabled it
-    if (!isAutoSpinning) {
+    if (!isAutoSpinning) return;
+    if (!wallet || !window.CasinoAuth) {
+        alert('Connect wallet and approve the sign request to spin');
+        isAutoSpinning = false;
+        updateSpinButtonText();
         return;
     }
-    
+
     isSpinning = true;
-    spinsRemaining = Math.max(0, spinsRemaining - 1);
     updateDisplay();
     updateButtonStates();
     updateSpinButtonText();
-    
-    // Start spinning animation
+
+    let spinData;
+    try {
+        const spinResponse = await window.CasinoAuth.casinoFetch(
+            '/api/spin-slots',
+            'spin-slots',
+            wallet,
+            {}
+        );
+        if (!spinResponse.ok) {
+            const err = await spinResponse.json().catch(() => ({}));
+            throw new Error(err.error || 'Spin failed');
+        }
+        spinData = await spinResponse.json();
+    } catch (spinErr) {
+        console.error('Spin API error:', spinErr);
+        alert(spinErr.message || 'Spin failed');
+        isSpinning = false;
+        isAutoSpinning = false;
+        updateSpinButtonText();
+        updateButtonStates();
+        return;
+    }
+
+    spinsRemaining = spinData.spinsRemaining;
+    totalWon = spinData.unclaimedRewards ?? totalWon;
+    const resultPositions = spinData.positions;
+    const results = spinData.symbols;
+    const winAmount = spinData.wonAmount || 0;
+
     for (let i = 1; i <= 3; i++) {
         const reel = document.getElementById(`reel-${i}`);
-        const strip = reel.querySelector('.reel-strip');
+        const strip = reel?.querySelector('.reel-strip');
         if (reel && strip) {
-            // Get current position
             const currentTransform = strip.style.transform;
             const currentY = currentTransform ? parseFloat(currentTransform.match(/-?\d+\.?\d*/)?.[0] || '0') : 0;
             strip.style.setProperty('--spin-start', `${currentY}px`);
             reel.classList.add('spinning');
         }
     }
-    
-    // Generate weighted random positions based on symbol distribution
-    const resultPositions = [
-        getWeightedRandomPosition(),
-        getWeightedRandomPosition(),
-        getWeightedRandomPosition()
-    ];
-    
-    // Derive symbol indices from positions for win calculation
-    const results = resultPositions.map(pos => FIXED_REEL_ORDER[pos]);
-    
-    // Stop reels with delay for visual effect, positioning the chosen symbol in the center
+
     setTimeout(() => stopReel(1, resultPositions[0]), 1000);
     setTimeout(() => stopReel(2, resultPositions[1]), 1500);
     setTimeout(() => stopReel(3, resultPositions[2]), 2000);
-    
-    // Calculate win after all reels stop
+
     setTimeout(async () => {
-        const costPerSpin = Math.min(parseFloat(document.getElementById('cost-per-spin').value) || SPIN_COST, MAX_COST_PER_SPIN);
-        const winAmount = calculateWin(results, costPerSpin);
-        isSpinning = false;
-        
-        // Save spin to database
-        if (wallet) {
-            try {
-                const saveResponse = await fetch('/api/save-game', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        walletAddress: wallet,
-                        spinCost: costPerSpin,
-                        resultSymbols: results,
-                        wonAmount: winAmount,
-                        updateSpinsRemaining: spinsRemaining
-                    })
-                });
-                
-                if (!saveResponse.ok) {
-                    const errorData = await saveResponse.json();
-                    console.error('Failed to save spin to database:', errorData);
-                    // Don't fail the spin if DB save fails, but log it
-                } else {
-                    console.log('Spin saved to database successfully');
-                }
-            } catch (saveError) {
-                console.error('Error saving spin to database:', saveError);
-                // Don't fail the spin if DB save fails, but log it
+        if (winAmount > 0) {
+            const winDisplay = document.getElementById('win-display');
+            const winMessage = document.getElementById('win-message');
+            if (winMessage) winMessage.textContent = `${winAmount.toLocaleString()} XMA`;
+            if (winDisplay) {
+                winDisplay.style.display = 'block';
+                setTimeout(() => { winDisplay.style.display = 'none'; }, 3000);
             }
         }
-        
+        isSpinning = false;
         updateDisplay();
         updateButtonStates();
         updateSpinButtonText();
-        
-        // Continue autospin if enabled and spins remaining
+
         if (isAutoSpinning && spinsRemaining > 0) {
-            // Small delay before next spin
-            setTimeout(() => {
-                performSpin();
-            }, 500);
+            setTimeout(() => performSpin(), 500);
         } else if (isAutoSpinning && spinsRemaining <= 0) {
-            // Stop autospin when spins run out
             isAutoSpinning = false;
             updateSpinButtonText();
         }
@@ -869,6 +849,10 @@ async function withdrawWinnings() {
         alert('Please connect your wallet');
         return;
     }
+    if (!window.CasinoAuth) {
+        alert('Wallet signing is required to collect winnings');
+        return;
+    }
     
     // Check if SPL token library is loaded
     if (!window.splToken) {
@@ -897,15 +881,8 @@ async function withdrawWinnings() {
         const amount = totalWon;
         
         // Call backend API to get presigned transaction
-        const response = await fetch('/api/collect', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                userWallet: wallet,
-                amount: amount
-            })
+        const response = await window.CasinoAuth.casinoFetch('/api/collect', 'collect', wallet, {
+            gameType: 'slots',
         });
 
         if (!response.ok) {
@@ -924,7 +901,7 @@ async function withdrawWinnings() {
             throw new Error(errorMessage);
         }
 
-        const { transaction: transactionBase64, actualAmount } = await response.json();
+        const { transaction: transactionBase64, actualAmount, payoutId, amountRaw } = await response.json();
 
         // Deserialize the presigned transaction
         const { Transaction } = window.solanaWeb3 || solanaWeb3;
@@ -1200,7 +1177,9 @@ async function withdrawWinnings() {
                     body: JSON.stringify({
                         userWallet: wallet,
                         signature: signature,
-                        amount: actualAmount || amount
+                        payoutId: payoutId,
+                        amountRaw: amountRaw,
+                        gameType: 'slots',
                     })
                 });
 
@@ -1265,8 +1244,14 @@ async function withdrawWinnings() {
         }
         
         // Reload player data from database to restore correct totalWon value
-        // This ensures the UI shows the correct unclaimed rewards even if transaction failed
         try {
+            if (typeof payoutId !== 'undefined' && payoutId) {
+                await fetch('/api/confirm-collect', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userWallet: wallet, payoutId, failed: true, gameType: 'slots' }),
+                });
+            }
             await loadPlayerData();
         } catch (loadError) {
             console.error('Failed to reload player data after collect error:', loadError);

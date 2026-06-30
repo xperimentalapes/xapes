@@ -89,6 +89,7 @@ Front-end copy, links, team Discord IDs, and token labels live in **`apps/web/js
 - **`DEPLOYMENT.md`** — Vercel-focused notes
 - **`docs/deploy-cron-jobs.md`** — cron-job.org schedules for XMA accrual, settlement, NFT sync
 - **`SECURITY.md`** — operational security reminders
+- **`docs/SECURITY_CASINO.md`** — casino API auth, server-side spins, collect flow; run `database/migration_casino_security.sql` in Supabase
 
 ## License / usage
 

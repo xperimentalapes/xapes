@@ -13,13 +13,10 @@ const RPC_URL = process.env.HELIUS_RPC_URL || ('https://mainnet.helius-rpc.com/?
 
 const supabase = supabaseUrl && supabaseServiceKey ? createClient(supabaseUrl, supabaseServiceKey) : null;
 
+const { applyCors } = require('../lib/casino/http');
+
 module.exports = async function handler(req, res) {
-    const origin = req.headers.origin;
-    const allowedOrigins = ['https://xapes.vercel.app', 'http://localhost:8000', 'http://localhost:3000'];
-    if (origin && allowedOrigins.includes(origin)) res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Access-Control-Allow-Methods', 'POST');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-    if (req.method === 'OPTIONS') return res.status(200).end();
+    if (applyCors(req, res)) return;
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
     if (!supabase) return res.status(500).json({ error: 'Database not configured' });

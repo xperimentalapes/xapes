@@ -475,11 +475,13 @@ async function handleOpenChest() {
         alert('Please connect your Phantom wallet to open a chest.');
         return;
     }
+    if (!window.CasinoAuth) {
+        alert('Wallet signing is required to open a chest.');
+        return;
+    }
     try {
-        const res = await fetch('/api/consume-chest-open', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userWallet: walletAddress })
+        const res = await window.CasinoAuth.casinoFetch('/api/open-chest', 'open-chest', walletAddress, {
+            userWallet: walletAddress,
         });
         const data = await res.json().catch(function () { return {}; });
         if (!res.ok || !data.ok) {
@@ -488,38 +490,10 @@ async function handleOpenChest() {
             alert(data.error || 'No unopened chest found. Please buy a chest first.');
             return;
         }
-        canOpenChest = false;
+        canOpenChest = (data.opens || 0) > 0;
         updateChestButton();
-        currentReservationId = null;
-        var outcome = rollOutcome();
-        if (outcome.type === 'win') {
-            try {
-                var reserveBody = { userWallet: walletAddress, prizeType: outcome.kind === 'nft' ? 'nft' : 'token' };
-                if (outcome.kind === 'nft') {
-                    reserveBody.mint = outcome.mint;
-                } else {
-                    reserveBody.tokenMint = outcome.tokenMint;
-                    reserveBody.amount = outcome.amount;
-                    reserveBody.decimals = outcome.decimals != null ? outcome.decimals : 6;
-                }
-                var reserveRes = await fetch('/api/reserve-chest-prize', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(reserveBody)
-                });
-                var reserveData = await reserveRes.json().catch(function () { return {}; });
-                if (!reserveRes.ok || !reserveData.reserved) {
-                    console.warn('Reserve failed:', reserveData);
-                    outcome = { type: 'loss' };
-                } else {
-                    currentReservationId = reserveData.reservationId || null;
-                }
-            } catch (e) {
-                console.warn('Reserve chest prize error:', e);
-                outcome = { type: 'loss' };
-            }
-        }
-        showResult(outcome);
+        currentReservationId = data.reservationId || null;
+        showResult(data.outcome || { type: 'loss' });
     } catch (err) {
         console.error('handleOpenChest error:', err);
         alert('Failed to open chest: ' + (err.message || String(err)));

@@ -57,9 +57,13 @@
         return total;
     }
 
+    function getAvailableChips() {
+        return Math.max(0, chipBalance - getTotalStaked());
+    }
+
     function updateChipUI() {
         var el = document.getElementById('roulette-chips');
-        if (el) el.textContent = chipBalance;
+        if (el) el.textContent = getAvailableChips();
     }
 
     function updateStakedUI() {
@@ -140,7 +144,6 @@
     function placeBet(key, amount) {
         bets[key] = (bets[key] || 0) + amount;
         chipTypes[key] = selectedChipValue;
-        chipBalance -= amount;
         undoHistory.push({ key: key, amount: amount });
         updatePopups();
         updateChipUI();
@@ -157,7 +160,6 @@
         var amount = last.amount;
         bets[key] = (bets[key] || 0) - amount;
         if (bets[key] <= 0) { delete bets[key]; delete chipTypes[key]; }
-        chipBalance += amount;
         updateChipUI();
         updateStakedUI();
         renderChipStacks();
@@ -175,7 +177,7 @@
         if (!btn) return;
         var total = 0;
         for (var k in lastBets) if (lastBets.hasOwnProperty(k)) total += lastBets[k];
-        btn.disabled = Object.keys(lastBets).length === 0 || chipBalance < total;
+        btn.disabled = Object.keys(lastBets).length === 0 || getAvailableChips() < total;
     }
 
     function showWinMessage(profit) {
@@ -208,12 +210,11 @@
     function replaceChips() {
         var total = 0;
         for (var k in lastBets) if (lastBets.hasOwnProperty(k)) total += lastBets[k];
-        if (chipBalance < total || Object.keys(lastBets).length === 0) return;
+        if (getAvailableChips() < total || Object.keys(lastBets).length === 0) return;
         for (var key in lastBets) {
             if (lastBets.hasOwnProperty(key)) {
                 bets[key] = lastBets[key];
                 chipTypes[key] = lastChipTypes[key] || 10;
-                chipBalance -= lastBets[key];
             }
         }
         updateChipUI();
@@ -278,7 +279,7 @@
         table.addEventListener('click', function (e) {
             var cell = e.target.closest('.roulette-num, .roulette-zero-cell, .roulette-outside-bet');
             if (!cell) return;
-            if (!selectedChipValue || chipBalance < selectedChipValue) return;
+            if (!selectedChipValue || getAvailableChips() < selectedChipValue) return;
             var key = getBetKey(cell);
             if (!key) return;
             placeBet(key, selectedChipValue);
@@ -417,38 +418,55 @@
         if (!btn) return;
         btn.addEventListener('click', function () {
             if (btn.disabled) return;
-            if (chipBalance <= 0) return;
+            if (getTotalStaked() < 1) return;
+            if (!wallet || !window.CasinoAuth) {
+                alert('Connect wallet and approve the sign request to spin');
+                return;
+            }
             btn.disabled = true;
             spinInProgress = true;
             userClickedChipYet = false;
             updatePopups();
             updateRouletteButtonStates();
-            var result = WHEEL_ORDER[Math.floor(Math.random() * SEGMENTS)];
-            spinReel(result, function () {
-                last10Results.push(result);
-                if (last10Results.length > 7) last10Results.shift();
-                renderLast10();
-                var win = calculateWinnings(result);
-                chipBalance += win.totalReturned;
-                lastBets = copyBets(bets);
-                lastChipTypes = copyBets(chipTypes);
-                showWinMessage(win.profit);
-                clearTable();
-                userClickedChipYet = false;
-                selectedChipValue = 0;
-                var chipBtns = document.querySelectorAll('.roulette-chip');
-                chipBtns.forEach(function (b) {
-                    b.classList.remove('selected');
-                    b.setAttribute('aria-pressed', 'false');
+            var betsSnapshot = copyBets(bets);
+            window.CasinoAuth.casinoFetch('/api/spin-roulette', 'spin-roulette', wallet, { bets: betsSnapshot })
+                .then(function (res) {
+                    if (!res.ok) return res.json().then(function (d) { throw new Error(d.error || 'Spin failed'); });
+                    return res.json();
+                })
+                .then(function (data) {
+                    var result = data.result;
+                    spinReel(result, function () {
+                        last10Results.push(result);
+                        if (last10Results.length > 7) last10Results.shift();
+                        renderLast10();
+                        chipBalance = data.chipBalance;
+                        lastBets = copyBets(betsSnapshot);
+                        lastChipTypes = copyBets(chipTypes);
+                        showWinMessage(data.profit);
+                        clearTable();
+                        userClickedChipYet = false;
+                        selectedChipValue = 0;
+                        var chipBtns = document.querySelectorAll('.roulette-chip');
+                        chipBtns.forEach(function (b) {
+                            b.classList.remove('selected');
+                            b.setAttribute('aria-pressed', 'false');
+                        });
+                        updateChipUI();
+                        updateReplaceButton();
+                        updateRouletteButtonStates();
+                        btn.disabled = false;
+                        spinInProgress = false;
+                        updatePopups();
+                    });
+                })
+                .catch(function (err) {
+                    console.error('Spin error:', err);
+                    alert(err.message || 'Spin failed');
+                    btn.disabled = false;
+                    spinInProgress = false;
+                    updateRouletteButtonStates();
                 });
-                updateChipUI();
-                updateReplaceButton();
-                updateRouletteButtonStates();
-                saveSpinToDb(result);
-                btn.disabled = false;
-                spinInProgress = false;
-                updatePopups();
-            });
         });
     }
 
@@ -489,7 +507,7 @@
             buyBtn.disabled = !wallet || isCollecting || chipBalance > 0;
         }
         if (spinBtn) {
-            spinBtn.disabled = !wallet || chipBalance <= 0 || spinInProgress || isCollecting;
+            spinBtn.disabled = !wallet || getTotalStaked() < 1 || chipBalance <= 0 || spinInProgress || isCollecting;
         }
         if (collectBtn) {
             collectBtn.disabled = !wallet || chipBalance <= 0 || isCollecting;
@@ -688,25 +706,21 @@
             return connection.sendRawTransaction(signed.serialize(), { skipPreflight: false, maxRetries: 3 });
         }).then(function (sig) {
             return connection.confirmTransaction(sig, 'confirmed').then(function () { return sig; });
-        }).then(function () {
-            chipBalance += num;
-            costPerChip = cost;
-            updateChipUI();
-            updateRouletteButtonStates();
-            return fetch('/api/save-game', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    walletAddress: wallet,
-                    chipsPurchased: num,
-                    costPerChip: cost,
-                    resultSymbols: [],
-                    wonAmount: 0,
-                    gameType: 'roulette'
-                })
+        }).then(function (sig) {
+            return window.CasinoAuth.casinoFetch('/api/record-game-purchase', 'purchase-roulette', wallet, {
+                gameType: 'roulette',
+                txSignature: sig,
+                chipsPurchased: num,
+                costPerChip: cost,
             });
         }).then(function (res) {
             if (!res.ok) return res.json().then(function (d) { throw new Error(d.error || 'Save failed'); });
+            return res.json();
+        }).then(function (data) {
+            chipBalance = data.chipsBalance ?? num;
+            costPerChip = cost;
+            updateChipUI();
+            updateRouletteButtonStates();
         }).then(function () {
             updateBalance();
             updateRouletteButtonStates();
@@ -722,7 +736,7 @@
             alert('No chips to collect');
             return;
         }
-        if (!wallet || !connection) {
+        if (!wallet || !connection || !window.CasinoAuth) {
             alert('Please connect your wallet');
             return;
         }
@@ -731,45 +745,18 @@
             return;
         }
         var chipValueXMA = chipBalance * costPerChip;
-        if (chipValueXMA <= 0) {
-            alert('No value to collect');
-            return;
-        }
         isCollecting = true;
         updateRouletteButtonStates();
-        fetch('/api/load-player?walletAddress=' + encodeURIComponent(wallet) + '&gameType=roulette')
-            .then(function (r) { return r.ok ? r.json() : null; })
-            .then(function (player) {
-                var currentUnclaimed = (player && player.unclaimedRewards) ? player.unclaimedRewards : unclaimedRewards;
-                return currentUnclaimed + chipValueXMA;
-            })
-            .then(function (newUnclaimed) {
-                return fetch('/api/save-game', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        walletAddress: wallet,
-                        resultSymbols: [],
-                        wonAmount: 0,
-                        updateUnclaimedRewards: newUnclaimed,
-                        updateChipsBalance: 0,
-                        gameType: 'roulette'
-                    })
-                });
-            })
-            .then(function (res) {
-                if (!res.ok) return res.json().then(function (d) { throw new Error(d.error || 'Save failed'); });
-                return fetch('/api/collect', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userWallet: wallet, amount: chipValueXMA, gameType: 'roulette' })
-                });
-            })
+        var payoutId;
+        var amountRaw;
+        window.CasinoAuth.casinoFetch('/api/collect', 'collect', wallet, { gameType: 'roulette' })
             .then(function (res) {
                 if (!res.ok) return res.json().then(function (d) { throw new Error(d.error || d.message || 'Collect failed'); });
                 return res.json();
             })
             .then(function (data) {
+                payoutId = data.payoutId;
+                amountRaw = data.amountRaw;
                 var txBytes = Uint8Array.from(atob(data.transaction), function (c) { return c.charCodeAt(0); });
                 var Transaction = (window.solanaWeb3 || solanaWeb3).Transaction;
                 var tx = Transaction.from(txBytes);
@@ -781,7 +768,13 @@
                         return fetch('/api/confirm-collect', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ userWallet: wallet, signature: sig, amount: data.actualAmount || chipValueXMA, gameType: 'roulette' })
+                            body: JSON.stringify({
+                                userWallet: wallet,
+                                signature: sig,
+                                payoutId: payoutId,
+                                amountRaw: amountRaw,
+                                gameType: 'roulette',
+                            }),
                         }).then(function (cr) {
                             if (!cr.ok) return cr.json().then(function (d) { throw new Error(d.error || 'Confirm failed'); });
                         });
