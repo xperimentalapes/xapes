@@ -1,14 +1,30 @@
 /**
  * Phantom wallet auth for casino API calls.
- * Signs: XapeLabz Casino|<action>|<wallet>|<unixTimestamp>
+ * Gameplay (spins/flips) uses one cached play-session signature; purchases/collects sign per action.
  */
 (function (global) {
   'use strict';
+
+  var PLAY_SESSION_ACTION = 'play-session';
+  var PLAY_ACTIONS = {
+    'spin-slots': true,
+    'spin-roulette': true,
+    'coinflip-flip': true,
+  };
+  /** Refresh cached session this many seconds before server expiry. */
+  var SESSION_REFRESH_BUFFER_SEC = 60;
+  /** Seconds the cached play-session signature remains valid (matches server AUTH_MAX_AGE_SEC). */
+  var SESSION_TTL_SEC = 1800;
+  var playSessionCache = null;
 
   function bytesToBase64(bytes) {
     var bin = '';
     for (var i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
     return btoa(bin);
+  }
+
+  function clearPlaySession() {
+    playSessionCache = null;
   }
 
   async function signCasinoRequest(action, walletAddress) {
@@ -27,8 +43,37 @@
     };
   }
 
+  async function getPlaySessionAuth(walletAddress) {
+    var now = Math.floor(Date.now() / 1000);
+    if (
+      playSessionCache &&
+      playSessionCache.wallet === walletAddress &&
+      playSessionCache.expiresAt > now + SESSION_REFRESH_BUFFER_SEC
+    ) {
+      return {
+        walletMessage: playSessionCache.message,
+        walletSignature: playSessionCache.signature,
+      };
+    }
+    var auth = await signCasinoRequest(PLAY_SESSION_ACTION, walletAddress);
+    playSessionCache = {
+      wallet: walletAddress,
+      message: auth.walletMessage,
+      signature: auth.walletSignature,
+      expiresAt: now + SESSION_TTL_SEC,
+    };
+    return auth;
+  }
+
+  function warmPlaySession(walletAddress) {
+    if (!walletAddress) return Promise.resolve();
+    return getPlaySessionAuth(walletAddress).catch(function () {});
+  }
+
   async function casinoFetch(url, action, walletAddress, body, extraHeaders) {
-    var auth = await signCasinoRequest(action, walletAddress);
+    var auth = PLAY_ACTIONS[action]
+      ? await getPlaySessionAuth(walletAddress)
+      : await signCasinoRequest(action, walletAddress);
     var headers = Object.assign(
       { 'Content-Type': 'application/json' },
       extraHeaders || {},
@@ -49,6 +94,9 @@
 
   global.CasinoAuth = {
     signCasinoRequest: signCasinoRequest,
+    getPlaySessionAuth: getPlaySessionAuth,
+    warmPlaySession: warmPlaySession,
+    clearPlaySession: clearPlaySession,
     casinoFetch: casinoFetch,
     getGameRpcUrl: function () {
       var k = global.HELIUS_API_KEY;

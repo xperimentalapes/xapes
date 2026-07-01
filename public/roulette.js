@@ -533,8 +533,14 @@
             if (walletAddress) walletAddress.textContent = addr.slice(0, 4) + '...' + addr.slice(-4);
             if (connectContainer) connectContainer.style.display = 'none';
             if (walletInfo) walletInfo.style.display = 'flex';
+            if (window.CasinoAuth && window.CasinoAuth.warmPlaySession) {
+                CasinoAuth.warmPlaySession(addr);
+            }
         }
         function showDisconnected() {
+            if (window.CasinoAuth && window.CasinoAuth.clearPlaySession) {
+                CasinoAuth.clearPlaySession();
+            }
             wallet = null;
             connection = null;
             if (connectContainer) connectContainer.style.display = 'block';

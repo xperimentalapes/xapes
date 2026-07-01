@@ -179,6 +179,9 @@ function setupWalletConnection() {
                     updateBalance();
                     loadCoinflipState();
                     loadGameStats();
+                    if (window.CasinoAuth && window.CasinoAuth.warmPlaySession) {
+                        CasinoAuth.warmPlaySession(wallet);
+                    }
                     updateButtonStates();
                 }).catch(() => {});
             }
@@ -200,6 +203,9 @@ function setupWalletConnection() {
             await updateBalance();
             await loadCoinflipState();
             await loadGameStats();
+            if (window.CasinoAuth && window.CasinoAuth.warmPlaySession) {
+                CasinoAuth.warmPlaySession(wallet);
+            }
             updateButtonStates();
         } catch (e) {
             if (!String(e.message || e).includes('rejected')) alert('Failed to connect: ' + (e.message || e));
@@ -207,6 +213,9 @@ function setupWalletConnection() {
     });
 
     disconnectBtn.addEventListener('click', () => {
+        if (window.CasinoAuth && window.CasinoAuth.clearPlaySession) {
+            CasinoAuth.clearPlaySession();
+        }
         if (window.solana.disconnect) window.solana.disconnect();
         wallet = null;
         connection = null;

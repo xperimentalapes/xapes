@@ -278,6 +278,9 @@ async function setupWalletConnection() {
                     
                     await updateBalance();
                     await loadPlayerData(); // Load saved player data from database
+                    if (window.CasinoAuth && window.CasinoAuth.warmPlaySession) {
+                        CasinoAuth.warmPlaySession(wallet);
+                    }
                     updateButtonStates();
                 }
             }
@@ -332,6 +335,9 @@ async function setupWalletConnection() {
                 
                 await updateBalance();
                 await loadPlayerData(); // Load saved player data from database
+                if (window.CasinoAuth && window.CasinoAuth.warmPlaySession) {
+                    CasinoAuth.warmPlaySession(wallet);
+                }
                 updateButtonStates();
             } catch (err) {
                 console.error('Wallet connection error:', err);
@@ -345,6 +351,9 @@ async function setupWalletConnection() {
         });
         
         disconnectBtn.addEventListener('click', async () => {
+            if (window.CasinoAuth && window.CasinoAuth.clearPlaySession) {
+                CasinoAuth.clearPlaySession();
+            }
             if (window.solana && window.solana.disconnect) {
                 await window.solana.disconnect();
             }
