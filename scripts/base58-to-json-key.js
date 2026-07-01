@@ -3,7 +3,7 @@
  * Usage: node scripts/base58-to-json-key.js "YOUR_BASE58_KEY"
  * Or:    echo "YOUR_BASE58_KEY" | node scripts/base58-to-json-key.js
  *
- * Copy the output and set BRONZE_WALLET_KEY (or TREASURY_PRIVATE_KEY) in Vercel to that value.
+ * Copy the output and set TREASURY_PRIVATE_KEY (or XMA_REWARDS_TREASURY_KEY) in Vercel.
  */
 const bs58 = require('bs58');
 

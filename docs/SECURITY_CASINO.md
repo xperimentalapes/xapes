@@ -26,21 +26,15 @@ Messages expire after 5 minutes (`AUTH_MAX_AGE_SEC`).
 | `POST /api/record-game-purchase` | `purchase-slots` / `purchase-roulette` / `purchase-coinflip` | Verify on-chain XMA tx, credit plays |
 | `POST /api/collect` | `collect` | Debit `unclaimed_rewards`, sign payout |
 | `POST /api/confirm-collect` | — | Verify payout tx on-chain |
-| `POST /api/open-chest` | `open-chest` | Consume open, server roll + reserve |
 | `POST /api/coinflip-flip` | `coinflip-flip` | Server flip (existing) |
 | `POST /api/coinflip-purchase` | `purchase-coinflip` | Verified purchase |
 | `POST /api/coinflip-collect` | `collect` | Debit `total_won`, sign payout |
-
-| `POST /api/confirm-chest-collect` | `confirm-chest-collect` / `collect-chest-restore` | Verify chest prize tx on-chain |
-| `POST /api/reserve-chest-prize` | — | **410 deprecated** (use `open-chest`) |
 
 ## Follow-up migration
 
 After `migration_casino_security.sql`, run `database/migration_casino_security_followup.sql`:
 
-- `chest_reservations.status` for pending collect flow
 - Drop anon INSERT on game history tables
-- Chest table RLS
 
 Verify: `npm run verify-casino`
 
@@ -65,9 +59,9 @@ Run `database/migration_casino_security.sql` in Supabase SQL Editor:
 
 ## Env (Vercel)
 
-- `TREASURY_PRIVATE_KEY` — slots/coinflip/roulette collect signer
-- `BRONZE_WALLET_KEY` — chest prizes (unchanged)
-- `HELIUS_API_KEY` — RPC + chest treasury inventory
+- `TREASURY_PRIVATE_KEY` — casino collect signer (slots, roulette, coinflip) and Discord XMA claims
+- `XMA_REWARDS_TREASURY_KEY` — optional alias for the same treasury key used for Discord claims
+- `HELIUS_API_KEY` — RPC
 - `SUPABASE_SERVICE_KEY` — all writes
 
 ## Collect flow

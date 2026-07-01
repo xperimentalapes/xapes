@@ -2,7 +2,7 @@
  * Build script: copies apps/web (dashboard + casino games) into public/.
  * - Dashboard: apps/web index.html, css/, js/, assets/
  * - Games: apps/web/games/* (HTML, JS, shared + per-game CSS) → public/ (flat paths for existing URLs)
- * - Injects HELIUS_API_KEY into chests.html / coinflip.html when copying.
+ * - Injects HELIUS_API_KEY into coinflip.html / slots.html / roulette.html when copying.
  * Reads HELIUS_API_KEY from process.env (Vercel) or root .env.
  */
 const fs = require('fs');
@@ -84,8 +84,6 @@ const gameFiles = [
   'casino-buy-tiers.js',
   'slots.html',
   'slots.js',
-  'chests.html',
-  'chests.js',
   'casino.html',
   'roulette.html',
   'roulette.js',
@@ -93,7 +91,6 @@ const gameFiles = [
   'coinflip.js',
   'styles.css',
   'slots.css',
-  'chests.css',
   'coinflip.css',
   'roulette.css',
 ];
@@ -102,7 +99,7 @@ gameFiles.forEach((file) => {
   const dest = path.join(publicDir, file);
   if (!fs.existsSync(src)) return;
   let data = fs.readFileSync(src, 'utf8');
-  if (file === 'chests.html' || file === 'coinflip.html' || file === 'slots.html' || file === 'roulette.html') {
+  if (file === 'coinflip.html' || file === 'slots.html' || file === 'roulette.html') {
     data = data.replace(/__HELIUS_API_KEY__/g, key.replace(/'/g, "\\'"));
   }
   fs.writeFileSync(dest, data);

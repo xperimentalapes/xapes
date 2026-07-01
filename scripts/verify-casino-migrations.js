@@ -38,15 +38,6 @@ async function main() {
     checks.push({ name: `table ${t}`, ok });
   }
 
-  const { data: resCols, error: resErr } = await supabase
-    .from('chest_reservations')
-    .select('status')
-    .limit(0);
-  checks.push({
-    name: 'chest_reservations.status column',
-    ok: !resErr || !String(resErr.message || '').includes('status'),
-  });
-
   let failed = 0;
   for (const c of checks) {
     const mark = c.ok ? 'OK' : 'FAIL';
