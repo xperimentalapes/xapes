@@ -1634,9 +1634,12 @@
         var blunanaUsd = prices.blunanaUsd;
         var solUsd = prices.solUsd;
         var floorByIndex = [];
+        if (data && data.floorPriceSol != null) {
+          floorByIndex[0] = parseFloat(String(data.floorPriceSol));
+        }
         if (collectionsData && collectionsData.collections && Array.isArray(collectionsData.collections)) {
           collectionsData.collections.forEach(function (c, idx) {
-            if (c.floorPriceSol != null) floorByIndex[idx] = parseFloat(String(c.floorPriceSol), 10);
+            if (c.floorPriceSol != null) floorByIndex[idx] = parseFloat(String(c.floorPriceSol));
           });
         }
         var floorFirstColSol = floorByIndex[0] != null ? floorByIndex[0] : null;
