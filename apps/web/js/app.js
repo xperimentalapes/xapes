@@ -501,6 +501,16 @@
     document.querySelectorAll('#btn-connect-wallet, #btn-connect-wallet-mobile').forEach(function (btn) {
       setBtnText(btn, walletLabel || btn.dataset.label || 'Connect');
     });
+    if (!connected) {
+      try {
+        localStorage.removeItem('xapes_verified_wallet');
+      } catch (_) {}
+      hasVerifiedThisSession = false;
+      setHolderVerifiedUI(false);
+      hideHoldings();
+    } else {
+      refreshHolderVerifiedState();
+    }
     if (typeof syncVerifyModalState === 'function') syncVerifyModalState();
   }
 
@@ -647,7 +657,7 @@
       : 'never';
     el.textContent =
       'Discord activity tracking looks offline (last event: ' + when + '). '
-      + 'Ask an admin to restart the ROYAL bot gateway on Railway so messages and reactions count again.';
+      + 'Ask an admin to restart the ROYAL bot gateway on Fly.io so messages and reactions count again.';
     el.hidden = false;
   }
 
@@ -1003,7 +1013,10 @@
       .then(function (result) {
         if (result.ok && result.body && !result.body.error) {
           var body = result.body;
-          finish(body, body, body.rolesSynced === true);
+          try {
+            localStorage.setItem('xapes_verified_wallet', wallet);
+          } catch (_) {}
+          finish(body, body, true);
           return;
         }
         if (result.body && result.body.error && result.status === 401) {
@@ -1041,6 +1054,55 @@
           .catch(function () {
             finish({}, { rolesSynced: false, message: 'Could not load holdings. Try again.' }, false);
           });
+      });
+  }
+
+  function setHolderVerifiedUI(verified) {
+    document.body.classList.toggle('holder-verified', !!verified);
+    if (verified) hasVerifiedThisSession = true;
+    syncVerifyModalState();
+  }
+
+  function refreshHolderVerifiedState() {
+    var wallet = getWalletPublicKey();
+    if (!isDiscordConnected() || !wallet) {
+      setHolderVerifiedUI(false);
+      return Promise.resolve(false);
+    }
+    return fetch(window.location.origin + '/api/discord-rewards/status', { credentials: 'include' })
+      .then(function (res) {
+        return res.ok ? res.json() : null;
+      })
+      .then(function (data) {
+        var linked =
+          !!(data && Array.isArray(data.linkedWallets) && data.linkedWallets.indexOf(wallet) >= 0);
+        var stored = false;
+        try {
+          stored = localStorage.getItem('xapes_verified_wallet') === wallet;
+        } catch (_) {}
+        var verified = linked || stored || hasVerifiedThisSession;
+        if (verified) {
+          setHolderVerifiedUI(true);
+          if (linked) {
+            try {
+              localStorage.setItem('xapes_verified_wallet', wallet);
+            } catch (_) {}
+          }
+          return fetchVerifyHoldings(wallet).then(function (h) {
+            if (h) showHoldings(h);
+            return true;
+          });
+        }
+        setHolderVerifiedUI(false);
+        return false;
+      })
+      .catch(function () {
+        if (hasVerifiedThisSession) {
+          setHolderVerifiedUI(true);
+          return true;
+        }
+        setHolderVerifiedUI(false);
+        return false;
       });
   }
 
@@ -1247,6 +1309,13 @@
 
   function setVerifySuccessInModal() {
     hasVerifiedThisSession = true;
+    var w = getWalletPublicKey();
+    if (w) {
+      try {
+        localStorage.setItem('xapes_verified_wallet', w);
+      } catch (_) {}
+    }
+    setHolderVerifiedUI(true);
     if (heroVerifyActions) heroVerifyActions.classList.add('hero-home__actions--verified');
     if (verifyModalBtnVerify) verifyModalBtnVerify.hidden = true;
     if (verifyModalSuccess) verifyModalSuccess.hidden = false;
@@ -1290,6 +1359,276 @@
   if (verifyResultModalBackdrop) verifyResultModalBackdrop.addEventListener('click', closeVerifyResultModal);
   if (verifyResultModalClose) verifyResultModalClose.addEventListener('click', closeVerifyResultModal);
   if (verifyResultModalOk) verifyResultModalOk.addEventListener('click', closeVerifyResultModal);
+
+  // ----- Profile modal -----
+  var profileModal = document.getElementById('profile-modal');
+  var profileNftsExpanded = false;
+
+  function openProfileModal() {
+    if (!profileModal) return;
+    profileModal.setAttribute('aria-hidden', 'false');
+    profileNftsExpanded = false;
+    setProfileTab('nfts');
+    loadProfileTab('nfts');
+  }
+
+  function closeProfileModal() {
+    if (profileModal) profileModal.setAttribute('aria-hidden', 'true');
+  }
+
+  function setProfileTab(tab) {
+    ['nfts', 'casino', 'rewards'].forEach(function (t) {
+      var btn = document.getElementById('profile-tab-' + t);
+      var panel = document.getElementById('profile-panel-' + t);
+      var active = t === tab;
+      if (btn) {
+        btn.classList.toggle('profile-modal__tab--active', active);
+        btn.setAttribute('aria-selected', active ? 'true' : 'false');
+      }
+      if (panel) {
+        panel.classList.toggle('profile-modal__panel--active', active);
+        panel.hidden = !active;
+      }
+    });
+  }
+
+  function loadProfileTab(tab) {
+    if (tab === 'nfts') loadProfileNfts();
+    else if (tab === 'casino') loadProfileCasino();
+    else loadProfileRewards();
+  }
+
+  function formatProfileXma(n) {
+    var x = Number(n);
+    if (!isFinite(x)) return '0';
+    return x.toLocaleString('en-US', { maximumFractionDigits: 4 });
+  }
+
+  function loadProfileNfts() {
+    var wallet = getWalletPublicKey();
+    var loading = document.getElementById('profile-nfts-loading');
+    var empty = document.getElementById('profile-nfts-empty');
+    var wrap = document.getElementById('profile-nfts-wrap');
+    var grid = document.getElementById('profile-nfts-grid');
+    var expandBtn = document.getElementById('profile-nfts-expand');
+    if (!wallet) {
+      if (loading) loading.hidden = true;
+      if (empty) {
+        empty.hidden = false;
+        empty.textContent = 'Connect your wallet to view NFTs.';
+      }
+      if (wrap) wrap.hidden = true;
+      if (expandBtn) expandBtn.hidden = true;
+      return;
+    }
+    if (loading) loading.hidden = false;
+    if (empty) empty.hidden = true;
+    if (wrap) wrap.hidden = true;
+    if (expandBtn) expandBtn.hidden = true;
+    fetch(window.location.origin + '/api/profile/nfts?wallet=' + encodeURIComponent(wallet), {
+      credentials: 'omit',
+    })
+      .then(function (res) {
+        return res.ok ? res.json() : { nfts: [] };
+      })
+      .then(function (data) {
+        if (loading) loading.hidden = true;
+        var nfts = (data && data.nfts) || [];
+        if (!nfts.length) {
+          if (empty) {
+            empty.hidden = false;
+            empty.textContent = 'No NFTs found in your linked wallet.';
+          }
+          return;
+        }
+        if (grid) {
+          grid.innerHTML = nfts
+            .map(function (nft) {
+              var img = nft.image ? escapeHtml(nft.image) : 'assets/logo.png';
+              var name = escapeHtml(nft.name || 'NFT');
+              var num = nft.number ? '#' + escapeHtml(String(nft.number)) : '';
+              return (
+                '<article class="profile-nft-card">' +
+                '<img class="profile-nft-card__img" src="' +
+                img +
+                '" alt="" loading="lazy" onerror="this.src=\'assets/logo.png\'" />' +
+                '<div class="profile-nft-card__meta"><p class="profile-nft-card__name">' +
+                name +
+                '</p>' +
+                (num ? '<p class="profile-nft-card__num">' + num + '</p>' : '') +
+                '</div></article>'
+              );
+            })
+            .join('');
+        }
+        var needsCollapse = nfts.length > 4;
+        if (wrap) {
+          wrap.hidden = false;
+          wrap.classList.toggle('profile-nfts-wrap--collapsed', needsCollapse && !profileNftsExpanded);
+          wrap.classList.toggle('profile-nfts-wrap--expanded', !needsCollapse || profileNftsExpanded);
+        }
+        if (expandBtn) {
+          expandBtn.hidden = !needsCollapse;
+          expandBtn.textContent = profileNftsExpanded
+            ? 'Show less'
+            : 'Show all (' + nfts.length + ')';
+        }
+      })
+      .catch(function () {
+        if (loading) loading.hidden = true;
+        if (empty) {
+          empty.hidden = false;
+          empty.textContent = 'Could not load NFTs.';
+        }
+      });
+  }
+
+  function loadProfileCasino() {
+    var wallet = getWalletPublicKey();
+    var loading = document.getElementById('profile-casino-loading');
+    var list = document.getElementById('profile-casino-list');
+    if (!list) return;
+    if (!wallet) {
+      if (loading) loading.hidden = true;
+      list.innerHTML =
+        '<p class="profile-modal__empty">Connect your wallet to view casino stats.</p>';
+      return;
+    }
+    if (loading) loading.hidden = false;
+    list.innerHTML = '';
+    fetch(window.location.origin + '/api/profile/casino?wallet=' + encodeURIComponent(wallet), {
+      credentials: 'omit',
+    })
+      .then(function (res) {
+        return res.ok ? res.json() : { games: [] };
+      })
+      .then(function (data) {
+        if (loading) loading.hidden = true;
+        var games = (data && data.games) || [];
+        if (!games.length) {
+          list.innerHTML = '<p class="profile-modal__empty">No casino activity yet.</p>';
+          return;
+        }
+        list.innerHTML = games
+          .map(function (g) {
+            return (
+              '<article class="profile-casino-card">' +
+              '<h3 class="profile-casino-card__title">' +
+              escapeHtml(g.label || 'Game') +
+              '</h3>' +
+              '<div class="profile-casino-card__grid">' +
+              '<div><span>Plays</span><strong>' +
+              escapeHtml(String(g.totalSpins != null ? g.totalSpins : 0)) +
+              '</strong></div>' +
+              '<div><span>' +
+              escapeHtml(g.balanceLabel || 'Balance') +
+              '</span><strong>' +
+              escapeHtml(String(g.balance != null ? g.balance : 0)) +
+              '</strong></div>' +
+              '<div><span>Wagered (XMA)</span><strong>' +
+              formatProfileXma(g.totalWagered) +
+              '</strong></div>' +
+              '<div><span>Won (XMA)</span><strong>' +
+              formatProfileXma(g.totalWon) +
+              '</strong></div>' +
+              (g.unclaimedRewards > 0
+                ? '<div><span>Unclaimed</span><strong>' +
+                  formatProfileXma(g.unclaimedRewards) +
+                  '</strong></div>'
+                : '') +
+              '</div></article>'
+            );
+          })
+          .join('');
+      })
+      .catch(function () {
+        if (loading) loading.hidden = true;
+        list.innerHTML = '<p class="profile-modal__empty">Could not load casino stats.</p>';
+      });
+  }
+
+  function loadProfileRewards() {
+    var hint = document.getElementById('profile-rewards-hint');
+    var content = document.getElementById('profile-rewards-content');
+    var tracking = document.getElementById('profile-rewards-tracking');
+    if (!isDiscordConnected()) {
+      if (hint) hint.hidden = false;
+      if (content) content.hidden = true;
+      if (tracking) tracking.hidden = true;
+      return;
+    }
+    if (hint) hint.hidden = true;
+    if (content) content.hidden = false;
+    var dash = '—';
+    var set = function (id, val) {
+      var el = document.getElementById(id);
+      if (el) el.textContent = val != null ? val : dash;
+    };
+    set('profile-rewards-messages', dash);
+    set('profile-rewards-reactions', dash);
+    set('profile-rewards-voice', dash);
+    set('profile-rewards-pending', dash);
+    set('profile-rewards-unclaimed', dash);
+    fetch(window.location.origin + '/api/discord-rewards/status', { credentials: 'include' })
+      .then(function (res) {
+        return res.ok ? res.json() : null;
+      })
+      .then(function (data) {
+        if (!data) return;
+        set('profile-rewards-messages', String(data.messagesToday != null ? data.messagesToday : 0));
+        set('profile-rewards-reactions', String(data.reactionsToday != null ? data.reactionsToday : 0));
+        var vm =
+          data.voiceMinutesToday != null
+            ? data.voiceMinutesToday
+            : data.voiceMinutes24h != null
+              ? data.voiceMinutes24h
+              : 0;
+        set('profile-rewards-voice', String(vm));
+        set('profile-rewards-pending', computeTodaysClaimDisplay(data));
+        set(
+          'profile-rewards-unclaimed',
+          formatXmaDisplayAmount(data.unclaimedXma != null ? data.unclaimedXma : 0)
+        );
+        if (tracking) {
+          if (data.engagementTrackingActive === false) {
+            tracking.hidden = false;
+            var when = data.lastEngagementEventAt
+              ? new Date(data.lastEngagementEventAt).toLocaleString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric',
+                })
+              : 'never';
+            tracking.textContent =
+              'Discord activity tracking looks offline (last event: ' + when + ').';
+          } else {
+            tracking.hidden = true;
+            tracking.textContent = '';
+          }
+        }
+      })
+      .catch(function () {});
+  }
+
+  document.getElementById('btn-profile')?.addEventListener('click', openProfileModal);
+  document.getElementById('btn-profile-panel')?.addEventListener('click', function () {
+    closeMobilePanel();
+    openProfileModal();
+  });
+  document.getElementById('profile-modal-backdrop')?.addEventListener('click', closeProfileModal);
+  document.getElementById('profile-modal-close')?.addEventListener('click', closeProfileModal);
+  document.querySelectorAll('[data-profile-tab]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var tab = btn.getAttribute('data-profile-tab');
+      if (!tab) return;
+      setProfileTab(tab);
+      loadProfileTab(tab);
+    });
+  });
+  document.getElementById('profile-nfts-expand')?.addEventListener('click', function () {
+    profileNftsExpanded = !profileNftsExpanded;
+    loadProfileNfts();
+  });
 
   // ----- Discord login -----
   var discordUser = null;
@@ -1388,9 +1727,21 @@
       headers: { 'Content-Type': 'application/json' },
     })
       .then(function () {
+        try {
+          localStorage.removeItem('xapes_verified_wallet');
+        } catch (_) {}
+        hasVerifiedThisSession = false;
+        setHolderVerifiedUI(false);
+        hideHoldings();
         setDiscordUI(false);
       })
       .catch(function () {
+        try {
+          localStorage.removeItem('xapes_verified_wallet');
+        } catch (_) {}
+        hasVerifiedThisSession = false;
+        setHolderVerifiedUI(false);
+        hideHoldings();
         setDiscordUI(false);
       });
   }
@@ -1482,12 +1833,17 @@
     fetchDiscordMe().then(function (user) {
       if (discordParam === 'connected' && !user) {
         setTimeout(function () {
-          fetchDiscordMe().then(done);
+          fetchDiscordMe().then(function () {
+            refreshHolderVerifiedState();
+            done();
+          });
         }, 600);
         return;
       }
+      refreshHolderVerifiedState().then(done);
+    }).catch(function () {
       done();
-    }).catch(done);
+    });
   })();
 
   // ----- Mobile panel -----

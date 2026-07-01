@@ -19,13 +19,12 @@
     "daily-xma-grant": "node scripts/apply-daily-xma-grant.js",
     "verify-discord-xma": "node scripts/verify-discord-xma-migrations.js",
     "verify-casino": "node scripts/verify-casino-migrations.js",
-    "railway": "npx --yes @railway/cli",
-    "railway:login": "npx --yes @railway/cli login",
-    "railway:init": "npx --yes @railway/cli init",
-    "railway:link": "npx --yes @railway/cli link",
-    "railway:logs": "npx --yes @railway/cli logs",
-    "railway:status": "npx --yes @railway/cli status",
-    "deploy:gateway:railway": "npx --yes @railway/cli up"
+    "fly": "sh scripts/fly.sh",
+    "fly:login": "sh scripts/fly.sh auth login",
+    "fly:launch": "sh scripts/fly.sh launch --no-deploy --copy-config --region iad",
+    "fly:logs": "sh scripts/fly.sh logs",
+    "fly:status": "sh scripts/fly.sh status",
+    "deploy:gateway:fly": "sh scripts/fly.sh deploy"
   },
   "dependencies": {
     "@solana/spl-token": "^0.3.9",

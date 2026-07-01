@@ -4,7 +4,7 @@
  * - Engagement → Supabase `discord_engagement_events` via `attachEngagementTracking`
  * - Slash commands: Vercel `POST /api/discord/interactions` (same bot token; no second WebSocket)
  *
- * Run this 24/7 on a host (Railway, PM2, screen, etc.); Vercel does not keep a Gateway open.
+ * Run this 24/7 on a host (Fly.io, PM2, screen, etc.); Vercel does not keep a Gateway open.
  * One DISCORD_BOT_TOKEN = one `client.login` session — never two Gateway processes with the same token.
  *
  * Env: DISCORD_BOT_TOKEN, DISCORD_GUILD_ID, SUPABASE_URL, SUPABASE_SERVICE_KEY
@@ -14,11 +14,11 @@
  * inside registerRoyalBotGatewayHandlers().
  *
  * Run: npm run royal-bot-gateway
- * Railway / other PaaS: PORT set by platform (see Dockerfile.gateway); local dev leaves PORT unset.
+ * Fly.io / other PaaS: PORT set by platform (see Dockerfile.gateway); local dev leaves PORT unset.
  */
 require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
 
-/** When PORT is set (e.g. Railway health checks), serve GET / → ok. */
+/** When PORT is set (e.g. Fly.io health checks), serve GET / → ok. */
 const healthPort = process.env.PORT || process.env.GATEWAY_HEALTH_PORT;
 if (healthPort) {
   const port = Number(healthPort, 10);

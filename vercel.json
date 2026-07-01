@@ -8,6 +8,8 @@
   {"source":"/api/discord-rewards/:path*","destination":"/api/dashboard?__path=discord-rewards/:path*"},
   {"source":"/api/verify","destination":"/api/dashboard?__path=verify"},
   {"source":"/api/verify/:path*","destination":"/api/dashboard?__path=verify/:path*"},
+  {"source":"/api/profile/nfts","destination":"/api/dashboard?__path=profile/nfts"},
+  {"source":"/api/profile/casino","destination":"/api/dashboard?__path=profile/casino"},
   {"source":"/api/holder-link-wallet","destination":"/api/dashboard?__path=holder-link-wallet"},
   {"source":"/api/holder-verify","destination":"/api/dashboard?__path=holder-verify"},
   {"source":"/api/collections","destination":"/api/dashboard?__path=collections"},

@@ -5,7 +5,7 @@ node_modules/
 dist/
 build/
 .vercel/
-.railway/
+.fly/
 
 # Environment variables
 .env

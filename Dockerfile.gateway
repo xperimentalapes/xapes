@@ -1,5 +1,5 @@
 # Discord Gateway worker only (not the Vercel site).
-# Deploy: Railway — docs/deploy-discord-gateway-railway.md
+# Deploy: Fly.io — docs/deploy-discord-gateway-fly.md
 FROM node:20-alpine
 WORKDIR /app
 

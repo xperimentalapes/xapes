@@ -680,6 +680,39 @@ app.get('/api/verify', async function (req, res) {
   }
 });
 
+const getProfileNfts = require(path.join(__dirname, '..', '..', 'lib', 'holder', 'profile-nfts.js')).getProfileNfts;
+const getProfileCasinoStats = require(path.join(__dirname, '..', '..', 'lib', 'holder', 'profile-casino.js')).getProfileCasinoStats;
+
+app.get('/api/profile/nfts', async function (req, res) {
+  const wallet = (req.query.wallet || '').trim();
+  if (!wallet) {
+    return res.status(400).json({ error: 'Missing wallet' });
+  }
+  try {
+    const payload = await getProfileNfts(wallet);
+    res.setHeader('Cache-Control', 'private, max-age=60, stale-while-revalidate=120');
+    res.json(payload);
+  } catch (e) {
+    console.warn('/api/profile/nfts failed', e.message);
+    res.status(500).json({ nfts: [], total: 0, error: 'Failed to load NFTs' });
+  }
+});
+
+app.get('/api/profile/casino', async function (req, res) {
+  const wallet = (req.query.wallet || '').trim();
+  if (!wallet) {
+    return res.status(400).json({ error: 'Missing wallet' });
+  }
+  try {
+    const payload = await getProfileCasinoStats(wallet);
+    res.setHeader('Cache-Control', 'private, max-age=30, stale-while-revalidate=60');
+    res.json(payload);
+  } catch (e) {
+    console.warn('/api/profile/casino failed', e.message);
+    res.status(500).json({ games: [], error: 'Failed to load casino stats' });
+  }
+});
+
 // ——— Collections (Magic Eden + Helius/Supabase fallbacks) ———
 app.get('/api/collections', async function (req, res) {
   try {
