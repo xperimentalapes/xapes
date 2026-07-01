@@ -1445,13 +1445,15 @@
           grid.innerHTML = nfts
             .map(function (nft) {
               var img = nft.image ? escapeHtml(nft.image) : 'assets/logo.png';
-              var name = escapeHtml(nft.name || 'NFT');
+              var name = escapeHtml(nft.name || 'Mutant Ape');
               var num = nft.number ? '#' + escapeHtml(String(nft.number)) : '';
               return (
                 '<article class="profile-nft-card">' +
                 '<img class="profile-nft-card__img" src="' +
                 img +
-                '" alt="" loading="lazy" onerror="this.src=\'assets/logo.png\'" />' +
+                '" alt="' +
+                name +
+                '" loading="lazy" onerror="this.src=\'assets/logo.png\'" />' +
                 '<div class="profile-nft-card__meta"><p class="profile-nft-card__name">' +
                 name +
                 '</p>' +
