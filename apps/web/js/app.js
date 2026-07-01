@@ -237,7 +237,10 @@
     var tokenPriceLabel = document.getElementById('tokenomics-price-label');
     if (tokenPriceLabel && token.priceLabel) tokenPriceLabel.textContent = token.priceLabel;
     var tokenChartLabel = document.getElementById('tokenomics-chart-label');
-    if (tokenChartLabel && token.chartLabel) tokenChartLabel.textContent = token.chartLabel;
+    if (tokenChartLabel) {
+      var chartName = (token.name || token.symbol || 'Token').trim();
+      tokenChartLabel.textContent = chartName + ' / USD';
+    }
     var tokenSummary = document.getElementById('tokenomics-summary-text');
     if (tokenSummary && token.summaryText) tokenSummary.textContent = token.summaryText;
     var mint = (token.tokenMint || '').trim();
@@ -249,6 +252,19 @@
       var dex = document.getElementById('tokenomics-link-dextools');
       var dexUrl = (token.dextoolsUrl || '').trim();
       if (dex && dexUrl) dex.href = dexUrl;
+      var trade = document.getElementById('tokenomics-link-trade');
+      var tradeUrl = (token.pumpFunUrl || 'https://pump.fun/coin/' + mint).trim();
+      if (trade && tradeUrl) trade.href = tradeUrl;
+    }
+    var chartHint = document.getElementById('xma-chart-hint');
+    if (chartHint) {
+      var dexLink = (token.dextoolsUrl || '').trim();
+      var tradeLink = (token.pumpFunUrl || (mint ? 'https://pump.fun/coin/' + mint : '')).trim();
+      chartHint.innerHTML =
+        '14-day price preview only. '
+        + (dexLink ? '<a href="' + dexLink + '" target="_blank" rel="noopener">View full chart on DEXTools</a>' : 'View full chart on DEXTools')
+        + (tradeLink ? ' · <a href="' + tradeLink + '" target="_blank" rel="noopener">Trade on pump.fun</a>' : '')
+        + '.';
     }
     var rewardsCfg = c.xmaDiscordRewards || {};
     var claimHint = document.getElementById('xma-claim-hint');
@@ -1824,52 +1840,85 @@
         var noChart = items.length === 0;
         if (noChart) {
           if (chartWrapEl) chartWrapEl.classList.add('tokenomics__chart-wrap--hidden');
-          if (chartHintEl) chartHintEl.textContent = '';
           return;
         }
         if (chartWrapEl) chartWrapEl.classList.remove('tokenomics__chart-wrap--hidden');
-        if (chartHintEl) chartHintEl.textContent = '';
         var chartLabelEl = document.getElementById('tokenomics-chart-label');
-        if (chartLabelEl && data.data) {
-          if (data.data.chartDays) {
-            chartLabelEl.textContent = 'TOKEN / USD — ' + data.data.chartDays + 'D';
-          } else if (data.data.chartType) {
-            chartLabelEl.textContent = 'TOKEN / USD — ' + data.data.chartType;
-          }
+        var cfg = window.XAPES_CONFIG && window.XAPES_CONFIG.token ? window.XAPES_CONFIG.token : {};
+        var tokenName = (cfg.name || cfg.symbol || 'Token').trim();
+        if (chartLabelEl) chartLabelEl.textContent = tokenName + ' / USD';
+
+        function toDailyTime(unixTime) {
+          var d = new Date(Number(unixTime) * 1000);
+          var y = d.getUTCFullYear();
+          var m = String(d.getUTCMonth() + 1).padStart(2, '0');
+          var day = String(d.getUTCDate()).padStart(2, '0');
+          return y + '-' + m + '-' + day;
         }
-        var candlestickData = items.map(function (c) {
+
+        function formatChartPrice(price) {
+          if (price == null || isNaN(price)) return '';
+          if (price >= 1) return price.toFixed(4);
+          if (price >= 0.0001) return price.toFixed(8);
+          return price.toExponential(2);
+        }
+
+        var lineData = items.map(function (c) {
           return {
-            time: c.unix_time,
-            open: c.o,
-            high: c.h,
-            low: c.l,
-            close: c.c,
+            time: toDailyTime(c.unix_time),
+            value: Number(c.c),
           };
-        }).sort(function (a, b) { return a.time - b.time; });
-        if (typeof window.LightweightCharts === 'undefined') return;
+        }).filter(function (p) { return p.time && isFinite(p.value); })
+          .sort(function (a, b) { return a.time < b.time ? -1 : a.time > b.time ? 1 : 0; });
+
+        if (typeof window.LightweightCharts === 'undefined' || lineData.length === 0) return;
+
+        chartEl.innerHTML = '';
+        var chartWidth = chartEl.clientWidth || chartEl.offsetWidth || 320;
         var chart = window.LightweightCharts.createChart(chartEl, {
           layout: { background: { color: 'transparent' }, textColor: '#8b8f9a' },
           grid: { vertLines: { color: '#2a2d38' }, horzLines: { color: '#2a2d38' } },
-          width: chartEl.clientWidth,
-          height: 280,
+          width: chartWidth,
+          height: 260,
           timeScale: { borderColor: '#2a2d38', timeVisible: true, secondsVisible: false },
-          rightPriceScale: { borderColor: '#2a2d38', scaleMargins: { top: 0.1, bottom: 0.2 } },
+          rightPriceScale: {
+            borderColor: '#2a2d38',
+            scaleMargins: { top: 0.12, bottom: 0.1 },
+          },
+          localization: {
+            priceFormatter: formatChartPrice,
+          },
         });
-        var candleSeries = chart.addCandlestickSeries({
-          upColor: '#14f195',
-          downColor: '#f87171',
-          borderDownColor: '#f87171',
-          borderUpColor: '#14f195',
-        });
-        candleSeries.setData(candlestickData);
+
+        var priceFormat = {
+          type: 'custom',
+          formatter: formatChartPrice,
+          minMove: 0.0000000001,
+        };
+        var lineSeries;
+        if (typeof chart.addLineSeries === 'function') {
+          lineSeries = chart.addLineSeries({
+            color: '#14b8a6',
+            lineWidth: 2,
+            priceFormat: priceFormat,
+          });
+        } else if (window.LightweightCharts.LineSeries) {
+          lineSeries = chart.addSeries(window.LightweightCharts.LineSeries, {
+            color: '#14b8a6',
+            lineWidth: 2,
+            priceFormat: priceFormat,
+          });
+        }
+        if (!lineSeries) return;
+
+        lineSeries.setData(lineData);
         chart.timeScale().fitContent();
         window.addEventListener('resize', function () {
-          chart.applyOptions({ width: chartEl.clientWidth });
+          chart.applyOptions({ width: chartEl.clientWidth || chartWidth });
         });
       })
       .catch(function () {
         if (chartWrapEl) chartWrapEl.classList.add('tokenomics__chart-wrap--hidden');
-        if (chartHintEl) chartHintEl.textContent = '';
       });
   }
 })();

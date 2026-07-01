@@ -20,11 +20,12 @@ window.XAPES_CONFIG = {
     logoUrl: 'assets/logo.png',
     menuIconUrl: 'assets/coins-svgrepo-com.svg',
     priceLabel: '$XMA (XMA / USD)',
-    chartLabel: 'XMA / USD — 15m',
+    chartLabel: 'XMA / USD',
     summaryText: 'Your project token. Verify holdings in the dashboard.',
     /** Shown in $XMA section; also used for Solscan link when set */
     tokenMint: 'HVSruatutKcgpZJXYyeRCWAnyT7mzYq1io9YoJ6F4yMP',
     dextoolsUrl: 'https://www.dextools.io/app/solana/pair-explorer/HVSruatutKcgpZJXYyeRCWAnyT7mzYq1io9YoJ6F4yMP',
+    pumpFunUrl: 'https://pump.fun/coin/HVSruatutKcgpZJXYyeRCWAnyT7mzYq1io9YoJ6F4yMP',
   },
 
   /**
