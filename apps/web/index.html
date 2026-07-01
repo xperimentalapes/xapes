@@ -267,7 +267,6 @@
     <section class="section" id="xma">
       <div class="container">
         <h2 class="section__title"><img src="" alt="" class="section__thumb" width="32" height="32"> <span data-config="token-label">Token</span></h2>
-        <p class="section__lead">Project token on Solana.</p>
         <div class="card card--tokenomics">
           <div class="tokenomics__token-row grid grid--2">
             <div class="tokenomics__column tokenomics__column--info">
@@ -290,7 +289,6 @@
                 <p><strong>Network:</strong> Solana</p>
                 <p><strong>TOKEN ADDRESS:</strong> <code class="tokenomics__contract" id="tokenomics-contract">HVSruatutKcgpZJXYyeRCWAnyT7mzYq1io9YoJ6F4yMP</code></p>
               </div>
-              <p class="card__text" id="tokenomics-summary-text">Project token. Verify holdings in the dashboard.</p>
             </div>
             <div class="tokenomics__column tokenomics__column--chart">
               <div class="tokenomics__chart-wrap tokenomics__chart-wrap--hidden" id="xma-chart-wrap">
@@ -338,15 +336,16 @@
                 <p class="tokenomics__engagement-note" id="xma-engagement-note"></p>
               </div>
               <div class="tokenomics__rewards-claim">
-                <div class="tokenomics__grant-countdown" aria-live="polite">
-                  <span class="tokenomics__grant-countdown-label" id="xma-grant-countdown-label">Next daily reset (ET)</span>
+                <div class="tokenomics__engagement tokenomics__engagement--claim" aria-live="polite">
+                  <p class="tokenomics__engagement-head" id="xma-grant-countdown-label">Next daily reset (ET)</p>
                   <span class="tokenomics__countdown-digits" id="xma-grant-countdown">--:--:--</span>
-                </div>
-                <div class="tokenomics__rewards-balance">
-                  <p class="tokenomics__rewards-row"><span>Unclaimed XMA</span> <strong id="xma-unclaimed-balance">0</strong></p>
+                  <div class="tokenomics__daily-grant-row">
+                    <span class="tokenomics__daily-grant-label">Unclaimed XMA</span>
+                    <strong class="tokenomics__daily-grant-amount" id="xma-unclaimed-balance">0</strong>
+                  </div>
                   <p class="tokenomics__rewards-hint" id="xma-claim-hint"></p>
+                  <button type="button" class="btn btn--primary tokenomics__claim-btn" id="xma-claim-btn" disabled aria-disabled="true">Claim XMA</button>
                 </div>
-                <button type="button" class="btn btn--primary tokenomics__claim-btn" id="xma-claim-btn" disabled aria-disabled="true">Claim XMA</button>
               </div>
             </div>
           </div>

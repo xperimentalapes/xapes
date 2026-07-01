@@ -2138,21 +2138,31 @@ body.wallet-connected .btn--wallet .btn__icon {
   flex-direction: column;
   min-width: 0;
 }
-.tokenomics__rewards-claim {
-  gap: 1rem;
-  padding: 0.75rem;
-  background: var(--bg-elevated);
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border);
-}
-.tokenomics__rewards-claim .tokenomics__grant-countdown {
+.tokenomics__rewards-claim .tokenomics__engagement {
   margin-bottom: 0;
+  height: 100%;
 }
-.tokenomics__rewards-claim .tokenomics__rewards-balance {
-  margin-bottom: 0;
+.tokenomics__engagement--claim {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
 }
-.tokenomics__rewards-claim .tokenomics__claim-btn {
-  margin-top: auto;
+.tokenomics__engagement--claim .tokenomics__engagement-head {
+  margin: 0;
+}
+.tokenomics__engagement--claim .tokenomics__countdown-digits {
+  margin: 0;
+}
+.tokenomics__engagement--claim .tokenomics__daily-grant-row {
+  margin: 0;
+  padding-top: 0.35rem;
+  border-top: 1px solid var(--border);
+}
+.tokenomics__engagement--claim .tokenomics__rewards-hint {
+  margin: 0;
+}
+.tokenomics__engagement--claim .tokenomics__claim-btn {
+  margin: 0;
 }
 .tokenomics__rewards-title {
   margin: 0 0 0.5rem;

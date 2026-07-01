@@ -241,8 +241,6 @@
       var chartName = (token.name || token.symbol || 'Token').trim();
       tokenChartLabel.textContent = chartName + ' / USD';
     }
-    var tokenSummary = document.getElementById('tokenomics-summary-text');
-    if (tokenSummary && token.summaryText) tokenSummary.textContent = token.summaryText;
     var mint = (token.tokenMint || '').trim();
     if (mint) {
       var contractEl = document.getElementById('tokenomics-contract');
