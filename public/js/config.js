@@ -68,6 +68,19 @@ window.XAPES_CONFIG = {
     nfts: 'NFTs',
     token: '$XMA',
   },
+  /** Platform / treasury wallets shown with a coloured label in the holders table */
+  knownHolderAccounts: [
+    {
+      wallet: 'vzhnsQKtF3iBJVTYMfeNPMFDYd2VsfgDijsWa2xfJNq',
+      label: 'pump.fun',
+      kind: 'pumpfun',
+    },
+    {
+      walletPrefix: '1BW',
+      label: 'Magic Eden',
+      kind: 'magiceden',
+    },
+  ],
 
   holderPortalUrl: '',
   endpoints: { holdings: '/api/holdings', discordAuth: '/api/discord/auth' },

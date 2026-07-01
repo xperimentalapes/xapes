@@ -2151,6 +2151,34 @@ body.wallet-connected .btn--wallet .btn__icon {
   color: var(--text-muted);
   font-weight: 400;
 }
+.holders-wallet--known {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.2rem;
+  font-family: inherit;
+}
+.holders-known-name {
+  font-weight: 700;
+  font-family: var(--font-sans);
+  font-size: 0.9375rem;
+  letter-spacing: 0.01em;
+}
+.holders-known-name--pumpfun {
+  color: #52ffa8;
+}
+.holders-known-name--magiceden {
+  color: #e42575;
+}
+.holders-wallet--known:hover .holders-known-name {
+  text-decoration: underline;
+}
+.holders-row--pumpfun td:nth-child(2) {
+  background: rgba(82, 255, 168, 0.04);
+}
+.holders-row--magiceden td:nth-child(2) {
+  background: rgba(228, 37, 117, 0.05);
+}
 .holders-loading,
 .holders-empty {
   text-align: center;

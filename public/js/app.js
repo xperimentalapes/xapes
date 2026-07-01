@@ -1615,6 +1615,21 @@
       if (n >= 0.01) return '$' + n.toFixed(2);
       return '$' + n.toFixed(4);
     }
+    function getKnownHolderAccount(wallet) {
+      var accounts = (cfg && cfg.knownHolderAccounts) || [];
+      var w = String(wallet || '');
+      for (var i = 0; i < accounts.length; i++) {
+        var acc = accounts[i];
+        if (acc.wallet && acc.wallet === w) return acc;
+        if (
+          acc.walletPrefix &&
+          w.slice(0, acc.walletPrefix.length).toLowerCase() === String(acc.walletPrefix).toLowerCase()
+        ) {
+          return acc;
+        }
+      }
+      return null;
+    }
     function loadHolders(sort) {
       sort = sort || 'total';
       var table = document.getElementById('holders-table');
@@ -1677,8 +1692,24 @@
           var walletShort = h.wallet.length > 12 ? h.wallet.slice(0, 4) + '…' + h.wallet.slice(-4) : h.wallet;
           var walletLink = 'https://solscan.io/account/' + encodeURIComponent(h.wallet);
           var discordName = h.discordDisplayName && String(h.discordDisplayName).trim();
+          var knownAccount = getKnownHolderAccount(h.wallet);
           var walletCell;
-          if (discordName) {
+          if (knownAccount) {
+            walletCell =
+              '<a href="' +
+              escapeHtml(walletLink) +
+              '" target="_blank" rel="noopener" class="holders-wallet holders-wallet--known holders-wallet--' +
+              escapeHtml(knownAccount.kind) +
+              '" title="' +
+              escapeHtml(h.wallet) +
+              '"><span class="holders-known-name holders-known-name--' +
+              escapeHtml(knownAccount.kind) +
+              '">' +
+              escapeHtml(knownAccount.label) +
+              '</span><span class="holders-wallet-addr">' +
+              escapeHtml(walletShort) +
+              '</span></a>';
+          } else if (discordName) {
             walletCell =
               '<a href="' +
               escapeHtml(walletLink) +
@@ -1700,7 +1731,8 @@
               '</a>';
           }
           var valueCell = valueUsd != null ? formatUsd(valueUsd) : '—';
-          return '<tr>' +
+          var rowClass = knownAccount ? ' class="holders-row holders-row--' + escapeHtml(knownAccount.kind) + '"' : '';
+          return '<tr' + rowClass + '>' +
             '<td>' + (i + 1) + '</td>' +
             '<td>' + walletCell + '</td>' +
             '<td data-col="token">' + escapeHtml(h.tokenBalanceFormatted || '0') + '</td>' +
