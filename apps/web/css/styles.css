@@ -310,58 +310,6 @@ body {
   stroke: #d4af37;
 }
 
-/* Hero: Slotto partner block (bottom right) */
-.hero-home__slotto {
-  position: absolute;
-  bottom: 1.5rem;
-  right: 1.5rem;
-  z-index: 2;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 0.5rem;
-}
-.hero-home__slotto-label {
-  margin: 0;
-  font-size: 0.75rem;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: #facc15;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6), 0 4px 16px rgba(0, 0, 0, 0.4);
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-}
-.hero-home__slotto-btn {
-  display: block;
-  width: 200px;
-  height: 64px;
-  border-radius: 16px;
-  border: 2px solid rgba(255, 255, 255, 0.4);
-  background: url("../assets/slotto.png") center / cover no-repeat;
-  background-color: transparent;
-  text-indent: -9999px;
-  overflow: hidden;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-.hero-home__slotto-btn:hover {
-  transform: scale(1.03);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-}
-@media (max-width: 599px) {
-  .hero-home__slotto {
-    bottom: 1rem;
-    right: 1rem;
-  }
-  .hero-home__slotto-btn {
-    width: 170px;
-    height: 56px;
-    border-radius: 14px;
-  }
-}
-
 /* Portrait: use portrait hero image, keep text visible, enlarged CTA */
 @media (orientation: portrait) {
   .hero-home__bg {
@@ -594,6 +542,19 @@ body {
   color: var(--gold);
   background: var(--gold-dim);
   border-color: rgba(212, 175, 55, 0.25);
+}
+.dashboard__link--slotto:hover {
+  color: #c4b5fd;
+  background: rgba(139, 92, 246, 0.12);
+  border-color: rgba(139, 92, 246, 0.25);
+}
+.dashboard__icon--slotto {
+  border-radius: 50%;
+  overflow: hidden;
+  background: #1e1b4b;
+}
+.dashboard__icon--slotto .dashboard__icon-img {
+  object-fit: cover;
 }
 .dashboard__icon--gold {
   color: var(--gold);
@@ -1374,6 +1335,19 @@ body.wallet-connected .btn--wallet .btn__icon {
 }
 .panel__nav-icon--gold svg {
   stroke: var(--gold);
+}
+.panel__nav-icon--round {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #1e1b4b;
+}
+.panel__nav-icon--round .panel__nav-icon-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .holdings {

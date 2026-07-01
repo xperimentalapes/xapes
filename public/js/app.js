@@ -302,6 +302,18 @@
       heroCasinoCta.style.display = royalCasinoUrl ? '' : 'none';
     }
 
+    var slottoUrl = (c.slottoUrl || '').trim();
+    var slottoSide = document.getElementById('dashboard-link-slotto');
+    var slottoPanel = document.getElementById('panel-link-slotto');
+    if (slottoSide) {
+      slottoSide.href = slottoUrl || '#';
+      slottoSide.style.display = slottoUrl ? '' : 'none';
+    }
+    if (slottoPanel) {
+      slottoPanel.href = slottoUrl || '#';
+      slottoPanel.style.display = slottoUrl ? '' : 'none';
+    }
+
     // Holders labels (sidebar + mobile panel key labels)
     var labels = c.holdingsLabels || {};
     ['token', 'totalNfts', 'nfts'].forEach(function (key) {
