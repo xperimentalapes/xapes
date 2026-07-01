@@ -203,10 +203,8 @@
     // Hero
     var heroTitle = document.getElementById('hero-title');
     if (heroTitle) heroTitle.textContent = hero.title || projectName;
-    var heroTagline = document.getElementById('hero-tagline');
-    if (heroTagline) heroTagline.textContent = hero.tagline || '';
     var heroSub = document.getElementById('hero-subtitle');
-    if (heroSub) heroSub.textContent = hero.subtitle || '';
+    if (heroSub) heroSub.textContent = hero.subtitle || hero.tagline || '';
     var heroDesc = document.getElementById('hero-description');
     if (heroDesc) heroDesc.textContent = hero.description || '';
 
