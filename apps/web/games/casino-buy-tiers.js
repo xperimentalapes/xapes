@@ -1,10 +1,11 @@
 /**
- * USD-pegged casino buy-in tiers from GET /api/casino/buy-tiers.
+ * Fixed XMA buy-in tiers from GET /api/casino/buy-tiers (USD shown from live price).
  */
 (function (global) {
   'use strict';
 
   var tiers = null;
+  var DEFAULT_XMA = 100000;
   var xmaUsd = null;
 
   function populateCostSelect(selectEl, preferredXma) {
@@ -68,9 +69,9 @@
   }
 
   function getDefaultXma() {
-    if (!tiers || !tiers.length) return null;
-    var one = tiers.find(function (t) { return t.usd === 1; });
-    return one ? one.xma : tiers[Math.floor(tiers.length / 2)].xma;
+    if (!tiers || !tiers.length) return DEFAULT_XMA;
+    var preferred = tiers.find(function (t) { return Number(t.xma) === DEFAULT_XMA; });
+    return preferred ? preferred.xma : tiers[Math.floor(tiers.length / 2)].xma;
   }
 
   function getXmaUsd() {
