@@ -21,6 +21,8 @@ if (fs.existsSync(envPath)) {
     if (m) process.env.HELIUS_API_KEY = m[1].trim().replace(/^["']|["']$/g, '');
     const m2 = line.match(/^BASE_URL=(.*)$/);
     if (m2) process.env.BASE_URL = m2[1].trim().replace(/^["']|["']$/g, '');
+    const m3 = line.match(/^SITE_URL=(.*)$/);
+    if (m3) process.env.SITE_URL = m3[1].trim().replace(/^["']|["']$/g, '');
   });
 }
 const key = (process.env.HELIUS_API_KEY || '').trim().replace(/^["']|["']$/g, '');

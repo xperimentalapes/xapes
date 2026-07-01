@@ -56,7 +56,7 @@ window.XAPES_CONFIG = {
   footerCopy: 'XapeLabz',
   partnersLead: 'Platforms and tools integrated with this project.',
   partnersPlaceholder: 'Adding soon',
-  royalCasinoUrl: 'https://xapes.vercel.app/casino', // Direct link to Royal Casino (external); leave empty to hide menu item
+  royalCasinoUrl: '/casino', // Same-origin casino hub; use full URL only for external hosts
   slottoUrl: 'https://slotto.gg',
 
   holdingsLabels: {

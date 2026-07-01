@@ -298,7 +298,7 @@
     if (partnersPlaceholder) partnersPlaceholder.textContent = c.partnersPlaceholder || 'Adding soon';
 
     // Royal Casino (external link in desktop + mobile menu)
-    var royalCasinoUrl = (c.royalCasinoUrl || '').trim();
+    var royalCasinoUrl = (c.royalCasinoUrl || '/casino').trim();
     var royalCasinoSide = document.getElementById('dashboard-link-royal-casino');
     var royalCasinoPanel = document.getElementById('panel-link-royal-casino');
     if (royalCasinoSide) {
