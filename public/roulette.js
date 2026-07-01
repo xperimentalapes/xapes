@@ -19,13 +19,12 @@
     var FEE_TREASURY_LAMPORTS = 1200000;   // 0.0012 SOL -> treasury
     var FEE_PARTNER_LAMPORTS = 800000;     // 0.0008 SOL -> partner
     var FEE_PARTNER_WALLET = '3WNHW6sr1sQdbRjovhPrxgEJdWASZ43egGWMMNrhgoRR';
-    var MAX_COST_PER_CHIP = 1000;
     var MAX_CHIPS_PER_PURCHASE = 50000;
 
     var wallet = null;
     var connection = null;
     var xmaBalance = 0;
-    var costPerChip = 1;
+    var costPerChip = 0;
     var unclaimedRewards = 0;
     var isCollecting = false;
 
@@ -541,7 +540,7 @@
             if (connectContainer) connectContainer.style.display = 'block';
             if (walletInfo) walletInfo.style.display = 'none';
             xmaBalance = 0;
-            costPerChip = 1;
+            costPerChip = 0;
             unclaimedRewards = 0;
             chipBalance = 0;
             updateChipUI();
@@ -627,10 +626,12 @@
             .then(function (data) {
                 if (!data) return;
                 chipBalance = data.chipsBalance || 0;
-                costPerChip = data.costPerChip || 1;
+                costPerChip = data.costPerChip || 0;
                 unclaimedRewards = data.unclaimedRewards || 0;
                 var costInput = document.getElementById('roulette-cost-per-chip');
-                if (costInput) costInput.value = Math.min(costPerChip, MAX_COST_PER_CHIP);
+                if (costPerChip > 0 && costInput && window.CasinoBuyTiers) {
+                    CasinoBuyTiers.selectCost(costInput, costPerChip);
+                }
                 updateChipUI();
                 updateRouletteButtonStates();
             })
@@ -648,12 +649,17 @@
         }
         var costEl = document.getElementById('roulette-cost-per-chip');
         var numEl = document.getElementById('roulette-num-chips');
-        var cost = Math.min(parseFloat(costEl && costEl.value ? costEl.value : 1), MAX_COST_PER_CHIP);
+        var cost = parseFloat(costEl && costEl.value ? costEl.value : 0);
         var num = Math.min(parseInt(numEl && numEl.value ? numEl.value : 2500, 10), MAX_CHIPS_PER_PURCHASE);
         if (!cost || cost <= 0 || !num || num <= 0) {
             alert('Please enter valid cost per chip and number of chips');
             return;
         }
+        if (window.CasinoBuyTiers && !CasinoBuyTiers.isAllowedCost(cost)) {
+            alert('Please choose a valid buy-in tier.');
+            return;
+        }
+        cost = Math.floor(cost);
         var total = cost * num;
         if (xmaBalance < total) {
             alert('Insufficient balance. You need ' + total + ' XMA but only have ' + xmaBalance.toFixed(2) + ' XMA');
@@ -799,33 +805,46 @@
     }
 
     function init() {
-        showThree(0);
-        updateChipUI();
-        updateStakedUI();
-        updateUndoButton();
-        updateReplaceButton();
-        renderChipStacks();
-        updatePopups();
-        bindChipSelector();
-        bindTableClicks();
-        bindSpinButton();
-        bindUndoButton();
-        bindReplaceButton();
-        var buyBtn = document.getElementById('roulette-buy-chips');
-        var collectBtn = document.getElementById('roulette-collect');
-        if (buyBtn) buyBtn.addEventListener('click', purchaseSpins);
-        if (collectBtn) collectBtn.addEventListener('click', withdrawWinnings);
-        var initWallet = function () {
-            setupWalletConnection();
-            updateRouletteButtonStates();
+        var afterTiers = function () {
+            if (window.CasinoBuyTiers) {
+                CasinoBuyTiers.populateCostSelect(
+                    document.getElementById('roulette-cost-per-chip'),
+                    CasinoBuyTiers.getDefaultXma()
+                );
+            }
+            showThree(0);
+            updateChipUI();
+            updateStakedUI();
+            updateUndoButton();
+            updateReplaceButton();
+            renderChipStacks();
+            updatePopups();
+            bindChipSelector();
+            bindTableClicks();
+            bindSpinButton();
+            bindUndoButton();
+            bindReplaceButton();
+            var buyBtn = document.getElementById('roulette-buy-chips');
+            var collectBtn = document.getElementById('roulette-collect');
+            if (buyBtn) buyBtn.addEventListener('click', purchaseSpins);
+            if (collectBtn) collectBtn.addEventListener('click', withdrawWinnings);
+            var initWallet = function () {
+                setupWalletConnection();
+                updateRouletteButtonStates();
+            };
+            if (window.splToken) {
+                initWallet();
+            } else {
+                window.addEventListener('splTokenLoaded', initWallet);
+                setTimeout(initWallet, 2000);
+            }
+            window.addEventListener('resize', renderChipStacks);
         };
-        if (window.splToken) {
-            initWallet();
+        if (window.CasinoBuyTiers) {
+            CasinoBuyTiers.load().then(afterTiers).catch(afterTiers);
         } else {
-            window.addEventListener('splTokenLoaded', initWallet);
-            setTimeout(initWallet, 2000);
+            afterTiers();
         }
-        window.addEventListener('resize', renderChipStacks);
     }
 
     if (document.readyState === 'loading') {

@@ -26,6 +26,7 @@
   {"source":"/api/spin-slots","destination":"/api/dashboard?__path=spin-slots"},
   {"source":"/api/spin-roulette","destination":"/api/dashboard?__path=spin-roulette"},
   {"source":"/api/record-game-purchase","destination":"/api/dashboard?__path=record-game-purchase"},
+  {"source":"/api/casino/buy-tiers","destination":"/api/dashboard?__path=casino/buy-tiers"},
   {"source":"/api/open-chest","destination":"/api/dashboard?__path=open-chest"},
   {"source":"/api/confirm-chest-collect","destination":"/api/dashboard?__path=confirm-chest-collect"},
   {"source":"/api/collect-chest","destination":"/api/dashboard?__path=collect-chest"},

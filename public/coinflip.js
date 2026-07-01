@@ -4,7 +4,6 @@ const XMA_TOKEN_MINT = 'HVSruatutKcgpZJXYyeRCWAnyT7mzYq1io9YoJ6F4yMP';
 const TREASURY_WALLET = '6auNHk39Mut82FhjY9iBZXjqm7xJabFVrY3bVgrYSMvj';
 const TOKEN_DECIMALS = 6;
 const WIN_MULTIPLIER = 1.9;
-const MAX_COST_PER_FLIP = 1500;
 const MAX_FLIPS_PER_PURCHASE = 500;
 const FLIP_ANIMATION_MS = 1200;
 const SOLSCAN_TX_URL = 'https://solscan.io/tx/';
@@ -135,7 +134,9 @@ async function loadCoinflipState() {
             grandTotalWon = data.grandTotalWon != null ? Number(data.grandTotalWon) : 0;
         }
         const costInput = document.getElementById('cost-per-flip');
-        if (costPerFlip > 0 && costInput) costInput.value = costPerFlip;
+        if (costPerFlip > 0 && costInput && window.CasinoBuyTiers) {
+            CasinoBuyTiers.selectCost(costInput, costPerFlip);
+        }
         updateDisplay();
         updateButtonStates();
     } catch (e) {
@@ -258,7 +259,11 @@ async function purchaseFlips() {
         alert('Enter valid cost per flip and number of flips.');
         return;
     }
-    cost = Math.min(cost, MAX_COST_PER_FLIP);
+    if (window.CasinoBuyTiers && !CasinoBuyTiers.isAllowedCost(cost)) {
+        alert('Please choose a valid buy-in tier.');
+        return;
+    }
+    cost = Math.floor(cost);
     num = Math.min(num, MAX_FLIPS_PER_PURCHASE);
     const totalCost = cost * num;
     if (xmaBalance < totalCost) {
@@ -420,11 +425,24 @@ async function withdrawWinnings() {
 
 document.addEventListener('DOMContentLoaded', () => {
     const init = () => {
-        setupWalletConnection();
-        setupControls();
-        loadGameStats();
-        updateDisplay();
-        updateButtonStates();
+        const afterTiers = () => {
+            if (window.CasinoBuyTiers) {
+                CasinoBuyTiers.populateCostSelect(
+                    document.getElementById('cost-per-flip'),
+                    CasinoBuyTiers.getDefaultXma()
+                );
+            }
+            setupWalletConnection();
+            setupControls();
+            loadGameStats();
+            updateDisplay();
+            updateButtonStates();
+        };
+        if (window.CasinoBuyTiers) {
+            CasinoBuyTiers.load().then(afterTiers).catch(afterTiers);
+        } else {
+            afterTiers();
+        }
     };
     if (window.splToken) init();
     else {

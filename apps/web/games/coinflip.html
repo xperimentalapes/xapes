@@ -107,20 +107,8 @@
             <div class="controls-panel">
                 <div class="inputs-row">
                     <div class="control-group">
-                        <label for="cost-per-flip">Cost Per Flip (XMA):</label>
-                        <select id="cost-per-flip" class="control-select">
-                            <option value="10">10</option>
-                            <option value="20">20</option>
-                            <option value="30">30</option>
-                            <option value="40">40</option>
-                            <option value="50">50</option>
-                            <option value="100">100</option>
-                            <option value="200">200</option>
-                            <option value="300">300</option>
-                            <option value="500">500</option>
-                            <option value="1000">1000</option>
-                            <option value="2000">2000</option>
-                        </select>
+                        <label for="cost-per-flip">Cost per flip:</label>
+                        <select id="cost-per-flip" class="control-select" aria-label="Cost per flip in XMA"></select>
                     </div>
                     <div class="control-group">
                         <label for="number-of-flips">Number of Flips:</label>
@@ -152,6 +140,7 @@
         </div>
     </div>
 
+    <script src="casino-buy-tiers.js"></script>
     <script src="casino-auth.js"></script>
     <script src="coinflip.js"></script>
 </body>

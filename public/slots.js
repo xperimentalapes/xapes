@@ -51,8 +51,6 @@ function showTxModal(title, message, signature) {
     if (closeBtn) closeBtn.onclick = close;
     if (overlay) overlay.onclick = close;
 }
-const SPIN_COST = 100; // Default cost per spin in XMA
-const MAX_COST_PER_SPIN = 1500; // Cap cost per spin to protect bank
 const MAX_SPINS_PER_PURCHASE = 500; // Max spins per purchase
 const SLOT_MACHINE_PROGRAM_ID = 'Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS'; // Update with actual program ID
 const XMA_TOKEN_MINT = 'HVSruatutKcgpZJXYyeRCWAnyT7mzYq1io9YoJ6F4yMP'; // XMA token mint address
@@ -110,18 +108,28 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Wait for SPL token library to load before setting up wallet
     const initWhenReady = () => {
-        setupWalletConnection();
-        setupGameControls();
-        setupPrizeModal();
-        setupLeaderboardModal();
-        setupBackgroundMusic();
-        initializeReels();
-        loadGameStats(); // Load grand totals
-        
-        // Set default cost per spin
-        document.getElementById('cost-per-spin').value = SPIN_COST;
-        updateDisplay();
-        updateButtonStates();
+        const afterTiers = function () {
+            if (window.CasinoBuyTiers) {
+                CasinoBuyTiers.populateCostSelect(
+                    document.getElementById('cost-per-spin'),
+                    CasinoBuyTiers.getDefaultXma()
+                );
+            }
+            setupWalletConnection();
+            setupGameControls();
+            setupPrizeModal();
+            setupLeaderboardModal();
+            setupBackgroundMusic();
+            initializeReels();
+            loadGameStats();
+            updateDisplay();
+            updateButtonStates();
+        };
+        if (window.CasinoBuyTiers) {
+            CasinoBuyTiers.load().then(afterTiers).catch(afterTiers);
+        } else {
+            afterTiers();
+        }
     };
     
     // Check if SPL token is already loaded
@@ -445,15 +453,15 @@ async function purchaseSpins() {
         alert('Please enter valid cost per spin and number of spins');
         return;
     }
-    if (costPerSpin > MAX_COST_PER_SPIN) {
-        alert(`Cost per spin is capped at ${MAX_COST_PER_SPIN.toLocaleString()} XMA`);
-        return;
-    }
     if (numSpins > MAX_SPINS_PER_PURCHASE) {
         alert(`Maximum ${MAX_SPINS_PER_PURCHASE} spins per purchase`);
         return;
     }
-    costPerSpin = Math.min(costPerSpin, MAX_COST_PER_SPIN);
+    if (window.CasinoBuyTiers && !CasinoBuyTiers.isAllowedCost(costPerSpin)) {
+        alert('Please choose a valid buy-in tier.');
+        return;
+    }
+    costPerSpin = Math.floor(costPerSpin);
     numSpins = Math.min(numSpins, MAX_SPINS_PER_PURCHASE);
     
     const totalCost = costPerSpin * numSpins;
@@ -822,7 +830,7 @@ function calculateWin(results, bet) {
     if (results[0] === results[1] && results[1] === results[2]) {
         // All symbols match - use payout table
         const symbolIndex = results[0];
-        const costPerSpin = Math.min(parseFloat(document.getElementById('cost-per-spin').value) || SPIN_COST, MAX_COST_PER_SPIN);
+        const costPerSpin = parseFloat(document.getElementById('cost-per-spin').value) || (window.CasinoBuyTiers && CasinoBuyTiers.getDefaultXma()) || 0;
         win = getPayoutAmount(symbolIndex, costPerSpin);
         
         if (win > 0) {
@@ -1611,8 +1619,8 @@ async function loadPlayerData() {
         // Restore cost per spin for remaining spins (capped)
         if (data.costPerSpin != null && spinsRemaining > 0) {
             const costPerSpinInput = document.getElementById('cost-per-spin');
-            if (costPerSpinInput) {
-                costPerSpinInput.value = Math.min(Number(data.costPerSpin), MAX_COST_PER_SPIN);
+            if (costPerSpinInput && window.CasinoBuyTiers) {
+                CasinoBuyTiers.selectCost(costPerSpinInput, Number(data.costPerSpin));
                 console.log('Restored cost per spin:', costPerSpinInput.value);
             }
         }
