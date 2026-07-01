@@ -1817,7 +1817,7 @@
   }
 
   if (chartEl) {
-    fetch(window.location.origin + '/api/xma-ohlc?type=15m', { credentials: 'include' })
+    fetch(window.location.origin + '/api/xma-ohlc?type=1d&days=14', { credentials: 'include' })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (data) {
         var items = (data && data.data && data.data.items) ? data.data.items : [];
@@ -1830,8 +1830,12 @@
         if (chartWrapEl) chartWrapEl.classList.remove('tokenomics__chart-wrap--hidden');
         if (chartHintEl) chartHintEl.textContent = '';
         var chartLabelEl = document.getElementById('tokenomics-chart-label');
-        if (chartLabelEl && data.data && data.data.chartType) {
-          chartLabelEl.textContent = 'TOKEN / USD — ' + data.data.chartType;
+        if (chartLabelEl && data.data) {
+          if (data.data.chartDays) {
+            chartLabelEl.textContent = 'TOKEN / USD — ' + data.data.chartDays + 'D';
+          } else if (data.data.chartType) {
+            chartLabelEl.textContent = 'TOKEN / USD — ' + data.data.chartType;
+          }
         }
         var candlestickData = items.map(function (c) {
           return {

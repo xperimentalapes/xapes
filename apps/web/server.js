@@ -515,7 +515,8 @@ app.get('/api/prices', async function (req, res) {
 // ——— Token OHLC: Birdeye (optional key) with GeckoTerminal fallback ———
 const BIRDEYE_API_KEY = process.env.BIRDEYE_API_KEY;
 const OHLC_CACHE_MS = 2 * 60 * 1000;
-let ohlcCache = { data: null, ts: 0, type: null };
+const CHART_RANGE_DAYS = 14;
+let ohlcCache = { data: null, ts: 0, type: null, days: null };
 
 const GECKO_OHLC = {
   '1m': { timeframe: 'minute', aggregate: 1 },
@@ -532,6 +533,23 @@ const GECKO_OHLC = {
   '1d': { timeframe: 'day', aggregate: 1 },
 };
 
+function geckoLimitForRange(type, days) {
+  const d = Math.min(Math.max(Number(days) || CHART_RANGE_DAYS, 1), 90);
+  if (type === '1d') return d;
+  if (type === '12h') return d * 2;
+  if (type === '8h') return d * 3;
+  if (type === '6h') return d * 4;
+  if (type === '4h') return d * 6;
+  if (type === '2h') return d * 12;
+  if (type === '1h') return d * 24;
+  if (type === '30m') return d * 48;
+  if (type === '15m') return d * 96;
+  if (type === '5m') return d * 288;
+  if (type === '3m') return d * 480;
+  if (type === '1m') return d * 1440;
+  return d * 24;
+}
+
 async function resolveGeckoPoolAddress() {
   if (geckoPoolCache.address && Date.now() - geckoPoolCache.ts < GECKO_POOL_CACHE_MS) {
     return geckoPoolCache.address;
@@ -540,10 +558,11 @@ async function resolveGeckoPoolAddress() {
   return stats?.poolAddress || geckoPoolCache.address || null;
 }
 
-async function fetchGeckoOhlc(poolAddress, type) {
-  const cfg = GECKO_OHLC[type] || GECKO_OHLC['15m'];
+async function fetchGeckoOhlc(poolAddress, type, days) {
+  const cfg = GECKO_OHLC[type] || GECKO_OHLC['1d'];
+  const limit = geckoLimitForRange(type, days);
   const url = GECKO_BASE + '/pools/' + encodeURIComponent(poolAddress)
-    + '/ohlcv/' + cfg.timeframe + '?aggregate=' + cfg.aggregate + '&limit=200';
+    + '/ohlcv/' + cfg.timeframe + '?aggregate=' + cfg.aggregate + '&limit=' + limit;
   const r = await axios.get(url, {
     timeout: 10000,
     validateStatus: () => true,
@@ -564,16 +583,17 @@ async function fetchGeckoOhlc(poolAddress, type) {
 }
 
 async function tokenOhlcHandler(req, res) {
-  const type = (req.query.type || '15m').toLowerCase().replace(/\s/g, '');
-  const validType = Object.prototype.hasOwnProperty.call(GECKO_OHLC, type) ? type : '15m';
+  const type = (req.query.type || '1d').toLowerCase().replace(/\s/g, '');
+  const validType = Object.prototype.hasOwnProperty.call(GECKO_OHLC, type) ? type : '1d';
+  const days = Math.min(Math.max(parseInt(req.query.days, 10) || CHART_RANGE_DAYS, 1), 90);
   const nowMs = Date.now();
-  if (ohlcCache.data && ohlcCache.type === validType && nowMs - ohlcCache.ts < OHLC_CACHE_MS) {
+  if (ohlcCache.data && ohlcCache.type === validType && ohlcCache.days === days && nowMs - ohlcCache.ts < OHLC_CACHE_MS) {
     return res.json(ohlcCache.data);
   }
 
   if (BIRDEYE_API_KEY) {
     const now = Math.floor(nowMs / 1000);
-    const timeFrom = now - 7 * 24 * 60 * 60;
+    const timeFrom = now - days * 24 * 60 * 60;
     try {
       const r = await axios.get('https://public-api.birdeye.so/defi/v3/ohlcv', {
         params: {
@@ -591,8 +611,12 @@ async function tokenOhlcHandler(req, res) {
         },
       });
       if (r.status === 200 && r.data?.data?.items?.length) {
-        const payload = { success: true, data: { items: r.data.data.items }, source: 'birdeye' };
-        ohlcCache = { data: payload, ts: nowMs, type: validType };
+        const payload = {
+          success: true,
+          data: { items: r.data.data.items, chartType: validType, chartDays: days },
+          source: 'birdeye',
+        };
+        ohlcCache = { data: payload, ts: nowMs, type: validType, days: days };
         return res.json(payload);
       }
     } catch (e) {
@@ -604,23 +628,23 @@ async function tokenOhlcHandler(req, res) {
     const poolAddress = await resolveGeckoPoolAddress();
     if (!poolAddress) {
       const payload = { success: false, data: { items: [] }, message: 'No pool found for chart' };
-      ohlcCache = { data: payload, ts: nowMs, type: validType };
+      ohlcCache = { data: payload, ts: nowMs, type: validType, days: days };
       return res.json(payload);
     }
-    const items = await fetchGeckoOhlc(poolAddress, validType);
+    const items = await fetchGeckoOhlc(poolAddress, validType, days);
     let chartItems = items;
     let chartType = validType;
-    if (chartItems.length < 12 && validType === '15m') {
-      const hourly = await fetchGeckoOhlc(poolAddress, '1h');
-      if (hourly.length > chartItems.length) {
-        chartItems = hourly;
-        chartType = '1h';
+    if (chartItems.length < 8 && validType !== '1d') {
+      const daily = await fetchGeckoOhlc(poolAddress, '1d', days);
+      if (daily.length >= chartItems.length) {
+        chartItems = daily;
+        chartType = '1d';
       }
     }
     const payload = chartItems.length
-      ? { success: true, data: { items: chartItems, chartType: chartType }, source: 'geckoterminal' }
+      ? { success: true, data: { items: chartItems, chartType: chartType, chartDays: days }, source: 'geckoterminal' }
       : { success: false, data: { items: [] }, message: 'No OHLC data available' };
-    ohlcCache = { data: payload, ts: nowMs, type: validType };
+    ohlcCache = { data: payload, ts: nowMs, type: validType, days: days };
     res.json(payload);
   } catch (e) {
     console.warn('GeckoTerminal OHLC failed', e.message);
