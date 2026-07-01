@@ -2279,10 +2279,13 @@ body.wallet-connected .btn--wallet .btn__icon {
   font-variant-numeric: tabular-nums;
 }
 .tokenomics__engagement-note {
-  margin: 0.75rem 0 0;
+  margin: 1rem 0 0;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--border);
   font-size: 0.78rem;
   color: var(--text-muted);
-  line-height: 1.4;
+  line-height: 1.45;
+  width: 100%;
 }
 .tokenomics__rewards-balance {
   margin-bottom: 1rem;
