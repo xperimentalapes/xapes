@@ -64,6 +64,9 @@ function copyDir(src, dest) {
   else if (name === 'index.html') {
     let html = fs.readFileSync(src, 'utf8');
     html = html.replace(/__SITE_URL__/g, siteUrl);
+    const cssPath = path.join(webDir, 'css', 'styles.css');
+    const cssVer = fs.existsSync(cssPath) ? Math.floor(fs.statSync(cssPath).mtimeMs) : Date.now();
+    html = html.replace(/href="css\/styles\.css"/, `href="css/styles.css?v=${cssVer}"`);
     fs.writeFileSync(dest, html);
   } else fs.copyFileSync(src, dest);
 });
