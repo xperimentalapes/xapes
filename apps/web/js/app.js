@@ -472,9 +472,9 @@
   function setWalletConnected(connected) {
     document.body.classList.toggle('wallet-connected', connected);
     var pk = getWalletPublicKey();
-    var label = connected && pk ? truncateWallet(pk) : 'Connect wallet';
+    var walletLabel = pk ? truncateWallet(pk) : null;
     document.querySelectorAll('#btn-connect-wallet, #btn-connect-wallet-mobile').forEach(function (btn) {
-      setBtnText(btn, label);
+      setBtnText(btn, walletLabel || btn.dataset.label || 'Connect');
     });
     if (typeof syncVerifyModalState === 'function') syncVerifyModalState();
   }
@@ -1238,14 +1238,14 @@
     var wrapMobile = document.getElementById('discord-connected-mobile');
     if (btnSidebar) {
       btnSidebar.hidden = !!connected;
-      setBtnText(btnSidebar, 'Connect Discord');
-      btnSidebar.title = 'Sign in with Discord';
+      setBtnText(btnSidebar, btnSidebar.dataset.label || 'Login');
+      btnSidebar.title = 'Login with Discord';
       btnSidebar.dataset.discordConnected = connected ? '1' : '0';
     }
     if (btnMobile) {
       btnMobile.hidden = !!connected;
-      setBtnText(btnMobile, 'Connect Discord');
-      btnMobile.title = 'Sign in with Discord';
+      setBtnText(btnMobile, btnMobile.dataset.label || 'Login');
+      btnMobile.title = 'Login with Discord';
       btnMobile.dataset.discordConnected = connected ? '1' : '0';
     }
     if (wrapSidebar) {

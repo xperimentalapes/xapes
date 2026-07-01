@@ -607,6 +607,11 @@ body {
   padding-top: 1rem;
   border-top: 1px solid var(--border);
 }
+.dashboard__account .btn--with-icon,
+.panel__actions .btn--with-icon {
+  justify-content: center;
+  text-align: center;
+}
 .dashboard__account .btn + .btn,
 .dashboard__account .dashboard__discord-wrap {
   margin-top: 0.5rem;
