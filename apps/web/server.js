@@ -579,7 +579,9 @@ async function fetchGeckoOhlc(poolAddress, type, days) {
       l: row[3],
       c: row[4],
     };
-  }).sort(function (a, b) { return a.unix_time - b.unix_time; });
+  }).sort(function (a, b) { return a.unix_time - b.unix_time; }).filter(function (item, idx, arr) {
+    return idx === 0 || item.unix_time !== arr[idx - 1].unix_time;
+  });
 }
 
 async function tokenOhlcHandler(req, res) {

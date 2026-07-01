@@ -1837,23 +1837,25 @@
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (data) {
         var items = (data && data.data && data.data.items) ? data.data.items : [];
-        var noChart = items.length === 0;
-        if (noChart) {
+        if (items.length === 0) {
           if (chartWrapEl) chartWrapEl.classList.add('tokenomics__chart-wrap--hidden');
           return;
         }
         if (chartWrapEl) chartWrapEl.classList.remove('tokenomics__chart-wrap--hidden');
+
         var chartLabelEl = document.getElementById('tokenomics-chart-label');
         var cfg = window.XAPES_CONFIG && window.XAPES_CONFIG.token ? window.XAPES_CONFIG.token : {};
         var tokenName = (cfg.name || cfg.symbol || 'Token').trim();
         if (chartLabelEl) chartLabelEl.textContent = tokenName + ' / USD';
 
+        var LWC = window.LightweightCharts;
+        if (!LWC) return;
+
         function toDailyTime(unixTime) {
           var d = new Date(Number(unixTime) * 1000);
-          var y = d.getUTCFullYear();
-          var m = String(d.getUTCMonth() + 1).padStart(2, '0');
-          var day = String(d.getUTCDate()).padStart(2, '0');
-          return y + '-' + m + '-' + day;
+          return d.getUTCFullYear() + '-'
+            + String(d.getUTCMonth() + 1).padStart(2, '0') + '-'
+            + String(d.getUTCDate()).padStart(2, '0');
         }
 
         function formatChartPrice(price) {
@@ -1863,58 +1865,65 @@
           return price.toExponential(2);
         }
 
-        var lineData = items.map(function (c) {
-          return {
-            time: toDailyTime(c.unix_time),
-            value: Number(c.c),
-          };
-        }).filter(function (p) { return p.time && isFinite(p.value); })
-          .sort(function (a, b) { return a.time < b.time ? -1 : a.time > b.time ? 1 : 0; });
-
-        if (typeof window.LightweightCharts === 'undefined' || lineData.length === 0) return;
-
-        chartEl.innerHTML = '';
-        var chartWidth = chartEl.clientWidth || chartEl.offsetWidth || 320;
-        var chart = window.LightweightCharts.createChart(chartEl, {
-          layout: { background: { color: 'transparent' }, textColor: '#8b8f9a' },
-          grid: { vertLines: { color: '#2a2d38' }, horzLines: { color: '#2a2d38' } },
-          width: chartWidth,
-          height: 260,
-          timeScale: { borderColor: '#2a2d38', timeVisible: true, secondsVisible: false },
-          rightPriceScale: {
-            borderColor: '#2a2d38',
-            scaleMargins: { top: 0.12, bottom: 0.1 },
-          },
-          localization: {
-            priceFormatter: formatChartPrice,
-          },
+        // Dedupe by day — duplicate timestamps break Lightweight Charts setData().
+        var candleByDay = {};
+        items.forEach(function (c) {
+          var time = toDailyTime(c.unix_time);
+          var open = Number(c.o);
+          var high = Number(c.h);
+          var low = Number(c.l);
+          var close = Number(c.c);
+          if (!time || !isFinite(close)) return;
+          if (!isFinite(open)) open = close;
+          if (!isFinite(high)) high = close;
+          if (!isFinite(low)) low = close;
+          candleByDay[time] = { time: time, open: open, high: high, low: low, close: close };
         });
+        var candleData = Object.keys(candleByDay).sort().map(function (k) { return candleByDay[k]; });
+        if (candleData.length === 0) return;
 
-        var priceFormat = {
-          type: 'custom',
-          formatter: formatChartPrice,
-          minMove: 0.0000000001,
-        };
-        var lineSeries;
-        if (typeof chart.addLineSeries === 'function') {
-          lineSeries = chart.addLineSeries({
-            color: '#14b8a6',
-            lineWidth: 2,
-            priceFormat: priceFormat,
+        function renderChart() {
+          chartEl.innerHTML = '';
+          var chartWidth = Math.max(chartEl.clientWidth || chartEl.offsetWidth || 320, 200);
+          var chart = LWC.createChart(chartEl, {
+            layout: { background: { color: 'transparent' }, textColor: '#8b8f9a' },
+            grid: { vertLines: { color: '#2a2d38' }, horzLines: { color: '#2a2d38' } },
+            width: chartWidth,
+            height: 260,
+            timeScale: { borderColor: '#2a2d38', timeVisible: true, secondsVisible: false },
+            rightPriceScale: {
+              borderColor: '#2a2d38',
+              scaleMargins: { top: 0.12, bottom: 0.1 },
+            },
+            localization: { priceFormatter: formatChartPrice },
           });
-        } else if (window.LightweightCharts.LineSeries) {
-          lineSeries = chart.addSeries(window.LightweightCharts.LineSeries, {
-            color: '#14b8a6',
-            lineWidth: 2,
-            priceFormat: priceFormat,
+
+          var seriesOptions = {
+            upColor: '#14b8a6',
+            downColor: '#f87171',
+            borderVisible: false,
+            wickUpColor: '#14b8a6',
+            wickDownColor: '#f87171',
+            priceFormat: { type: 'price', precision: 10, minMove: 0.0000000001 },
+          };
+
+          var series = null;
+          if (LWC.CandlestickSeries && typeof chart.addSeries === 'function') {
+            series = chart.addSeries(LWC.CandlestickSeries, seriesOptions);
+          } else if (typeof chart.addCandlestickSeries === 'function') {
+            series = chart.addCandlestickSeries(seriesOptions);
+          }
+          if (!series) return;
+
+          series.setData(candleData);
+          chart.timeScale().fitContent();
+          window.addEventListener('resize', function () {
+            chart.applyOptions({ width: Math.max(chartEl.clientWidth || chartWidth, 200) });
           });
         }
-        if (!lineSeries) return;
 
-        lineSeries.setData(lineData);
-        chart.timeScale().fitContent();
-        window.addEventListener('resize', function () {
-          chart.applyOptions({ width: chartEl.clientWidth || chartWidth });
+        requestAnimationFrame(function () {
+          requestAnimationFrame(renderChart);
         });
       })
       .catch(function () {
