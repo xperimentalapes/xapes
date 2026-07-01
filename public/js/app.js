@@ -154,6 +154,7 @@
       .then(function (data) {
         if (data && typeof data === 'object') {
           applyDiscordRewardsMetaFields(data);
+          applyEngagementTrackingWarning(data);
         } else {
           applyDiscordRewardsMetaFromConfigFallback();
         }
@@ -349,7 +350,7 @@
     updateXmaClaimButtonState();
   }
   applyProjectConfig();
-  loadDiscordRewardsMetaPublic();
+  refreshDiscordRewardsPanel();
 
   window.XAPES_UI = window.XAPES_UI || {};
   window.XAPES_UI.setDiscordRewardsUnclaimedXma = function (amount) {
@@ -392,7 +393,7 @@
     window.history.replaceState(null, '', '#' + id);
     setActiveSection(id);
     el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    if (id === 'xma' && document.body.classList.contains('discord-connected')) {
+    if (id === 'xma') {
       refreshDiscordRewardsPanel();
     }
     setTimeout(function () {
@@ -627,58 +628,113 @@
     return '0';
   }
 
+  function applyEngagementTrackingWarning(data) {
+    var el = document.getElementById('xma-engagement-tracking');
+    if (!el) return;
+    if (!data || data.engagementTrackingActive !== false) {
+      el.hidden = true;
+      el.textContent = '';
+      return;
+    }
+    var when = data.lastEngagementEventAt
+      ? new Date(data.lastEngagementEventAt).toLocaleString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+          hour: 'numeric',
+          minute: '2-digit',
+        })
+      : 'never';
+    el.textContent =
+      'Discord activity tracking looks offline (last event: ' + when + '). '
+      + 'Ask an admin to restart the ROYAL bot gateway on Railway so messages and reactions count again.';
+    el.hidden = false;
+  }
+
+  function applyDiscordRewardsStatusData(data) {
+    if (!data || typeof data !== 'object') return;
+    lastDiscordRewardsStatus = data;
+    if (typeof data.claimThresholdXma === 'number' && isFinite(data.claimThresholdXma)) {
+      serverClaimThresholdXma = data.claimThresholdXma;
+    }
+    rewardsTreasuryConfigured = data.rewardsTreasuryConfigured !== false;
+    var msgEl = document.getElementById('xma-eng-messages');
+    var rEl = document.getElementById('xma-eng-reactions');
+    var vEl = document.getElementById('xma-eng-voice');
+    if (msgEl) {
+      var mToday = data.messagesToday != null ? data.messagesToday : data.messages24h;
+      msgEl.textContent = String(mToday != null ? mToday : 0);
+    }
+    if (rEl) {
+      var rToday = data.reactionsToday != null ? data.reactionsToday : data.reactions24h;
+      rEl.textContent = String(rToday != null ? rToday : 0);
+    }
+    if (vEl) {
+      var vm = data.voiceMinutesToday != null ? data.voiceMinutesToday : data.voiceMinutes24h;
+      vEl.textContent =
+        vm != null && isFinite(Number(vm)) ? String(Number(Number(vm).toFixed(2))) : '0';
+    }
+    applyDiscordRewardsMetaFields(data);
+    applyEngagementTrackingWarning(data);
+    var pendingTodayEl = document.getElementById('xma-pending-today');
+    if (pendingTodayEl) {
+      pendingTodayEl.textContent = computeTodaysClaimDisplay(data);
+    }
+    var claimedTodayEl = document.getElementById('xma-claimed-today');
+    if (claimedTodayEl) {
+      claimedTodayEl.textContent = computeTodaysEstimateDisplay(data);
+    }
+    var engNoteEl = document.getElementById('xma-engagement-note');
+    if (engNoteEl) {
+      engNoteEl.textContent =
+        'Pending today is credited from engagement batches (~every 10 min). It becomes claimable after nightly settlement. Per-user cap: 100,000 XMA/day (ET). Messages need at least 10 characters; up to 5 qualifying per 15 minutes and 250 per 24 hours.';
+    }
+    if (window.XAPES_UI && typeof window.XAPES_UI.setDiscordRewardsUnclaimedXma === 'function') {
+      window.XAPES_UI.setDiscordRewardsUnclaimedXma(data.unclaimedXma);
+    }
+    updateXmaClaimButtonState();
+  }
+
   function refreshDiscordRewardsPanel() {
-    if (!document.body.classList.contains('discord-connected')) return;
-    fetch(window.location.origin + '/api/discord-rewards/status', { credentials: 'include' })
-      .then(function (res) {
-        if (res.status === 401) {
-          resetDiscordRewardsUI();
-          return null;
+    var metaPromise = fetch(window.location.origin + '/api/discord-rewards/meta', { credentials: 'omit' })
+      .then(function (res) { return res.ok ? res.json() : null; });
+    var statusPromise = document.body.classList.contains('discord-connected')
+      ? fetch(window.location.origin + '/api/discord-rewards/status', { credentials: 'include' })
+        .then(function (res) {
+          if (res.status === 401) {
+            resetDiscordRewardsUI();
+            return null;
+          }
+          if (!res.ok) return null;
+          return res.json();
+        })
+      : Promise.resolve(null);
+
+    Promise.all([metaPromise, statusPromise])
+      .then(function (results) {
+        var meta = results[0];
+        var status = results[1];
+        if (meta && typeof meta === 'object') {
+          applyDiscordRewardsMetaFields(meta);
         }
-        if (!res.ok) return null;
-        return res.json();
-      })
-      .then(function (data) {
-        if (!data || typeof data !== 'object') return;
-        lastDiscordRewardsStatus = data;
-        if (typeof data.claimThresholdXma === 'number' && isFinite(data.claimThresholdXma)) {
-          serverClaimThresholdXma = data.claimThresholdXma;
+        if (status && typeof status === 'object') {
+          applyDiscordRewardsStatusData(status);
+          return;
         }
-        rewardsTreasuryConfigured = data.rewardsTreasuryConfigured !== false;
-        var msgEl = document.getElementById('xma-eng-messages');
-        var rEl = document.getElementById('xma-eng-reactions');
-        var vEl = document.getElementById('xma-eng-voice');
-        if (msgEl) {
-          var mToday = data.messagesToday != null ? data.messagesToday : data.messages24h;
-          msgEl.textContent = String(mToday != null ? mToday : '—');
+        if (meta && typeof meta === 'object') {
+          applyEngagementTrackingWarning(meta);
+          if (!document.body.classList.contains('discord-connected')) {
+            var zeroData = Object.assign({}, meta, {
+              messagesToday: 0,
+              reactionsToday: 0,
+              voiceMinutesToday: 0,
+              pendingTodayXma: '0',
+              todaysClaimXma: '0',
+              unclaimedXma: '0',
+            });
+            applyDiscordRewardsStatusData(zeroData);
+          }
         }
-        if (rEl) {
-          var rToday = data.reactionsToday != null ? data.reactionsToday : data.reactions24h;
-          rEl.textContent = String(rToday != null ? rToday : '—');
-        }
-        if (vEl) {
-          var vm = data.voiceMinutesToday != null ? data.voiceMinutesToday : data.voiceMinutes24h;
-          vEl.textContent =
-            vm != null && isFinite(Number(vm)) ? String(Number(Number(vm).toFixed(2))) : String(vm != null ? vm : '—');
-        }
-        applyDiscordRewardsMetaFields(data);
-        var pendingTodayEl = document.getElementById('xma-pending-today');
-        if (pendingTodayEl) {
-          pendingTodayEl.textContent = computeTodaysClaimDisplay(data);
-        }
-        var claimedTodayEl = document.getElementById('xma-claimed-today');
-        if (claimedTodayEl) {
-          claimedTodayEl.textContent = computeTodaysEstimateDisplay(data);
-        }
-        var engNoteEl = document.getElementById('xma-engagement-note');
-        if (engNoteEl) {
-          engNoteEl.textContent =
-            'Pending today is credited from engagement batches (~every 10 min). It becomes claimable after nightly settlement. Per-user cap: 100,000 XMA/day (ET). Messages need at least 10 characters; up to 5 qualifying per 15 minutes and 250 per 24 hours.';
-        }
-        if (window.XAPES_UI && typeof window.XAPES_UI.setDiscordRewardsUnclaimedXma === 'function') {
-          window.XAPES_UI.setDiscordRewardsUnclaimedXma(data.unclaimedXma);
-        }
-        updateXmaClaimButtonState();
       })
       .catch(function () {});
   }
