@@ -1781,6 +1781,7 @@
 
   function formatUsd(val) {
     if (val == null || isNaN(val)) return '—';
+    if (val === 0) return '$0';
     if (val >= 1e9) return '$' + (val / 1e9).toFixed(2) + 'B';
     if (val >= 1e6) return '$' + (val / 1e6).toFixed(2) + 'M';
     if (val >= 1e3) return '$' + (val / 1e3).toFixed(2) + 'K';
@@ -1828,6 +1829,10 @@
         }
         if (chartWrapEl) chartWrapEl.classList.remove('tokenomics__chart-wrap--hidden');
         if (chartHintEl) chartHintEl.textContent = '';
+        var chartLabelEl = document.getElementById('tokenomics-chart-label');
+        if (chartLabelEl && data.data && data.data.chartType) {
+          chartLabelEl.textContent = 'TOKEN / USD — ' + data.data.chartType;
+        }
         var candlestickData = items.map(function (c) {
           return {
             time: c.unix_time,

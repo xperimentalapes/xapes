@@ -321,25 +321,142 @@ app.get('/api/discord/user/:id', async function (req, res) {
   }
 });
 
-// ——— Live prices (Jupiter): SOL + Blunana USD; cache 60s ———
+// ——— Live prices: Jupiter + Jupiter token stats + GeckoTerminal; cache 60s ———
 const SOL_MINT = 'So11111111111111111111111111111111111111112';
+const GECKO_BASE = 'https://api.geckoterminal.com/api/v2/networks/solana';
 let pricesCache = { data: null, ts: 0 };
 const PRICES_CACHE_MS = 60 * 1000;
+let geckoPoolCache = { address: null, ts: 0 };
+const GECKO_POOL_CACHE_MS = 10 * 60 * 1000;
+
+function numOrNull(val) {
+  if (val == null || val === '') return null;
+  const n = Number(val);
+  return Number.isFinite(n) ? n : null;
+}
+
+function applyMetric(out, key, val) {
+  const n = numOrNull(val);
+  if (out[key] == null && n != null) out[key] = n;
+}
 
 function parseJupiterPrices(data) {
-  const out = { solUsd: null, blunanaUsd: null, blunanaPerSol: null };
+  const out = { solUsd: null, blunanaUsd: null, blunanaPerSol: null, liquidityUsd: null };
   if (!data || typeof data !== 'object') return out;
   const d = typeof data.data === 'object' && data.data !== null ? data.data : data;
   const sol = d[SOL_MINT];
-  const blunana = d[BLUNA_TOKEN_MINT];
+  const token = d[BLUNA_TOKEN_MINT];
   const solP = sol?.price ?? sol?.usdPrice;
-  const bluP = blunana?.price ?? blunana?.usdPrice;
+  const tokenP = token?.price ?? token?.usdPrice;
   if (solP != null) out.solUsd = Number(solP);
-  if (bluP != null) {
-    out.blunanaUsd = Number(bluP);
+  if (tokenP != null) {
+    out.blunanaUsd = Number(tokenP);
     if (out.solUsd && out.solUsd > 0) out.blunanaPerSol = out.blunanaUsd / out.solUsd;
   }
+  if (token?.liquidity != null) out.liquidityUsd = numOrNull(token.liquidity);
   return out;
+}
+
+async function fetchJupiterTokenStats(mint) {
+  try {
+    const r = await axios.get('https://api.jup.ag/tokens/v2/search?query=' + encodeURIComponent(mint), {
+      timeout: 8000,
+      validateStatus: () => true,
+      headers: { Accept: 'application/json' },
+    });
+    if (r.status !== 200 || !Array.isArray(r.data) || r.data.length === 0) return null;
+    const t = r.data.find(function (row) { return row.id === mint; }) || r.data[0];
+    return {
+      priceUsd: t.usdPrice,
+      marketCapUsd: t.mcap,
+      fdvUsd: t.fdv,
+      liquidityUsd: t.liquidity,
+      priceChange24h: t.stats24h?.priceChange ?? t.priceChange24h ?? null,
+      volume24hUsd: t.stats24h?.volume ?? null,
+    };
+  } catch (e) {
+    console.warn('Jupiter token stats failed', e.message);
+    return null;
+  }
+}
+
+async function fetchGeckoTerminalStats(mint) {
+  try {
+    const tokenRes = await axios.get(GECKO_BASE + '/tokens/' + encodeURIComponent(mint), {
+      timeout: 8000,
+      validateStatus: () => true,
+      headers: { Accept: 'application/json' },
+    });
+    if (tokenRes.status !== 200 || !tokenRes.data?.data) return null;
+    const tokenAttrs = tokenRes.data.data.attributes || {};
+    const poolRel = tokenRes.data.data.relationships?.top_pools?.data?.[0]?.id;
+    let poolAttrs = null;
+    let poolAddress = null;
+    if (poolRel) {
+      poolAddress = String(poolRel).replace(/^solana_/, '');
+      const poolRes = await axios.get(GECKO_BASE + '/pools/' + encodeURIComponent(poolAddress), {
+        timeout: 8000,
+        validateStatus: () => true,
+        headers: { Accept: 'application/json' },
+      });
+      if (poolRes.status === 200 && poolRes.data?.data?.attributes) {
+        poolAttrs = poolRes.data.data.attributes;
+      }
+    }
+    if (poolAddress) {
+      geckoPoolCache = { address: poolAddress, ts: Date.now() };
+    }
+    const pc = poolAttrs?.price_change_percentage?.h24 ?? tokenAttrs.price_change_percentage?.h24;
+    return {
+      priceUsd: tokenAttrs.price_usd ?? poolAttrs?.base_token_price_usd,
+      marketCapUsd: tokenAttrs.market_cap_usd ?? poolAttrs?.market_cap_usd,
+      fdvUsd: tokenAttrs.fdv_usd ?? poolAttrs?.fdv_usd,
+      liquidityUsd: tokenAttrs.total_reserve_in_usd ?? poolAttrs?.reserve_in_usd,
+      volume24hUsd: poolAttrs?.volume_usd?.h24 ?? tokenAttrs.volume_usd?.h24,
+      priceChange24h: pc,
+      poolAddress: poolAddress,
+    };
+  } catch (e) {
+    console.warn('GeckoTerminal stats failed', e.message);
+    return null;
+  }
+}
+
+async function fetchDexScreenerStats(mint) {
+  try {
+    const dsRes = await axios.get(
+      'https://api.dexscreener.com/token-pairs/v1/solana/' + encodeURIComponent(mint),
+      { timeout: 6000, validateStatus: () => true, headers: { Accept: 'application/json' } }
+    );
+    if (dsRes.status !== 200 || !Array.isArray(dsRes.data) || dsRes.data.length === 0) return null;
+    const pairs = dsRes.data.filter(function (p) {
+      return p.priceUsd != null && p.priceUsd !== '' && (p.liquidity?.usd ?? 0) > 0;
+    });
+    const best = pairs.sort(function (a, b) { return (b.liquidity?.usd ?? 0) - (a.liquidity?.usd ?? 0); })[0];
+    if (!best) return null;
+    const pc = best.priceChange;
+    return {
+      priceUsd: best.priceUsd,
+      marketCapUsd: best.marketCap,
+      fdvUsd: best.fdv,
+      liquidityUsd: best.liquidity?.usd,
+      volume24hUsd: best.volume?.h24,
+      priceChange24h: pc != null && typeof pc.h24 === 'number' ? pc.h24 : null,
+    };
+  } catch (e) {
+    console.warn('DexScreener stats failed', e.message);
+    return null;
+  }
+}
+
+function mergeTokenStats(out, stats) {
+  if (!stats) return;
+  applyMetric(out, 'blunanaUsd', stats.priceUsd);
+  applyMetric(out, 'marketCapUsd', stats.marketCapUsd);
+  applyMetric(out, 'fdvUsd', stats.fdvUsd);
+  applyMetric(out, 'liquidityUsd', stats.liquidityUsd);
+  applyMetric(out, 'volume24hUsd', stats.volume24hUsd);
+  applyMetric(out, 'priceChange24h', stats.priceChange24h);
 }
 
 app.get('/api/prices', async function (req, res) {
@@ -347,7 +464,16 @@ app.get('/api/prices', async function (req, res) {
   if (pricesCache.data && now - pricesCache.ts < PRICES_CACHE_MS) {
     return res.json(pricesCache.data);
   }
-  const out = { solUsd: null, blunanaUsd: null, blunanaPerSol: null };
+  const out = {
+    solUsd: null,
+    blunanaUsd: null,
+    blunanaPerSol: null,
+    marketCapUsd: null,
+    fdvUsd: null,
+    liquidityUsd: null,
+    volume24hUsd: null,
+    priceChange24h: null,
+  };
   const ids = [SOL_MINT, BLUNA_TOKEN_MINT].join(',');
   const urls = [
     'https://api.jup.ag/price/v3?ids=' + encodeURIComponent(ids),
@@ -365,110 +491,139 @@ app.get('/api/prices', async function (req, res) {
         if (parsed.solUsd != null) out.solUsd = parsed.solUsd;
         if (parsed.blunanaUsd != null) out.blunanaUsd = parsed.blunanaUsd;
         if (parsed.blunanaPerSol != null) out.blunanaPerSol = parsed.blunanaPerSol;
+        if (parsed.liquidityUsd != null) out.liquidityUsd = parsed.liquidityUsd;
         if (out.blunanaUsd != null) break;
       }
     } catch (e) {
       console.warn('Prices fetch failed', url, e.message);
     }
   }
-  // Fallback: DexScreener token-pairs if Jupiter didn't return Blunana price
-  if (out.blunanaUsd == null) {
-    try {
-      const dsRes = await axios.get(
-        'https://api.dexscreener.com/token-pairs/v1/solana/' + encodeURIComponent(BLUNA_TOKEN_MINT),
-        { timeout: 6000, validateStatus: () => true, headers: { Accept: 'application/json' } }
-      );
-      if (dsRes.status === 200 && Array.isArray(dsRes.data) && dsRes.data.length > 0) {
-        const priceUsd = dsRes.data[0].priceUsd;
-        if (priceUsd != null && priceUsd !== '') {
-          out.blunanaUsd = Number(priceUsd);
-          if (out.solUsd != null && out.solUsd > 0) out.blunanaPerSol = out.blunanaUsd / out.solUsd;
-        }
-      }
-    } catch (e) {
-      console.warn('DexScreener fallback failed', e.message);
-    }
-  }
+
+  mergeTokenStats(out, await fetchJupiterTokenStats(BLUNA_TOKEN_MINT));
+  mergeTokenStats(out, await fetchDexScreenerStats(BLUNA_TOKEN_MINT));
+  mergeTokenStats(out, await fetchGeckoTerminalStats(BLUNA_TOKEN_MINT));
+
+  if (out.marketCapUsd == null && out.fdvUsd != null) out.marketCapUsd = out.fdvUsd;
   if (out.solUsd != null && out.blunanaUsd != null && out.blunanaPerSol == null && out.solUsd > 0) {
     out.blunanaPerSol = out.blunanaUsd / out.solUsd;
   }
-  // Enrich with DexScreener: 24h change, liquidity, volume, market cap (DEXTools-style)
-  try {
-    const dsRes = await axios.get(
-      'https://api.dexscreener.com/token-pairs/v1/solana/' + encodeURIComponent(BLUNA_TOKEN_MINT),
-      { timeout: 6000, validateStatus: () => true, headers: { Accept: 'application/json' } }
-    );
-    if (dsRes.status === 200 && Array.isArray(dsRes.data) && dsRes.data.length > 0) {
-      const pairs = dsRes.data.filter(function (p) {
-        return p.priceUsd != null && p.priceUsd !== '' && (p.liquidity?.usd ?? 0) > 0;
-      });
-      const best = pairs.sort(function (a, b) { return (b.liquidity?.usd ?? 0) - (a.liquidity?.usd ?? 0); })[0];
-      if (best) {
-        if (out.blunanaUsd == null && best.priceUsd != null) {
-          out.blunanaUsd = Number(best.priceUsd);
-          if (out.solUsd != null && out.solUsd > 0) out.blunanaPerSol = out.blunanaUsd / out.solUsd;
-        }
-        const pc = best.priceChange;
-        if (pc != null && typeof pc.h24 === 'number') out.priceChange24h = pc.h24;
-        if (best.liquidity?.usd != null) out.liquidityUsd = Number(best.liquidity.usd);
-        if (best.volume?.h24 != null) out.volume24hUsd = Number(best.volume.h24);
-        if (best.marketCap != null) out.marketCapUsd = Number(best.marketCap);
-        if (best.fdv != null) out.fdvUsd = Number(best.fdv);
-      }
-    }
-  } catch (e) {
-    console.warn('DexScreener enrichment failed', e.message);
-  }
+
   pricesCache = { data: out, ts: now };
   res.json(out);
 });
 
-// ——— Token OHLC (Birdeye, XMA mint); optional BIRDEYE_API_KEY ———
+// ——— Token OHLC: Birdeye (optional key) with GeckoTerminal fallback ———
 const BIRDEYE_API_KEY = process.env.BIRDEYE_API_KEY;
 const OHLC_CACHE_MS = 2 * 60 * 1000;
-let ohlcCache = { data: null, ts: 0 };
+let ohlcCache = { data: null, ts: 0, type: null };
+
+const GECKO_OHLC = {
+  '1m': { timeframe: 'minute', aggregate: 1 },
+  '3m': { timeframe: 'minute', aggregate: 3 },
+  '5m': { timeframe: 'minute', aggregate: 5 },
+  '15m': { timeframe: 'minute', aggregate: 15 },
+  '30m': { timeframe: 'minute', aggregate: 30 },
+  '1h': { timeframe: 'hour', aggregate: 1 },
+  '2h': { timeframe: 'hour', aggregate: 2 },
+  '4h': { timeframe: 'hour', aggregate: 4 },
+  '6h': { timeframe: 'hour', aggregate: 6 },
+  '8h': { timeframe: 'hour', aggregate: 8 },
+  '12h': { timeframe: 'hour', aggregate: 12 },
+  '1d': { timeframe: 'day', aggregate: 1 },
+};
+
+async function resolveGeckoPoolAddress() {
+  if (geckoPoolCache.address && Date.now() - geckoPoolCache.ts < GECKO_POOL_CACHE_MS) {
+    return geckoPoolCache.address;
+  }
+  const stats = await fetchGeckoTerminalStats(BLUNA_TOKEN_MINT);
+  return stats?.poolAddress || geckoPoolCache.address || null;
+}
+
+async function fetchGeckoOhlc(poolAddress, type) {
+  const cfg = GECKO_OHLC[type] || GECKO_OHLC['15m'];
+  const url = GECKO_BASE + '/pools/' + encodeURIComponent(poolAddress)
+    + '/ohlcv/' + cfg.timeframe + '?aggregate=' + cfg.aggregate + '&limit=200';
+  const r = await axios.get(url, {
+    timeout: 10000,
+    validateStatus: () => true,
+    headers: { Accept: 'application/json' },
+  });
+  if (r.status !== 200) return [];
+  const list = r.data?.data?.attributes?.ohlcv_list;
+  if (!Array.isArray(list)) return [];
+  return list.map(function (row) {
+    return {
+      unix_time: row[0],
+      o: row[1],
+      h: row[2],
+      l: row[3],
+      c: row[4],
+    };
+  }).sort(function (a, b) { return a.unix_time - b.unix_time; });
+}
 
 async function tokenOhlcHandler(req, res) {
   const type = (req.query.type || '15m').toLowerCase().replace(/\s/g, '');
-  const validType = ['1m', '3m', '5m', '15m', '30m', '1h', '2h', '4h', '6h', '8h', '12h', '1d'].includes(type) ? type : '15m';
-  if (!BIRDEYE_API_KEY) {
-    return res.json({ success: false, data: { items: [] }, message: 'Chart requires BIRDEYE_API_KEY in server .env' });
-  }
-  const now = Math.floor(Date.now() / 1000);
-  const cacheKey = validType;
-  if (ohlcCache.data && ohlcCache.type === cacheKey && now * 1000 - ohlcCache.ts < OHLC_CACHE_MS) {
+  const validType = Object.prototype.hasOwnProperty.call(GECKO_OHLC, type) ? type : '15m';
+  const nowMs = Date.now();
+  if (ohlcCache.data && ohlcCache.type === validType && nowMs - ohlcCache.ts < OHLC_CACHE_MS) {
     return res.json(ohlcCache.data);
   }
-  const timeTo = now;
-  const timeFrom = now - 7 * 24 * 60 * 60;
-  try {
-    const r = await axios.get(
-      'https://public-api.birdeye.so/defi/v3/ohlcv',
-      {
+
+  if (BIRDEYE_API_KEY) {
+    const now = Math.floor(nowMs / 1000);
+    const timeFrom = now - 7 * 24 * 60 * 60;
+    try {
+      const r = await axios.get('https://public-api.birdeye.so/defi/v3/ohlcv', {
         params: {
           address: BLUNA_TOKEN_MINT,
           type: validType,
           time_from: timeFrom,
-          time_to: timeTo,
+          time_to: now,
           currency: 'usd',
         },
         timeout: 10000,
         validateStatus: () => true,
         headers: {
           'X-API-KEY': BIRDEYE_API_KEY,
-          'Accept': 'application/json',
+          Accept: 'application/json',
         },
+      });
+      if (r.status === 200 && r.data?.data?.items?.length) {
+        const payload = { success: true, data: { items: r.data.data.items }, source: 'birdeye' };
+        ohlcCache = { data: payload, ts: nowMs, type: validType };
+        return res.json(payload);
       }
-    );
-    if (r.status !== 200 || !r.data?.data?.items) {
-      ohlcCache = { data: { success: false, data: { items: [] } }, ts: Date.now(), type: cacheKey };
-      return res.json(ohlcCache.data);
+    } catch (e) {
+      console.warn('Birdeye OHLC failed', e.message);
     }
-    const payload = { success: true, data: { items: r.data.data.items } };
-    ohlcCache = { data: payload, ts: Date.now(), type: cacheKey };
+  }
+
+  try {
+    const poolAddress = await resolveGeckoPoolAddress();
+    if (!poolAddress) {
+      const payload = { success: false, data: { items: [] }, message: 'No pool found for chart' };
+      ohlcCache = { data: payload, ts: nowMs, type: validType };
+      return res.json(payload);
+    }
+    const items = await fetchGeckoOhlc(poolAddress, validType);
+    let chartItems = items;
+    let chartType = validType;
+    if (chartItems.length < 12 && validType === '15m') {
+      const hourly = await fetchGeckoOhlc(poolAddress, '1h');
+      if (hourly.length > chartItems.length) {
+        chartItems = hourly;
+        chartType = '1h';
+      }
+    }
+    const payload = chartItems.length
+      ? { success: true, data: { items: chartItems, chartType: chartType }, source: 'geckoterminal' }
+      : { success: false, data: { items: [] }, message: 'No OHLC data available' };
+    ohlcCache = { data: payload, ts: nowMs, type: validType };
     res.json(payload);
   } catch (e) {
-    console.warn('Birdeye OHLC failed', e.message);
+    console.warn('GeckoTerminal OHLC failed', e.message);
     res.json({ success: false, data: { items: [] }, message: e.message || 'OHLC fetch failed' });
   }
 }
