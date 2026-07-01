@@ -1616,7 +1616,7 @@
       return '$' + n.toFixed(4);
     }
     function getKnownHolderAccount(wallet) {
-      var accounts = (cfg && cfg.knownHolderAccounts) || [];
+      var accounts = (CONFIG && CONFIG.knownHolderAccounts) || [];
       var w = String(wallet || '');
       for (var i = 0; i < accounts.length; i++) {
         var acc = accounts[i];
@@ -1630,19 +1630,7 @@
       }
       return null;
     }
-    function loadHolders(sort) {
-      sort = sort || 'total';
-      var table = document.getElementById('holders-table');
-      if (table) table.className = 'holders-table holders-table--sort-' + sort;
-      holdersTbody.innerHTML = '<tr><td colspan="5" class="holders-loading">Loading…</td></tr>';
-      Promise.all([
-        fetch(window.location.origin + '/api/holders?sort=' + encodeURIComponent(sort), { credentials: 'include' }).then(function (r) { return r.ok ? r.json() : null; }),
-        fetch(window.location.origin + '/api/prices', { credentials: 'include' }).then(function (r) { return r.ok ? r.json() : null; }),
-        fetchCollectionsData(),
-      ]).then(function (arr) {
-        var data = arr[0];
-        var prices = arr[1] || {};
-        var collectionsData = arr[2];
+    function renderHoldersTable(data, prices, collectionsData, sort) {
         var blunanaUsd = prices.blunanaUsd;
         var solUsd = prices.solUsd;
         var floorByIndex = [];
@@ -1741,6 +1729,22 @@
             '</tr>';
         });
         holdersTbody.innerHTML = rows.length ? rows.join('') : '<tr><td colspan="5" class="holders-empty">No holders</td></tr>';
+    }
+    function loadHolders(sort) {
+      sort = sort || 'total';
+      var table = document.getElementById('holders-table');
+      if (table) table.className = 'holders-table holders-table--sort-' + sort;
+      holdersTbody.innerHTML = '<tr><td colspan="5" class="holders-loading">Loading…</td></tr>';
+      Promise.all([
+        fetch(window.location.origin + '/api/holders?sort=' + encodeURIComponent(sort), { credentials: 'include' }).then(function (r) { return r.ok ? r.json() : null; }),
+        fetch(window.location.origin + '/api/prices', { credentials: 'include' }).then(function (r) { return r.ok ? r.json() : null; }),
+      ]).then(function (arr) {
+        var data = arr[0];
+        var prices = arr[1] || {};
+        renderHoldersTable(data, prices, null, sort);
+        fetchCollectionsData().then(function (collectionsData) {
+          if (collectionsData) renderHoldersTable(data, prices, collectionsData, sort);
+        });
       }).catch(function () {
         holdersTbody.innerHTML = '<tr><td colspan="5" class="holders-empty">Failed to load</td></tr>';
       });
