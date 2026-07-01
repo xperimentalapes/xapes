@@ -444,17 +444,19 @@ body {
 }
 
 .casino-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 28px;
-    max-width: 760px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    width: 100%;
+    max-width: 920px;
     margin: 0 auto;
 }
 
 .casino-game-btn {
+    width: 100%;
     justify-content: flex-start;
     text-align: left;
-    padding: 28px 28px;
+    padding: 28px 32px;
     font-size: 24px;
     gap: 26px;
 }
@@ -512,9 +514,6 @@ body {
     }
     .casino-title-icon {
         height: 1.5em;
-    }
-    .casino-grid {
-        grid-template-columns: 1fr;
     }
 }
 
