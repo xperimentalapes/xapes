@@ -150,6 +150,7 @@
         renderChipStacks();
         updateUndoButton();
         updateReplaceButton();
+        updateRouletteButtonStates();
     }
 
     function undoLastBet() {
@@ -164,6 +165,7 @@
         renderChipStacks();
         updateUndoButton();
         updateReplaceButton();
+        updateRouletteButtonStates();
     }
 
     function updateUndoButton() {
@@ -204,6 +206,7 @@
         renderChipStacks();
         updateUndoButton();
         updateReplaceButton();
+        updateRouletteButtonStates();
     }
 
     function replaceChips() {
@@ -221,6 +224,7 @@
         renderChipStacks();
         updateUndoButton();
         updateReplaceButton();
+        updateRouletteButtonStates();
     }
 
     function copyBets(src) {
@@ -506,10 +510,10 @@
             buyBtn.disabled = !wallet || isCollecting || chipBalance > 0;
         }
         if (spinBtn) {
-            spinBtn.disabled = !wallet || getTotalStaked() < 1 || chipBalance <= 0 || spinInProgress || isCollecting;
+            spinBtn.disabled = !wallet || getTotalStaked() < 1 || spinInProgress || isCollecting;
         }
         if (collectBtn) {
-            collectBtn.disabled = !wallet || chipBalance <= 0 || isCollecting;
+            collectBtn.disabled = !wallet || chipBalance <= 0 || getTotalStaked() > 0 || isCollecting;
         }
     }
 
