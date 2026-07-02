@@ -873,6 +873,12 @@
     outline: none;
     border-color: var(--primary-color);
 }
+.roulette-input-hint {
+    font-size: 9px;
+    line-height: 1.2;
+    color: var(--text-secondary);
+    opacity: 0.85;
+}
 
 /* Controls - bottom row: BUY CHIPS, COLLECT, SPIN - full width */
 .roulette-controls {

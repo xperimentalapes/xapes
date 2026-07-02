@@ -20,6 +20,8 @@
     var FEE_PARTNER_LAMPORTS = 800000;     // 0.0008 SOL -> partner
     var FEE_PARTNER_WALLET = '3WNHW6sr1sQdbRjovhPrxgEJdWASZ43egGWMMNrhgoRR';
     var MAX_CHIPS_PER_PURCHASE = 50000;
+    var MAX_PURCHASE_XMA = 2000000;
+    var DEFAULT_CHIPS_TO_BUY = 10;
 
     var wallet = null;
     var connection = null;
@@ -40,6 +42,43 @@
     var last10Results = [];
     var spinInProgress = false;
     var userClickedChipYet = false;
+
+    function getMaxChipsForCost(cost) {
+        cost = Math.floor(Number(cost) || 0);
+        if (cost <= 0) return 1;
+        return Math.max(1, Math.min(MAX_CHIPS_PER_PURCHASE, Math.floor(MAX_PURCHASE_XMA / cost)));
+    }
+
+    function updateChipPurchaseLimits() {
+        var costEl = document.getElementById('roulette-cost-per-chip');
+        var numEl = document.getElementById('roulette-num-chips');
+        if (!numEl) return;
+        var cost = parseFloat(costEl && costEl.value ? costEl.value : 0);
+        var maxChips = getMaxChipsForCost(cost);
+        numEl.max = String(maxChips);
+        numEl.min = '1';
+        numEl.placeholder = 'Max ' + maxChips;
+        var current = parseInt(numEl.value, 10);
+        if (!current || current < 1) {
+            numEl.value = String(Math.min(DEFAULT_CHIPS_TO_BUY, maxChips));
+        } else if (current > maxChips) {
+            numEl.value = String(maxChips);
+        }
+        var hint = document.getElementById('roulette-num-chips-hint');
+        if (hint) {
+            hint.textContent = maxChips === 1
+                ? '2M XMA limit — 1 chip max at this tier'
+                : '2M XMA limit — max ' + maxChips + ' chips at this tier';
+        }
+    }
+
+    function bindChipPurchaseControls() {
+        var costEl = document.getElementById('roulette-cost-per-chip');
+        if (costEl) {
+            costEl.addEventListener('change', updateChipPurchaseLimits);
+        }
+        updateChipPurchaseLimits();
+    }
 
     function getBgColor(num) {
         if (num === 0 || num === '00') return '#0d7d3a';
@@ -695,7 +734,10 @@
         var costEl = document.getElementById('roulette-cost-per-chip');
         var numEl = document.getElementById('roulette-num-chips');
         var cost = parseFloat(costEl && costEl.value ? costEl.value : 0);
-        var num = Math.min(parseInt(numEl && numEl.value ? numEl.value : 2500, 10), MAX_CHIPS_PER_PURCHASE);
+        var num = Math.min(
+            parseInt(numEl && numEl.value ? numEl.value : DEFAULT_CHIPS_TO_BUY, 10),
+            getMaxChipsForCost(cost)
+        );
         if (!cost || cost <= 0 || !num || num <= 0) {
             alert('Please enter valid cost per chip and number of chips');
             return;
@@ -704,8 +746,17 @@
             alert('Please choose a valid buy-in tier.');
             return;
         }
+        var maxChips = getMaxChipsForCost(cost);
+        if (num > maxChips) {
+            alert('Maximum ' + maxChips + ' chips at ' + cost.toLocaleString() + ' XMA each (2M XMA purchase limit).');
+            return;
+        }
         cost = Math.floor(cost);
         var total = cost * num;
+        if (total > MAX_PURCHASE_XMA) {
+            alert('Maximum purchase is ' + MAX_PURCHASE_XMA.toLocaleString() + ' XMA.');
+            return;
+        }
         if (xmaBalance < total) {
             alert('Insufficient balance. You need ' + total + ' XMA but only have ' + xmaBalance.toFixed(2) + ' XMA');
             return;
@@ -856,6 +907,7 @@
                     document.getElementById('roulette-cost-per-chip'),
                     CasinoBuyTiers.getDefaultXma()
                 );
+                updateChipPurchaseLimits();
             }
             showThree(0);
             updateChipUI();
@@ -864,6 +916,7 @@
             updateReplaceButton();
             renderChipStacks();
             updatePopups();
+            bindChipPurchaseControls();
             bindChipSelector();
             bindTableClicks();
             bindSpinButton();
