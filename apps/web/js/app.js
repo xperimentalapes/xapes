@@ -502,13 +502,12 @@
       setBtnText(btn, walletLabel || btn.dataset.label || 'Connect');
     });
     if (!connected) {
-      try {
-        localStorage.removeItem('xapes_verified_wallet');
-      } catch (_) {}
       hasVerifiedThisSession = false;
       setHolderVerifiedUI(false);
       hideHoldings();
     } else {
+      var pk = getWalletPublicKey();
+      if (pk && window.XAPES_WALLET) window.XAPES_WALLET.saveWalletAddress(pk);
       refreshHolderVerifiedState();
     }
     if (typeof syncVerifyModalState === 'function') syncVerifyModalState();
@@ -816,6 +815,8 @@
   function connectWithProvider(provider) {
     return provider.connect({ onlyIfTrusted: false })
       .then(function () {
+        var pk = getWalletPublicKey();
+        if (pk && window.XAPES_WALLET) window.XAPES_WALLET.saveWalletAddress(pk);
         setWalletConnected(true);
         hideHoldings();
         postHolderLinkWallet();
@@ -886,6 +887,7 @@
       if (w.provider && typeof w.provider.on === 'function') {
         w.provider.on('accountChanged', function (pk) {
           if (pk) {
+            if (window.XAPES_WALLET) window.XAPES_WALLET.saveWalletAddress(pk.toString());
             setWalletConnected(true);
             postHolderLinkWallet();
           } else setWalletConnected(false);
@@ -893,7 +895,6 @@
         });
       }
     });
-    if (getWalletPublicKey()) setWalletConnected(true);
   })();
 
   document.getElementById('btn-connect-wallet')?.addEventListener('click', connectWallet);
@@ -1064,8 +1065,21 @@
   }
 
   function refreshHolderVerifiedState() {
+    if (!isDiscordConnected()) {
+      setHolderVerifiedUI(false);
+      return Promise.resolve(false);
+    }
     var wallet = getWalletPublicKey();
-    if (!isDiscordConnected() || !wallet) {
+    var walletHint = wallet;
+    if (!walletHint) {
+      try {
+        walletHint = localStorage.getItem('xapes_verified_wallet');
+        if (!walletHint && window.XAPES_WALLET) {
+          walletHint = window.XAPES_WALLET.getSavedWalletAddress();
+        }
+      } catch (_) {}
+    }
+    if (!walletHint) {
       setHolderVerifiedUI(false);
       return Promise.resolve(false);
     }
@@ -1074,21 +1088,25 @@
         return res.ok ? res.json() : null;
       })
       .then(function (data) {
+        var linkedWallets =
+          data && Array.isArray(data.linkedWallets) ? data.linkedWallets : [];
         var linked =
-          !!(data && Array.isArray(data.linkedWallets) && data.linkedWallets.indexOf(wallet) >= 0);
+          linkedWallets.indexOf(walletHint) >= 0 ||
+          (wallet && linkedWallets.indexOf(wallet) >= 0);
         var stored = false;
         try {
-          stored = localStorage.getItem('xapes_verified_wallet') === wallet;
+          stored = localStorage.getItem('xapes_verified_wallet') === walletHint;
         } catch (_) {}
         var verified = linked || stored || hasVerifiedThisSession;
         if (verified) {
           setHolderVerifiedUI(true);
           if (linked) {
             try {
-              localStorage.setItem('xapes_verified_wallet', wallet);
+              localStorage.setItem('xapes_verified_wallet', walletHint);
             } catch (_) {}
           }
-          return fetchVerifyHoldings(wallet).then(function (h) {
+          var holdingsWallet = wallet || walletHint;
+          return fetchVerifyHoldings(holdingsWallet).then(function (h) {
             if (h) showHoldings(h);
             return true;
           });
@@ -1101,6 +1119,15 @@
           setHolderVerifiedUI(true);
           return true;
         }
+        try {
+          if (localStorage.getItem('xapes_verified_wallet') === walletHint) {
+            setHolderVerifiedUI(true);
+            return fetchVerifyHoldings(walletHint).then(function (h) {
+              if (h) showHoldings(h);
+              return true;
+            });
+          }
+        } catch (_) {}
         setHolderVerifiedUI(false);
         return false;
       });
@@ -1729,18 +1756,26 @@
       headers: { 'Content-Type': 'application/json' },
     })
       .then(function () {
-        try {
-          localStorage.removeItem('xapes_verified_wallet');
-        } catch (_) {}
+        if (window.XAPES_WALLET && window.XAPES_WALLET.clearWalletSession) {
+          window.XAPES_WALLET.clearWalletSession();
+        } else {
+          try {
+            localStorage.removeItem('xapes_verified_wallet');
+          } catch (_) {}
+        }
         hasVerifiedThisSession = false;
         setHolderVerifiedUI(false);
         hideHoldings();
         setDiscordUI(false);
       })
       .catch(function () {
-        try {
-          localStorage.removeItem('xapes_verified_wallet');
-        } catch (_) {}
+        if (window.XAPES_WALLET && window.XAPES_WALLET.clearWalletSession) {
+          window.XAPES_WALLET.clearWalletSession();
+        } else {
+          try {
+            localStorage.removeItem('xapes_verified_wallet');
+          } catch (_) {}
+        }
         hasVerifiedThisSession = false;
         setHolderVerifiedUI(false);
         hideHoldings();
@@ -1832,17 +1867,34 @@
         window.history.replaceState(null, '', cleanUrl);
       }
     }
+    function bootSession() {
+      var restore =
+        window.XAPES_WALLET && window.XAPES_WALLET.restoreTrustedConnection
+          ? window.XAPES_WALLET.restoreTrustedConnection()
+          : Promise.resolve(null);
+      return restore.then(function (result) {
+        if (result && result.address) {
+          setWalletConnected(true);
+          postHolderLinkWallet();
+        } else if (getWalletPublicKey()) {
+          setWalletConnected(true);
+        }
+      });
+    }
     fetchDiscordMe().then(function (user) {
       if (discordParam === 'connected' && !user) {
         setTimeout(function () {
           fetchDiscordMe().then(function () {
-            refreshHolderVerifiedState();
-            done();
-          });
+            return bootSession();
+          }).then(function () {
+            return refreshHolderVerifiedState();
+          }).then(done);
         }, 600);
         return;
       }
-      refreshHolderVerifiedState().then(done);
+      return bootSession().then(function () {
+        return refreshHolderVerifiedState();
+      }).then(done);
     }).catch(function () {
       done();
     });

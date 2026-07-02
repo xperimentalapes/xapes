@@ -256,89 +256,48 @@ async function setupWalletConnection() {
         (window.solana.isPhantom || typeof window.solana.connect === 'function');
     
     if (isPhantomInstalled) {
-        // Check if already connected
-        try {
-            if (window.solana.isConnected) {
-                const resp = await window.solana.connect({ onlyIfTrusted: true });
-                if (resp) {
-                    wallet = resp.publicKey.toString();
-                    walletAddress.textContent = `${wallet.slice(0, 4)}...${wallet.slice(-4)}`;
-                    connectContainer.style.display = 'none';
-                    walletInfo.style.display = 'flex';
-                    
-                    // Initialize connection
-                    const rpcUrl = window.CasinoAuth && window.CasinoAuth.getGameRpcUrl
-                        ? window.CasinoAuth.getGameRpcUrl()
-                        : 'https://api.mainnet-beta.solana.com';
-                    if (typeof window.solanaWeb3 !== 'undefined') {
-                        connection = new window.solanaWeb3.Connection(rpcUrl, 'confirmed');
-                    } else if (typeof solanaWeb3 !== 'undefined') {
-                        connection = new solanaWeb3.Connection(rpcUrl, 'confirmed');
-                    }
-                    
-                    await updateBalance();
-                    await loadPlayerData(); // Load saved player data from database
-                    if (window.CasinoAuth && window.CasinoAuth.warmPlaySession) {
-                        CasinoAuth.warmPlaySession(wallet);
-                    }
-                    updateButtonStates();
-                }
+        async function applyConnectedAddress(addr) {
+            wallet = addr;
+            walletAddress.textContent = `${wallet.slice(0, 4)}...${wallet.slice(-4)}`;
+            connectContainer.style.display = 'none';
+            walletInfo.style.display = 'flex';
+            if (window.XAPES_WALLET) window.XAPES_WALLET.saveWalletAddress(addr);
+
+            const rpcUrl = window.CasinoAuth && window.CasinoAuth.getGameRpcUrl
+                ? window.CasinoAuth.getGameRpcUrl()
+                : 'https://api.mainnet-beta.solana.com';
+            if (typeof window.solanaWeb3 !== 'undefined') {
+                connection = new window.solanaWeb3.Connection(rpcUrl, 'confirmed');
+            } else if (typeof solanaWeb3 !== 'undefined') {
+                connection = new solanaWeb3.Connection(rpcUrl, 'confirmed');
             }
-        } catch (err) {
-            // Not connected, that's fine - user will click connect button
-            console.log('Wallet not auto-connected:', err.message);
+
+            await updateBalance();
+            await loadPlayerData();
+            if (window.CasinoAuth && window.CasinoAuth.warmPlaySession) {
+                CasinoAuth.warmPlaySession(wallet);
+            }
+            updateButtonStates();
         }
+
+        const restore = window.XAPES_WALLET && window.XAPES_WALLET.restoreTrustedConnection
+            ? window.XAPES_WALLET.restoreTrustedConnection()
+            : Promise.resolve(null);
+        restore.then(function (result) {
+            if (result && result.address) {
+                applyConnectedAddress(result.address).catch(function (err) {
+                    console.log('Wallet auto-restore follow-up failed:', err.message);
+                });
+            }
+        }).catch(function () {});
         
         connectBtn.addEventListener('click', async () => {
             try {
-                // Request connection with explicit options
                 const resp = await window.solana.connect({
                     onlyIfTrusted: false
                 });
                 
-                wallet = resp.publicKey.toString();
-                walletAddress.textContent = `${wallet.slice(0, 4)}...${wallet.slice(-4)}`;
-                connectContainer.style.display = 'none';
-                walletInfo.style.display = 'flex';
-                
-                // Initialize connection using solanaWeb3 from the loaded script
-                // Use Helius RPC endpoint (dedicated service, no rate limits)
-                const rpcUrl = window.CasinoAuth && window.CasinoAuth.getGameRpcUrl
-                    ? window.CasinoAuth.getGameRpcUrl()
-                    : 'https://api.mainnet-beta.solana.com';
-                
-                if (typeof window.solanaWeb3 !== 'undefined') {
-                    connection = new window.solanaWeb3.Connection(
-                        rpcUrl,
-                        'confirmed',
-                        {
-                            commitment: 'confirmed',
-                            disableRetryOnRateLimit: false,
-                            httpHeaders: {
-                                'Content-Type': 'application/json'
-                            }
-                        }
-                    );
-                } else if (typeof solanaWeb3 !== 'undefined') {
-                    connection = new solanaWeb3.Connection(
-                        rpcUrl,
-                        'confirmed',
-                        {
-                            commitment: 'confirmed',
-                            disableRetryOnRateLimit: false,
-                            httpHeaders: {
-                                'Content-Type': 'application/json'
-                            }
-                        }
-                    );
-                }
-                
-                await updateBalance();
-                await loadPlayerData(); // Load saved player data from database
-                if (window.CasinoAuth && window.CasinoAuth.warmPlaySession) {
-                    CasinoAuth.warmPlaySession(wallet);
-                }
-                updateButtonStates();
+                await applyConnectedAddress(resp.publicKey.toString());
             } catch (err) {
                 console.error('Wallet connection error:', err);
                 // Don't show alert for user rejection
@@ -353,6 +312,9 @@ async function setupWalletConnection() {
         disconnectBtn.addEventListener('click', async () => {
             if (window.CasinoAuth && window.CasinoAuth.clearPlaySession) {
                 CasinoAuth.clearPlaySession();
+            }
+            if (window.XAPES_WALLET && window.XAPES_WALLET.clearWalletAddress) {
+                window.XAPES_WALLET.clearWalletAddress();
             }
             if (window.solana && window.solana.disconnect) {
                 await window.solana.disconnect();

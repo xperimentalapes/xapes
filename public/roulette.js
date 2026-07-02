@@ -611,6 +611,7 @@
             if (walletAddress) walletAddress.textContent = addr.slice(0, 4) + '...' + addr.slice(-4);
             if (connectContainer) connectContainer.style.display = 'none';
             if (walletInfo) walletInfo.style.display = 'flex';
+            if (window.XAPES_WALLET) window.XAPES_WALLET.saveWalletAddress(addr);
             if (window.CasinoAuth && window.CasinoAuth.warmPlaySession) {
                 CasinoAuth.warmPlaySession(addr);
             }
@@ -618,6 +619,9 @@
         function showDisconnected() {
             if (window.CasinoAuth && window.CasinoAuth.clearPlaySession) {
                 CasinoAuth.clearPlaySession();
+            }
+            if (window.XAPES_WALLET && window.XAPES_WALLET.clearWalletAddress) {
+                window.XAPES_WALLET.clearWalletAddress();
             }
             wallet = null;
             connection = null;
@@ -632,19 +636,19 @@
             updateRouletteButtonStates();
         }
         try {
-            if (window.solana && window.solana.isConnected) {
-                window.solana.connect({ onlyIfTrusted: true }).then(function (r) {
-                    if (r && r.publicKey) {
-                        showConnected(r.publicKey.toString());
-                        initConnection();
-                        updateBalance().then(function () {
-                            loadPlayerData().then(function () {
-                                updateRouletteButtonStates();
-                            });
-                        });
-                    }
-                }).catch(function () {});
-            }
+            var restore = window.XAPES_WALLET && window.XAPES_WALLET.restoreTrustedConnection
+                ? window.XAPES_WALLET.restoreTrustedConnection()
+                : Promise.resolve(null);
+            restore.then(function (r) {
+                if (!r || !r.address) return;
+                showConnected(r.address);
+                initConnection();
+                updateBalance().then(function () {
+                    loadPlayerData().then(function () {
+                        updateRouletteButtonStates();
+                    });
+                });
+            });
         } catch (e) {}
         if (connectBtn) {
             connectBtn.addEventListener('click', function () {

@@ -167,25 +167,31 @@ function setupWalletConnection() {
 
     const hasPhantom = typeof window.solana !== 'undefined' && (window.solana.isPhantom || typeof window.solana.connect === 'function');
 
+    async function applyConnectedAddress(addr) {
+        wallet = addr;
+        walletAddress.textContent = `${wallet.slice(0, 4)}...${wallet.slice(-4)}`;
+        connectBtn.style.display = 'none';
+        walletInfo.style.display = 'flex';
+        if (window.XAPES_WALLET) window.XAPES_WALLET.saveWalletAddress(addr);
+        initConnection();
+        await updateBalance();
+        await loadCoinflipState();
+        await loadGameStats();
+        if (window.CasinoAuth && window.CasinoAuth.warmPlaySession) {
+            CasinoAuth.warmPlaySession(wallet);
+        }
+        updateButtonStates();
+    }
+
     if (hasPhantom) {
-        try {
-            if (window.solana.isConnected) {
-                window.solana.connect({ onlyIfTrusted: true }).then(r => {
-                    wallet = r.publicKey.toString();
-                    walletAddress.textContent = `${wallet.slice(0, 4)}...${wallet.slice(-4)}`;
-                    connectBtn.style.display = 'none';
-                    walletInfo.style.display = 'flex';
-                    initConnection();
-                    updateBalance();
-                    loadCoinflipState();
-                    loadGameStats();
-                    if (window.CasinoAuth && window.CasinoAuth.warmPlaySession) {
-                        CasinoAuth.warmPlaySession(wallet);
-                    }
-                    updateButtonStates();
-                }).catch(() => {});
+        const restore = window.XAPES_WALLET && window.XAPES_WALLET.restoreTrustedConnection
+            ? window.XAPES_WALLET.restoreTrustedConnection()
+            : Promise.resolve(null);
+        restore.then(function (result) {
+            if (result && result.address) {
+                applyConnectedAddress(result.address).catch(function () {});
             }
-        } catch (e) {}
+        }).catch(function () {});
     }
 
     connectBtn.addEventListener('click', async () => {
@@ -195,18 +201,7 @@ function setupWalletConnection() {
         }
         try {
             const r = await window.solana.connect();
-            wallet = r.publicKey.toString();
-            walletAddress.textContent = `${wallet.slice(0, 4)}...${wallet.slice(-4)}`;
-            connectBtn.style.display = 'none';
-            walletInfo.style.display = 'flex';
-            initConnection();
-            await updateBalance();
-            await loadCoinflipState();
-            await loadGameStats();
-            if (window.CasinoAuth && window.CasinoAuth.warmPlaySession) {
-                CasinoAuth.warmPlaySession(wallet);
-            }
-            updateButtonStates();
+            await applyConnectedAddress(r.publicKey.toString());
         } catch (e) {
             if (!String(e.message || e).includes('rejected')) alert('Failed to connect: ' + (e.message || e));
         }
@@ -215,6 +210,9 @@ function setupWalletConnection() {
     disconnectBtn.addEventListener('click', () => {
         if (window.CasinoAuth && window.CasinoAuth.clearPlaySession) {
             CasinoAuth.clearPlaySession();
+        }
+        if (window.XAPES_WALLET && window.XAPES_WALLET.clearWalletAddress) {
+            window.XAPES_WALLET.clearWalletAddress();
         }
         if (window.solana.disconnect) window.solana.disconnect();
         wallet = null;
