@@ -82,6 +82,11 @@ window.XAPES_CONFIG = {
       label: 'Magic Eden',
       kind: 'magiceden',
     },
+    {
+      wallet: '5ZpbzchZ6QacUDA5hAAXGkv6bcoqVaVqBrrry511fsw5',
+      label: 'Stolen wallet',
+      kind: 'stolen',
+    },
   ],
 
   holderPortalUrl: '',

@@ -24,7 +24,7 @@ function readRawBodyBuffer(req) {
   });
 }
 
-const DASHBOARD_API = /^\/api\/(discord|discord-rewards|verify|profile|collections|holders|prices|xma-ohlc|blunana-ohlc|coinflip-state|coinflip-stats|coinflip-flip|coinflip-purchase|coinflip-collect|coinflip-confirm-collect|holder-link-wallet|holder-verify|cron\/accrue-xma|cron\/settle-xma|cron\/sync-nfts|spin-slots|spin-roulette|record-game-purchase|casino\/buy-tiers|collect|confirm-collect|load-player|leaderboard|game-stats|save-game)(\/|$|\?)/;
+const DASHBOARD_API = /^\/api\/(discord|discord-rewards|verify|profile|collections|holders|prices|xma-ohlc|blunana-ohlc|coinflip-state|coinflip-stats|coinflip-flip|coinflip-purchase|coinflip-collect|coinflip-confirm-collect|holder-link-wallet|holder-unlink-wallet|holder\/aggregated-holdings|holder-verify|cron\/accrue-xma|cron\/settle-xma|cron\/sync-nfts|spin-slots|spin-roulette|record-game-purchase|casino\/buy-tiers|collect|confirm-collect|load-player|leaderboard|game-stats|save-game)(\/|$|\?)/;
 
 function getPathAndQuery(req) {
   const __path = req.query && req.query.__path;

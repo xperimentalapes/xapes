@@ -237,6 +237,7 @@
       </div>
       <div class="profile-modal__tabs" role="tablist" aria-label="Profile sections">
         <button type="button" class="profile-modal__tab profile-modal__tab--active" id="profile-tab-nfts" role="tab" aria-selected="true" aria-controls="profile-panel-nfts" data-profile-tab="nfts">My NFTs</button>
+        <button type="button" class="profile-modal__tab" id="profile-tab-wallets" role="tab" aria-selected="false" aria-controls="profile-panel-wallets" data-profile-tab="wallets">Wallets</button>
         <button type="button" class="profile-modal__tab" id="profile-tab-casino" role="tab" aria-selected="false" aria-controls="profile-panel-casino" data-profile-tab="casino">Casino</button>
         <button type="button" class="profile-modal__tab" id="profile-tab-rewards" role="tab" aria-selected="false" aria-controls="profile-panel-rewards" data-profile-tab="rewards">Rewards</button>
       </div>
@@ -248,6 +249,13 @@
             <div class="profile-nfts-grid" id="profile-nfts-grid"></div>
           </div>
           <button type="button" class="profile-nfts-expand btn btn--outline btn--full" id="profile-nfts-expand" hidden>Show all</button>
+        </div>
+        <div class="profile-modal__panel" id="profile-panel-wallets" role="tabpanel" aria-labelledby="profile-tab-wallets" hidden>
+          <p class="profile-modal__hint" id="profile-wallets-hint" hidden>Connect Discord to manage linked wallets.</p>
+          <p class="profile-modal__loading" id="profile-wallets-loading" hidden>Loading wallets…</p>
+          <ul class="profile-wallets-list" id="profile-wallets-list" hidden></ul>
+          <p class="profile-modal__empty" id="profile-wallets-empty" hidden>No wallets linked yet.</p>
+          <button type="button" class="btn btn--outline btn--full profile-wallets-add" id="profile-wallets-add" hidden>Add another wallet</button>
         </div>
         <div class="profile-modal__panel" id="profile-panel-casino" role="tabpanel" aria-labelledby="profile-tab-casino" hidden>
           <p class="profile-modal__loading" id="profile-casino-loading" hidden>Loading casino stats…</p>

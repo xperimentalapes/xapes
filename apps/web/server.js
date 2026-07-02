@@ -139,10 +139,15 @@ if (fs.existsSync(path.join(holderDir, 'link-wallet.js'))) {
   try {
     const linkWallet = require(path.join(holderDir, 'link-wallet.js'));
     const verifyRoles = require(path.join(holderDir, 'verify-roles.js'));
+    const unlinkWallet = require(path.join(holderDir, 'unlink-wallet.js'));
+    const aggregatedHoldingsApi = require(path.join(holderDir, 'aggregated-holdings-api.js'));
     app.post('/api/holder/link-wallet', useHolderHandler(linkWallet));
     app.post('/api/holder/verify', useHolderHandler(verifyRoles));
     app.post('/api/holder-link-wallet', useHolderHandler(linkWallet));
     app.post('/api/holder-verify', useHolderHandler(verifyRoles));
+    app.post('/api/holder-unlink-wallet', useHolderHandler(unlinkWallet));
+    app.post('/api/holder/unlink-wallet', useHolderHandler(unlinkWallet));
+    app.get('/api/holder/aggregated-holdings', useHolderHandler(aggregatedHoldingsApi));
   } catch (e) {
     console.warn('Holder API routes not loaded:', e.message);
   }
@@ -680,16 +685,41 @@ app.get('/api/verify', async function (req, res) {
   }
 });
 
-const getProfileNfts = require(path.join(__dirname, '..', '..', 'lib', 'holder', 'profile-nfts.js')).getProfileNfts;
-const getProfileCasinoStats = require(path.join(__dirname, '..', '..', 'lib', 'holder', 'profile-casino.js')).getProfileCasinoStats;
+const getProfileNfts = require(path.join(__dirname, '..', '..', 'lib', 'holder', 'profile-nfts.js'));
+const getProfileCasinoStats =
+  require(path.join(__dirname, '..', '..', 'lib', 'holder', 'profile-casino.js')).getProfileCasinoStats;
+const { createClient } = require('@supabase/supabase-js');
+
+function getSupabaseForProfile() {
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_KEY;
+  if (!url || !key) return null;
+  return createClient(url, key);
+}
 
 app.get('/api/profile/nfts', async function (req, res) {
   const wallet = (req.query.wallet || '').trim();
-  if (!wallet) {
-    return res.status(400).json({ error: 'Missing wallet' });
-  }
+  const discord = req.session && req.session.discord;
   try {
-    const payload = await getProfileNfts(wallet);
+    if (discord && discord.id) {
+      const supabase = getSupabaseForProfile();
+      if (supabase) {
+        const { data: links } = await supabase
+          .from('discord_wallet_links')
+          .select('wallet_address')
+          .eq('discord_user_id', String(discord.id));
+        const linked = (links || []).map((r) => r.wallet_address).filter(Boolean);
+        if (linked.length) {
+          const payload = await getProfileNfts.getProfileNftsForWallets(linked);
+          res.setHeader('Cache-Control', 'private, max-age=60, stale-while-revalidate=120');
+          return res.json(payload);
+        }
+      }
+    }
+    if (!wallet) {
+      return res.status(400).json({ error: 'Missing wallet' });
+    }
+    const payload = await getProfileNfts.getProfileNfts(wallet);
     res.setHeader('Cache-Control', 'private, max-age=60, stale-while-revalidate=120');
     res.json(payload);
   } catch (e) {
