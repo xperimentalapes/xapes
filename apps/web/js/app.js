@@ -248,20 +248,20 @@
       if (contractEl) contractEl.textContent = mint;
       var solscan = document.getElementById('tokenomics-link-solscan');
       if (solscan) solscan.href = 'https://solscan.io/token/' + encodeURIComponent(mint);
-      var dex = document.getElementById('tokenomics-link-dextools');
-      var dexUrl = (token.dextoolsUrl || '').trim();
-      if (dex && dexUrl) dex.href = dexUrl;
+      var jup = document.getElementById('tokenomics-link-jupiter');
+      var jupUrl = (token.jupiterUrl || '').trim();
+      if (jup && jupUrl) jup.href = jupUrl;
       var trade = document.getElementById('tokenomics-link-trade');
       var tradeUrl = (token.pumpFunUrl || 'https://pump.fun/coin/' + mint).trim();
       if (trade && tradeUrl) trade.href = tradeUrl;
     }
     var chartHint = document.getElementById('xma-chart-hint');
     if (chartHint) {
-      var dexLink = (token.dextoolsUrl || '').trim();
+      var jupLink = (token.jupiterUrl || '').trim();
       var tradeLink = (token.pumpFunUrl || (mint ? 'https://pump.fun/coin/' + mint : '')).trim();
       chartHint.innerHTML =
         '14-day price preview only. '
-        + (dexLink ? '<a href="' + dexLink + '" target="_blank" rel="noopener">View full chart on DEXTools</a>' : 'View full chart on DEXTools')
+        + (jupLink ? '<a href="' + jupLink + '" target="_blank" rel="noopener">View on Jupiter</a>' : 'View on Jupiter')
         + (tradeLink ? ' · <a href="' + tradeLink + '" target="_blank" rel="noopener">Trade on pump.fun</a>' : '')
         + '.';
     }

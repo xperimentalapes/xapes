@@ -24,7 +24,7 @@ window.XAPES_CONFIG = {
     summaryText: 'Your project token. Verify holdings in the dashboard.',
     /** Shown in $XMA section; also used for Solscan link when set */
     tokenMint: 'HVSruatutKcgpZJXYyeRCWAnyT7mzYq1io9YoJ6F4yMP',
-    dextoolsUrl: 'https://www.dextools.io/app/solana/pair-explorer/HVSruatutKcgpZJXYyeRCWAnyT7mzYq1io9YoJ6F4yMP',
+    jupiterUrl: 'https://jup.ag/tokens/HVSruatutKcgpZJXYyeRCWAnyT7mzYq1io9YoJ6F4yMP',
     pumpFunUrl: 'https://pump.fun/coin/HVSruatutKcgpZJXYyeRCWAnyT7mzYq1io9YoJ6F4yMP',
   },
 
