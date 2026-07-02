@@ -1,6 +1,6 @@
 /**
  * XMA Roulette – 3 cells; each cell has 2 slots and slides up to next number. Ease-out timing.
- * Chip placement: select chip (10/50/100), click table to place; same square stacks.
+ * Chip placement: select chip (1/5/10/25/50), click table to place; same square stacks.
  * Spins persist to DB (same as slots). Buy chips = purchase spins. Collect = cash out chips.
  */
 (function () {
@@ -28,8 +28,10 @@
     var unclaimedRewards = 0;
     var isCollecting = false;
 
+    var CHIP_VALUES = [1, 5, 10, 25, 50];
+
     var chipBalance = 0;
-    var selectedChipValue = 0;
+    var selectedChipValue = 1;
     var bets = {};
     var chipTypes = {};
     var undoHistory = [];
@@ -63,6 +65,38 @@
     function updateChipUI() {
         var el = document.getElementById('roulette-chips');
         if (el) el.textContent = getAvailableChips();
+        updateChipSelectorState();
+    }
+
+    function updateChipSelectorState() {
+        var available = getAvailableChips();
+        var chips = document.querySelectorAll('.roulette-chip');
+        var selectedStillOk = false;
+        chips.forEach(function (btn) {
+            var val = parseInt(btn.getAttribute('data-value'), 10);
+            var canAfford = available >= val;
+            btn.disabled = !canAfford;
+            if (val === selectedChipValue && canAfford) selectedStillOk = true;
+        });
+        if (!selectedStillOk) {
+            selectedChipValue = 0;
+            if (available >= 1) {
+                selectedChipValue = 1;
+            } else if (available > 0) {
+                for (var i = CHIP_VALUES.length - 1; i >= 0; i--) {
+                    if (CHIP_VALUES[i] <= available) {
+                        selectedChipValue = CHIP_VALUES[i];
+                        break;
+                    }
+                }
+            }
+        }
+        chips.forEach(function (btn) {
+            var val = parseInt(btn.getAttribute('data-value'), 10);
+            var isSel = val === selectedChipValue && !btn.disabled;
+            btn.classList.toggle('selected', isSel);
+            btn.setAttribute('aria-pressed', isSel ? 'true' : 'false');
+        });
     }
 
     function updateStakedUI() {
@@ -82,7 +116,7 @@
             var amount = bets[key];
             if (amount && amount > 0) {
                 var stack = document.createElement('div');
-                var chipClass = chipTypes[key] ? 'roulette-chip-stack roulette-chip-' + chipTypes[key] : 'roulette-chip-stack roulette-chip-10';
+                var chipClass = chipTypes[key] ? 'roulette-chip-stack roulette-chip-' + chipTypes[key] : 'roulette-chip-stack roulette-chip-1';
                 stack.className = chipClass;
                 stack.textContent = amount;
                 var cellRect = cell.getBoundingClientRect();
@@ -216,7 +250,7 @@
         for (var key in lastBets) {
             if (lastBets.hasOwnProperty(key)) {
                 bets[key] = lastBets[key];
-                chipTypes[key] = lastChipTypes[key] || 10;
+                chipTypes[key] = lastChipTypes[key] || 1;
             }
         }
         updateChipUI();
@@ -261,6 +295,7 @@
         var chips = document.querySelectorAll('.roulette-chip');
         chips.forEach(function (btn) {
             btn.addEventListener('click', function () {
+                if (btn.disabled) return;
                 var val = parseInt(btn.getAttribute('data-value'), 10);
                 if (isNaN(val)) return;
                 selectedChipValue = val;
