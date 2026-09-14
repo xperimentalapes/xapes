@@ -1569,7 +1569,7 @@ body.wallet-connected .btn--wallet .btn__icon {
   color: var(--success);
 }
 
-/* Collections: Magic Eden / Tensor buttons */
+/* Collections: Orbis marketplace button */
 .collections__actions {
   display: flex;
   flex-wrap: wrap;
@@ -1592,6 +1592,14 @@ body.wallet-connected .btn--wallet .btn__icon {
   -webkit-tap-highlight-color: transparent;
   transition: background 0.2s, border-color 0.2s, transform 0.1s;
 }
+.collections__btn--orbis {
+  width: auto;
+  min-width: 140px;
+  height: 44px;
+  padding: 0.35rem 0.9rem;
+  background: #000;
+  border: 1px solid rgba(124, 58, 237, 0.35);
+}
 .collections__btn:hover {
   transform: translateY(-1px);
 }
@@ -1600,8 +1608,9 @@ body.wallet-connected .btn--wallet .btn__icon {
   max-height: 100%;
   width: auto;
 }
-.collections__btn-img--me {
-  max-height: 100%;
+.collections__btn-img--orbis {
+  max-height: 26px;
+  width: auto;
 }
 
 /* Lunarverse full-width card with banner background */

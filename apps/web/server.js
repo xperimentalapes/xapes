@@ -743,7 +743,7 @@ app.get('/api/profile/casino', async function (req, res) {
   }
 });
 
-// ——— Collections (Magic Eden + Helius/Supabase fallbacks) ———
+// ——— Collections (Orbis link + ME/Helius stats) ———
 app.get('/api/collections', async function (req, res) {
   try {
     const payload = await getCollectionsMarketData();

@@ -2150,8 +2150,7 @@
           var statsHtml = stats.length ? '<div class="embed__stats">' + stats.map(function (s) {
             return '<div class="embed__stat"><span class="embed__stat-label">' + escapeHtml(s.label) + '</span><span class="embed__stat-value">' + escapeHtml(s.value) + '</span></div>';
           }).join('') + '</div>' : '';
-          var meUrl = c.marketplaceUrl || ('https://magiceden.io/marketplace/' + encodeURIComponent(c.symbol || ''));
-          var tensorUrl = c.tensorUrl || ('https://www.tensor.trade/trade/' + encodeURIComponent(c.symbol || ''));
+          var orbisUrl = c.marketplaceUrl || ('https://www.orbisonsol.io/marketplace/' + encodeURIComponent((c.symbol || '').replace(/_/g, '-')));
           card.innerHTML =
             mediaHtml +
             '<div class="embed__body">' +
@@ -2159,11 +2158,8 @@
               (desc ? '<p class="card__text">' + escapeHtml(desc) + '</p>' : '') +
               statsHtml +
               '<div class="collections__actions">' +
-                '<a href="' + escapeHtml(meUrl) + '" class="collections__btn" target="_blank" rel="noopener" aria-label="Trade on Magic Eden">' +
-                  '<img src="assets/magic-eden.png" alt="Magic Eden" class="collections__btn-img collections__btn-img--me" loading="lazy" />' +
-                '</a>' +
-                '<a href="' + escapeHtml(tensorUrl) + '" class="collections__btn" target="_blank" rel="noopener" aria-label="Trade on Tensor">' +
-                  '<img src="assets/tensor.png" alt="Tensor" class="collections__btn-img" loading="lazy" />' +
+                '<a href="' + escapeHtml(orbisUrl) + '" class="collections__btn collections__btn--orbis" target="_blank" rel="noopener" aria-label="Trade on Orbis">' +
+                  '<img src="assets/orbis.png" alt="Orbis" class="collections__btn-img collections__btn-img--orbis" loading="lazy" />' +
                 '</a>' +
               '</div>' +
             '</div>';
