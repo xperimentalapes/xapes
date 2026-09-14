@@ -1613,8 +1613,8 @@ body.wallet-connected .btn--wallet .btn__icon {
   width: auto;
 }
 
-/* Lunarverse full-width card with banner background */
-.card--lunarverse {
+/* The Fox Club full-width card with banner background */
+.card--thefox {
   display: block;
   width: 100%;
   min-height: 360px;
@@ -1626,11 +1626,10 @@ body.wallet-connected .btn--wallet .btn__icon {
   color: inherit;
   transition: opacity 0.2s;
 }
-.card--lunarverse:hover {
+.card--thefox:hover {
   opacity: 0.95;
 }
-/* Pin bg to card bottom-right: wrapper 2x width, right-aligned; card overflow clips left only */
-.card--lunarverse .card__bg {
+.card--thefox .card__bg {
   position: absolute;
   top: 0;
   right: 0;
@@ -1640,23 +1639,23 @@ body.wallet-connected .btn--wallet .btn__icon {
   height: 100%;
   z-index: 0;
 }
-.card--lunarverse .card__bg::before {
+.card--thefox .card__bg::before {
   content: '';
   position: absolute;
   inset: 0;
-  background-image: url("../assets/lunarverse-bg.png");
+  background-image: url("../assets/thefox-bg.png");
   background-size: cover;
-  background-position: 100% 100%;
+  background-position: right center;
   background-repeat: no-repeat;
 }
-.card--lunarverse .card__bg::after {
+.card--thefox .card__bg::after {
   content: '';
   position: absolute;
   inset: 0;
   background: linear-gradient(90deg, rgba(13, 14, 18, 0.85) 0%, rgba(13, 14, 18, 0.5) 50%, rgba(13, 14, 18, 0.3) 100%);
   z-index: 1;
 }
-.card--lunarverse .card__lunarverse-content {
+.card--thefox .card__thefox-content {
   position: relative;
   z-index: 2;
   padding: 1.75rem 1.5rem;
@@ -1666,19 +1665,19 @@ body.wallet-connected .btn--wallet .btn__icon {
   justify-content: center;
   min-height: 360px;
 }
-.card--lunarverse .card__title {
+.card--thefox .card__title {
   color: #fff;
   font-size: 1.5rem;
   margin-bottom: 0.35rem;
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
 }
-.card--lunarverse .card__text {
+.card--thefox .card__text {
   color: rgba(255, 255, 255, 0.9);
   margin-bottom: 1rem;
   font-size: 1rem;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
-.card--lunarverse .btn {
+.card--thefox .btn {
   pointer-events: none;
 }
 
