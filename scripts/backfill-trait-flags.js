@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Recompute is_burn_squad / is_crown / is_cowboy for every row in nfts using lib/holder/trait-flags.js.
+ * Recompute is_business_dao / is_crown / is_cowboy for every row in nfts using lib/holder/trait-flags.js.
  * Uses UPDATE only (never upserts partial rows).
  *
  * Requires: SUPABASE_URL, SUPABASE_SERVICE_KEY
@@ -51,7 +51,7 @@ async function main() {
     const flags = inferTraitFlagsFromMetadata(row.metadata_json || {});
     return {
       mint_address: row.mint_address,
-      is_burn_squad: flags.is_burn_squad,
+      is_business_dao: flags.is_business_dao,
       is_crown: flags.is_crown,
       is_cowboy: flags.is_cowboy,
       updated_at: new Date().toISOString(),
@@ -66,7 +66,7 @@ async function main() {
         supabase
           .from('nfts')
           .update({
-            is_burn_squad: p.is_burn_squad,
+            is_business_dao: p.is_business_dao,
             is_crown: p.is_crown,
             is_cowboy: p.is_cowboy,
             updated_at: p.updated_at,

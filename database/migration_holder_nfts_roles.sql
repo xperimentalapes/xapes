@@ -35,6 +35,7 @@ CREATE TABLE IF NOT EXISTS nfts (
     is_crown BOOLEAN NOT NULL DEFAULT false,
     is_cowboy BOOLEAN NOT NULL DEFAULT false,
     is_burn_squad BOOLEAN NOT NULL DEFAULT false,
+    is_business_dao BOOLEAN NOT NULL DEFAULT false,
     owner_wallet TEXT,
     discord_user_id TEXT,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()

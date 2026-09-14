@@ -11,7 +11,7 @@ const ROWS = [
   { slug: 'xape_holder', discord_role_id: '1377593419723046952', display_name: 'Xape Holder', rule_type: 'collection_min_one', rule_config: {}, active: true, sort_order: 10 },
   { slug: 'royal_family', discord_role_id: '1456871093351747604', display_name: 'Royal Family', rule_type: 'nft_column_true', rule_config: { column: 'is_crown' }, active: true, sort_order: 20 },
   { slug: 'cowboy_dao', discord_role_id: '1463993881392709693', display_name: 'Cowboy DAO', rule_type: 'nft_column_true', rule_config: { column: 'is_cowboy' }, active: true, sort_order: 30 },
-  { slug: 'burn_squad', discord_role_id: '1491281476367552642', display_name: 'Burn Squad', rule_type: 'nft_column_true', rule_config: { column: 'is_burn_squad' }, active: true, sort_order: 40 },
+  { slug: 'business_dao', discord_role_id: '1491281476367552642', display_name: 'BUSINESS DAO', rule_type: 'nft_column_true', rule_config: { column: 'is_business_dao' }, active: true, sort_order: 40 },
   { slug: 'xape_god', discord_role_id: '1380162518072164383', display_name: 'Xape God', rule_type: 'collection_min_nfts', rule_config: { min: 50 }, active: true, sort_order: 50 },
   { slug: 'mutant_100', discord_role_id: '1388338739297648640', display_name: 'Mutant', rule_type: 'collection_min_nfts', rule_config: { min: 100 }, active: true, sort_order: 60 },
   { slug: 'xma_holder', discord_role_id: '1457517122581168252', display_name: '$XMA holder', rule_type: 'token_balance_min', rule_config: { min: 5000000 }, active: true, sort_order: 70 },
@@ -31,7 +31,16 @@ async function main() {
     console.error(error);
     process.exit(1);
   }
+  const { error: retireErr } = await supabase
+    .from('discord_roles')
+    .update({ active: false })
+    .eq('slug', 'burn_squad');
+  if (retireErr) {
+    console.error('Failed to retire burn_squad:', retireErr);
+    process.exit(1);
+  }
   console.log('Upserted', (data || []).length, 'rows:', (data || []).map((r) => r.slug).join(', '));
+  console.log('Retired slug burn_squad (active=false) if present');
 }
 
 main();
